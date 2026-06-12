@@ -1,6 +1,11 @@
 ---
-gsd_state_version: '1.0'
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
 status: planning
+stopped_at: Phase 1 UI-SPEC approved
+last_updated: "2026-06-11T17:19:44.502Z"
+last_activity: 2026-06-11 — Roadmap created (4 phases, Vertical MVP structure), requirements traceability mapped (15/15)
 progress:
   total_phases: 4
   completed_phases: 0
@@ -30,6 +35,7 @@ Progress: [░░░░░░░░░░] 0%
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 0
 - Average duration: - min
 - Total execution time: 0 hours
@@ -41,6 +47,7 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 **Recent Trend:**
+
 - Last 5 plans: -
 - Trend: -
 
@@ -63,7 +70,8 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 1] Inspecionar a estrutura real da planilha "Controle pis e cofins.xlsx" antes de implementar a importação — provavelmente sem campo "regime tributário" e sem empresas do Simples Nacional (research/SUMMARY.md).
+- [Phase 1] ~~Inspecionar a estrutura real da planilha de importação~~ — RESOLVIDO nesta sessão: a fonte real de EMPR-02 é `Lista de Empresas com CNPJ.xlsx` (não "Controle pis e cofins.xlsx"), inspecionada diretamente. 198 empresas em 3 regimes: Lucro Real=61, Simples Nacional=80, Lucro Presumido=50, 7 sem regime identificável. Ver `01-RESEARCH.md` Pattern 3.5.
+- [Phase 3] NOVO — TASK-01 define regras de geração mensal só para Lucro Real e Simples Nacional; ~25% das empresas reais (50/198, Lucro Presumido) ainda não têm regra de obrigação definida. Definir essas regras antes de implementar o motor de geração (ver `01-RESEARCH.md` Pattern 3.5).
 - [Phase 3] Validar a regra de antecipação/postergação de prazo (antecipa vs adia) por tipo de obrigação (DAS, ICMS, PIS/COFINS, SPED) contra calendário oficial vigente antes de codificar `regras_obrigacao` (research/PITFALLS.md, Pitfall 4).
 - [Phase 3] Decidir explicitamente se Corpus Christi conta como dia não útil para este escritório.
 
@@ -77,6 +85,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-11
-Stopped at: ROADMAP.md and REQUIREMENTS.md traceability created; ready for /gsd-plan-phase 1
-Resume file: None
+Last session: 2026-06-11T17:19:44.494Z
+Stopped at: Phase 1 UI-SPEC approved
+Resume file: .planning/phases/01-funda-o-acesso-empresas-e-importa-o/01-UI-SPEC.md
