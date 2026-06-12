@@ -737,7 +737,7 @@ main().finally(() => db.$disconnect());
 
 **Se esta tabela não estivesse vazia (não está):** todos os itens acima precisam de confirmação rápida (comandos `npm view`, inspeção da planilha, teste de login local) durante a execução — nenhum bloqueia o INÍCIO da implementação, mas A4/A5 bloqueiam a FINALIZAÇÃO do módulo de importação.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. ~~Qual planilha é a fonte real de EMPR-02~~ — **RESOLVIDA nesta sessão.**
    - **Resposta:** `Lista de Empresas com CNPJ.xlsx` é a fonte real e suficiente para EMPR-02. Inspeção direta (Pattern 3.5) confirmou 198 empresas com nome, CNPJ e regime tributário (via seções LUCRO REAL/SIMPLES NACIONAL/LUCRO PRESUMIDO) — exatamente o que EMPR-02 precisa como cadastro mestre inicial. `"Controle pis e cofins.xlsx"` (citada no REQUIREMENTS.md) serve outro propósito (apuração mensal de PIS/COFINS, estrutura de ~19 linhas/empresa, conforme MEMORY.md do usuário) e não precisa ser usada para a importação inicial — pode ser referenciada futuramente (TASK-06) como ferramenta externa de automação, não como fonte de dados de EMPR-02.
@@ -747,11 +747,13 @@ main().finally(() => db.$disconnect());
    - What we know: AUTH-01 exige login individual com email/senha para 5 usuários fixos, cadastrados manualmente (não há fluxo de "criar conta" self-service nem recuperação de senha por email no v1, conforme CLAUDE.md/Alternatives — Auth.js Credentials simples).
    - What's unclear: se o dono fornecerá os emails/senhas reais dos 5 usuários para o seed, ou se o sistema deve gerar senhas temporárias e exibi-las (com expectativa de troca no primeiro login — o que exigiria uma tela de "alterar senha", não especificada no UI-SPEC desta fase).
    - Recommendation: para a Fase 1, seed com senhas placeholder conhecidas (documentadas em local seguro, não no código-fonte público) é suficiente — "trocar senha" pode ser v1.x. Confirmar com o usuário os 4 nomes/emails reais dos colaboradores antes do seed final (atualmente são placeholders genéricos).
+   - **RESOLVED:** recomendação aceita como decisão. O seed (`prisma/seed.ts`) cria os 5 usuários com credenciais placeholder documentadas (senha `"trocar-no-primeiro-login"`). O dono substitui os 5 emails/nomes seedados pelos da equipe real e cada usuário troca a senha no primeiro login (ou via script de atualização de credenciais) antes do handoff para a equipe. Nenhuma tela de "recuperar senha por email" é necessária no v1.
 
 3. **O domínio público Railway (`*.up.railway.app`) é suficiente para INFRA-01, ou o escritório espera um domínio próprio (ex.: `agenda.escritoriocontabil.com.br`)?**
    - What we know: INFRA-01 exige apenas "acessível por uma URL pública pela internet, não restrito à rede local" — o domínio gerado automaticamente pelo Railway atende literalmente esse requisito.
    - What's unclear: se há expectativa (não documentada em CONTEXT.md, que não existe para esta fase) de domínio customizado com o nome do escritório.
    - Recommendation: usar o domínio `*.up.railway.app` para esta fase (atende ao requisito formal); domínio customizado é uma configuração adicional trivial no Railway (CNAME) que pode ser feita a qualquer momento depois, sem bloquear a Fase 1.
+   - **RESOLVED:** recomendação aceita como decisão. O domínio fornecido pelo Railway (`*.up.railway.app`) é suficiente para INFRA-01 no v1 — nenhum domínio próprio é requerido. Um domínio customizado (CNAME) pode ser adicionado depois sem bloquear nem alterar a Fase 1.
 
 ## Environment Availability
 
