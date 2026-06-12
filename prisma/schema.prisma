@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  COLABORADOR
+  DONO
+}
+
+enum RegimeTributario {
+  LUCRO_REAL
+  LUCRO_PRESUMIDO
+  SIMPLES_NACIONAL
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  role      Role     @default(COLABORADOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  empresas  Empresa[] @relation("ResponsavelEmpresa")
+
+  @@map("usuarios")
+}
+
+model Empresa {
+  id               String            @id @default(cuid())
+  nome             String
+  cnpj             String            @unique
+  regimeTributario RegimeTributario
+  responsavelId    String
+  responsavel      Usuario           @relation("ResponsavelEmpresa", fields: [responsavelId], references: [id])
+  contatos         String?
+  particularidades String?
+  ativo            Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  regimeHistorico  EmpresaRegimeHistorico[]
+
+  @@index([responsavelId])
+  @@index([regimeTributario])
+  @@map("empresas")
+}
+
+model EmpresaRegimeHistorico {
+  id               String            @id @default(cuid())
+  empresaId        String
+  empresa          Empresa           @relation(fields: [empresaId], references: [id])
+  regimeTributario RegimeTributario
+  dataInicio       DateTime
+  dataFim          DateTime?
+
+  @@index([empresaId, dataInicio])
+  @@map("empresa_regime_historico")
+}
