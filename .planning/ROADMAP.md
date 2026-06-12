@@ -41,7 +41,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 01-02-PLAN.md — Auth (AUTH-01): Auth.js v5 Credentials + JWT com role, middleware, tela de login
-- [ ] 01-03-PLAN.md — Camada de dados (AUTH-02/EMPR-01): withVisibilityScope, validarCNPJ, empresaSchema, queries escopadas
+- [x] 01-03-PLAN.md — Camada de dados (AUTH-02/EMPR-01): withVisibilityScope, validarCNPJ, empresaSchema, queries escopadas
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundação — Acesso, Empresas e Importação | 2/6 | In Progress|  |
+| 1. Fundação — Acesso, Empresas e Importação | 3/6 | In Progress|  |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 0/0 | Not started | - |
 | 3. Motor de Geração Automática Mensal | 0/0 | Not started | - |
 | 4. Dashboards Comparativos | 0/0 | Not started | - |

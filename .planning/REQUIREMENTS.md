@@ -10,7 +10,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Auth (Autenticação e Permissões)
 
 - [x] **AUTH-01**: Login individual para os 4 membros da equipe + dono (5 usuários), com sessão persistente
-- [ ] **AUTH-02**: Visibilidade diferenciada por papel — colaborador vê apenas suas tarefas e empresas; dono vê de todos, sem restrição
+- [x] **AUTH-02**: Visibilidade diferenciada por papel — colaborador vê apenas suas tarefas e empresas; dono vê de todos, sem restrição
 
 ### Empresas (Cadastro de Clientes)
 
@@ -69,7 +69,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | AUTH-01 | Phase 1 | Complete |
-| AUTH-02 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Complete |
 | EMPR-01 | Phase 1 | Complete |
 | EMPR-02 | Phase 1 | Complete |
 | TASK-01 | Phase 3 | Pending |
