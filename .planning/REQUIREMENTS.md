@@ -9,13 +9,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Auth (Autenticação e Permissões)
 
-- [ ] **AUTH-01**: Login individual para os 4 membros da equipe + dono (5 usuários), com sessão persistente
+- [x] **AUTH-01**: Login individual para os 4 membros da equipe + dono (5 usuários), com sessão persistente
 - [ ] **AUTH-02**: Visibilidade diferenciada por papel — colaborador vê apenas suas tarefas e empresas; dono vê de todos, sem restrição
 
 ### Empresas (Cadastro de Clientes)
 
-- [ ] **EMPR-01**: Cadastro de empresas-cliente com nome, CNPJ, regime tributário, responsável, contatos e particularidades
-- [ ] **EMPR-02**: Importação inicial das 100+ empresas a partir da planilha "Controle pis e cofins.xlsx" existente, com etapa de revisão antes de persistir
+- [x] **EMPR-01**: Cadastro de empresas-cliente com nome, CNPJ, regime tributário, responsável, contatos e particularidades
+- [x] **EMPR-02**: Importação inicial das 100+ empresas a partir da planilha "Controle pis e cofins.xlsx" existente, com etapa de revisão antes de persistir
 
 ### Tarefas (Geração, Execução e Histórico)
 
@@ -38,7 +38,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Infraestrutura
 
-- [ ] **INFRA-01**: Acesso ao sistema pela internet, não restrito à rede local do escritório
+- [x] **INFRA-01**: Acesso ao sistema pela internet, não restrito à rede local do escritório
 
 ## v2 Requirements
 
@@ -68,10 +68,10 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
 | AUTH-02 | Phase 1 | Pending |
-| EMPR-01 | Phase 1 | Pending |
-| EMPR-02 | Phase 1 | Pending |
+| EMPR-01 | Phase 1 | Complete |
+| EMPR-02 | Phase 1 | Complete |
 | TASK-01 | Phase 3 | Pending |
 | TASK-02 | Phase 3 | Pending |
 | TASK-03 | Phase 2 | Pending |
@@ -82,9 +82,10 @@ Explicitly excluded. Documented to prevent scope creep.
 | DASH-01 | Phase 4 | Pending |
 | DASH-02 | Phase 4 | Pending |
 | DASH-03 | Phase 4 | Pending |
-| INFRA-01 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Complete |
 
 **Coverage:**
+
 - v1 requirements: 15 total
 - Mapped to phases: 15
 - Unmapped: 0 ✓

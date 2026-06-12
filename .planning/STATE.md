@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 UI-SPEC approved
-last_updated: "2026-06-12T13:52:32.559Z"
-last_activity: 2026-06-11 — Roadmap created (4 phases, Vertical MVP structure), requirements traceability mapped (15/15)
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-06-12T18:17:14.520Z"
+last_activity: 2026-06-12 -- Phase 01 execution started
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 6
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** A equipe nunca perde um prazo fiscal de nenhum cliente, e o dono sempre sabe em tempo real o status de tudo.
-**Current focus:** Phase 1 — Fundação: Acesso, Empresas e Importação
+**Current focus:** Phase 01 — funda-o-acesso-empresas-e-importa-o
 
 ## Current Position
 
-Phase: 1 of 4 (Fundação — Acesso, Empresas e Importação)
-Plan: 0 of TBD in current phase
+Phase: 01 (funda-o-acesso-empresas-e-importa-o) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-06-11 — Roadmap created (4 phases, Vertical MVP structure), requirements traceability mapped (15/15)
+Last activity: 2026-06-12 -- Phase 01 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01 P01 | 35min | 4 tasks | 52 files |
 
 ## Accumulated Context
 
@@ -63,6 +64,8 @@ Recent decisions affecting current work:
 - [Roadmap]: Estrutura Vertical MVP com 4 fases — Fundação (auth+empresas+import) → Gestão de Tarefas (avulsas+detalhe+alertas) → Motor de Geração Mensal → Dashboards. Cada fase entrega algo navegável/usável de ponta a ponta.
 - [Roadmap]: Fases 2 e 3 reordenadas em relação à proposta inicial da pesquisa — UX de tarefas (avulsas, detalhe, alertas) vem ANTES do motor de geração automática, pois não depende dele e já entrega valor usável; o motor (Fase 3) então "alimenta" essa UI já existente.
 - [Roadmap]: INFRA-01 (acesso pela internet) absorvido na Fase 1 como parte da fundação de infraestrutura/deploy.
+- [Phase ?]: Database hosting: Neon (managed Postgres) instead of Railway-provisioned Postgres for DATABASE_URL/DIRECT_URL — User supplied Neon pooled+direct connection strings directly; Plan 06 Railway deploy must set these as env vars, not provision Railway Postgres
+- [Phase ?]: AUTH_SECRET generated via node crypto.randomBytes(32).base64 fallback — npx auth secret resolved to unrelated better-auth CLI (writes BETTER_AUTH_SECRET, not AUTH_SECRET)
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-11T17:19:44.494Z
-Stopped at: Phase 1 UI-SPEC approved
-Resume file: .planning/phases/01-funda-o-acesso-empresas-e-importa-o/01-UI-SPEC.md
+Last session: 2026-06-12T18:17:14.511Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None
