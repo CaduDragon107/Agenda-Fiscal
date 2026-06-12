@@ -29,7 +29,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A lista de empresas-cliente (nome, CNPJ, regime tributário, responsável, contatos, particularidades) está populada a partir da importação da planilha "Controle pis e cofins.xlsx", com etapa de revisão humana antes de persistir.
   4. Usuário consegue cadastrar e editar uma empresa-cliente manualmente pela interface, incluindo definir seu regime tributário.
   5. O sistema está acessível por uma URL pública pela internet, não restrito à rede local do escritório.
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 01-01-PLAN.md — Fundação: bootstrap Next.js + shadcn, deps auditadas, schema Prisma (3 regimes) + db push, seed, infra Vitest
+- [ ] 01-02-PLAN.md — Auth (AUTH-01): Auth.js v5 Credentials + JWT com role, middleware, tela de login
+- [ ] 01-03-PLAN.md — Camada de dados (AUTH-02/EMPR-01): withVisibilityScope, validarCNPJ, empresaSchema, queries escopadas
+- [ ] 01-04-PLAN.md — Empresas (EMPR-01/AUTH-02): shell, lista escopada, CRUD com anti-IDOR
+- [ ] 01-05-PLAN.md — Importação (EMPR-02): parser SheetJS 198 empresas, wizard de 3 etapas com revisão humana
+- [ ] 01-06-PLAN.md — Deploy (INFRA-01): build standalone + Railway + URL pública
 **UI hint**: yes
 
 ### Phase 2: Gestão de Tarefas — Avulsas, Detalhe e Alertas
@@ -65,7 +72,6 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. O dono visualiza um dashboard de evolução mensal mostrando a tendência de cumprimento de prazos ao longo do tempo, com números de meses fechados estáveis (não recalculados retroativamente a cada acesso).
   3. O dono visualiza um dashboard comparando empresas, destacando quais geram mais atrasos/problemas recorrentes.
 **Plans**: TBD
-**UI hint**: yes
 
 ## Progress
 
@@ -74,7 +80,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundação — Acesso, Empresas e Importação | 0/0 | Not started | - |
+| 1. Fundação — Acesso, Empresas e Importação | 0/6 | Planned | - |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 0/0 | Not started | - |
 | 3. Motor de Geração Automática Mensal | 0/0 | Not started | - |
 | 4. Dashboards Comparativos | 0/0 | Not started | - |
