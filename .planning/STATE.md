@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 Phase: 01 (funda-o-acesso-empresas-e-importa-o) — EXECUTING
 Plan: 6 of 6
 Status: Ready to execute
-Last activity: 2026-06-15 - Completed quick task 260615-d0j: Corrigir rota raiz '/' para redirecionar conforme sessao (era template create-next-app)
+Last activity: 2026-06-15 - Completed quick task 260615-jyn: Adicionar logo da empresa na sidebar e no login (fundo escuro fixo, visivel em light/dark)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -98,6 +98,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260615-ci1 | Adicionar toggle de modo escuro (dark mode) na interface usando next-themes + shadcn | 2026-06-15 | f70d98c | [260615-ci1-adicionar-toggle-de-modo-escuro-dark-mod](./quick/260615-ci1-adicionar-toggle-de-modo-escuro-dark-mod/) |
 | 260615-d0j | Corrigir rota raiz '/' (servia template create-next-app) para redirecionar para /empresas ou /login conforme sessao | 2026-06-15 | 2c61912 | [260615-d0j-corrigir-redirect-pagina-raiz](./quick/260615-d0j-corrigir-redirect-pagina-raiz/) |
+| 260615-jyn | Adicionar logo da empresa (logo-branco.png) na sidebar e no header do login, sobre fundo escuro fixo (visivel em light/dark) | 2026-06-15 | 878f089 | [260615-jyn-adicionar-logo-marca](./quick/260615-jyn-adicionar-logo-marca/) |
 
 ## Deferred Items
 
