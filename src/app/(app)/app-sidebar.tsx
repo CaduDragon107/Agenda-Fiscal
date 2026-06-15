@@ -1,0 +1,128 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Building2, LayoutDashboard, ListChecks, LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import {
+  Avatar,
+  AvatarFallback,
+} from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+type AppSidebarUser = {
+  nome?: string | null;
+  email?: string | null;
+  role: "COLABORADOR" | "DONO";
+};
+
+function iniciais(nome?: string | null, email?: string | null): string {
+  const base = nome?.trim() || email?.trim() || "?";
+  const partes = base.split(/\s+/).filter(Boolean);
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
+export function AppSidebar({ user }: { user: AppSidebarUser }) {
+  const pathname = usePathname();
+  const isDono = user.role === "DONO";
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <div className="flex items-center gap-2 px-2 py-1.5">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Building2 className="size-4" />
+          </div>
+          <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
+            <span className="text-sm font-semibold">Agenda Fiscal</span>
+            {isDono ? (
+              <span className="text-xs text-muted-foreground">Visão geral</span>
+            ) : null}
+          </div>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname?.startsWith("/empresas")}>
+                  <Link href="/empresas">
+                    <Building2 />
+                    <span>Empresas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton disabled>
+                  <ListChecks />
+                  <span>Tarefas</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton disabled>
+                  <LayoutDashboard />
+                  <span>Dashboards</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton size="lg">
+              <Avatar size="sm">
+                <AvatarFallback>{iniciais(user.nome, user.email)}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col text-left leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="text-sm font-medium">{user.nome ?? user.email}</span>
+                <span className="text-xs text-muted-foreground">
+                  {isDono ? "Dono" : "Colaborador"}
+                </span>
+              </div>
+            </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-56">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">{user.nome ?? "Usuário"}</span>
+                <span className="text-xs text-muted-foreground">{user.email}</span>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/login" })}>
+              <LogOut />
+              <span>Sair</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
