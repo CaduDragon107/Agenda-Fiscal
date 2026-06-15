@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Building2, LayoutDashboard, ListChecks, LogOut } from "lucide-react";
@@ -52,15 +53,20 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1.5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Building2 className="size-4" />
+          <div className="flex shrink-0 items-center justify-center rounded-md bg-neutral-900 px-2 py-1.5 group-data-[collapsible=icon]:hidden">
+            <Image
+              src="/logo-branco.png"
+              alt="Agenda Fiscal"
+              width={169}
+              height={64}
+              className="h-8 w-auto"
+            />
           </div>
-          <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold">Agenda Fiscal</span>
-            {isDono ? (
+          {isDono ? (
+            <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
               <span className="text-xs text-muted-foreground">Visão geral</span>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       </SidebarHeader>
 
