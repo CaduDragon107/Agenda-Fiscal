@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +15,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Form,
@@ -73,8 +73,21 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl font-semibold">Agenda Fiscal</CardTitle>
-        <CardDescription>Entre com seu email e senha para continuar.</CardDescription>
+        <div className="flex justify-center">
+          <div className="flex items-center justify-center rounded-md bg-neutral-900 px-4 py-3">
+            <Image
+              src="/logo-branco.png"
+              alt="Agenda Fiscal"
+              width={169}
+              height={64}
+              priority
+              className="h-12 w-auto"
+            />
+          </div>
+        </div>
+        <CardDescription className="text-center">
+          Entre com seu email e senha para continuar.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
