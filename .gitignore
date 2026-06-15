@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# excel temp lock files
+~$*.xlsx
+
+# claude code local state
+.claude/
