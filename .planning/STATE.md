@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 Phase: 01 (funda-o-acesso-empresas-e-importa-o) — EXECUTING
 Plan: 6 of 6
 Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 01 execution started
+Last activity: 2026-06-15 - Completed quick task 260615-ci1: Adicionar toggle de modo escuro (dark mode) na interface usando next-themes + shadcn
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -91,6 +91,12 @@ None yet.
 - [Phase 3] NOVO — TASK-01 define regras de geração mensal só para Lucro Real e Simples Nacional; ~25% das empresas reais (50/198, Lucro Presumido) ainda não têm regra de obrigação definida. Definir essas regras antes de implementar o motor de geração (ver `01-RESEARCH.md` Pattern 3.5).
 - [Phase 3] Validar a regra de antecipação/postergação de prazo (antecipa vs adia) por tipo de obrigação (DAS, ICMS, PIS/COFINS, SPED) contra calendário oficial vigente antes de codificar `regras_obrigacao` (research/PITFALLS.md, Pitfall 4).
 - [Phase 3] Decidir explicitamente se Corpus Christi conta como dia não útil para este escritório.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260615-ci1 | Adicionar toggle de modo escuro (dark mode) na interface usando next-themes + shadcn | 2026-06-15 | f70d98c | [260615-ci1-adicionar-toggle-de-modo-escuro-dark-mod](./quick/260615-ci1-adicionar-toggle-de-modo-escuro-dark-mod/) |
 
 ## Deferred Items
 
