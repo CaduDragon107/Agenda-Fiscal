@@ -46,7 +46,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 01-04-PLAN.md — Empresas (EMPR-01/AUTH-02): shell, lista escopada, CRUD com anti-IDOR
-- [ ] 01-05-PLAN.md — Importação (EMPR-02): parser SheetJS 198 empresas, wizard de 3 etapas com revisão humana
+- [x] 01-05-PLAN.md — Importação (EMPR-02): parser SheetJS 198 empresas, wizard de 3 etapas com revisão humana
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundação — Acesso, Empresas e Importação | 4/6 | In Progress|  |
+| 1. Fundação — Acesso, Empresas e Importação | 5/6 | In Progress|  |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 0/0 | Not started | - |
 | 3. Motor de Geração Automática Mensal | 0/0 | Not started | - |
 | 4. Dashboards Comparativos | 0/0 | Not started | - |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-04-PLAN.md
-last_updated: "2026-06-15T10:25:12.475Z"
+stopped_at: Completed 01-05-PLAN.md
+last_updated: "2026-06-15T10:53:50.784Z"
 last_activity: 2026-06-12 -- Phase 01 execution started
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 01 (funda-o-acesso-empresas-e-importa-o) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-06-12 -- Phase 01 execution started
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P02 | 18min | 2 tasks | 10 files |
 | Phase 01 P03 | 7 min | 2 tasks | 8 files |
 | Phase 01 P04 | 35min | 2 tasks | 11 files |
+| Phase 01 P05 | 70min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,9 @@ Recent decisions affecting current work:
 - [Phase 01-04]: criarEmpresa writes the first EmpresaRegimeHistorico entry at creation (regime atual, dataInicio = now), keeping regime history coherent from v1
 - [Phase 01-04]: Server Actions return { ok: true, id } | { ok: false, error } instead of throwing, simplifying client-side toast handling
 - [Phase 01-04]: Edit page uses Next.js notFound() (404) when buscarEmpresaPorId returns null, satisfying 'nao encontrado, never 403' for the IDOR read path
+- [Phase 01-05]: RESEARCH.md Pattern 3.5 documented 61/80/50/7=198; verified real total is 61/79/50/7=197 (CNPJ uniqueness check: 197 unique CNPJs, zero duplicates). A merged-cell 'MEI ' sub-header in SIMPLES NACIONAL was miscounted as a company in the prior research. All count references (inspect-planilha.mjs, import.test.ts) corrected to 197/79.
+- [Phase 01-05]: parseUploadAction validates ZIP/OOXML magic bytes (PK\x03\x04) before XLSX.read, because SheetJS's CSV/text fallback does not throw on arbitrary non-xlsx bytes -- extension check + try/catch alone was insufficient to reject corrupted .xlsx uploads (T-01-UPLOAD).
+- [Phase 01-05]: The 'Marcar todas como Lucro Real' bulk action was removed (not generalized). The parser pre-populates regimeTributario for 190/197 rows via section labels; the per-row Regime Select (3 values) plus the 'Sem regime' filter chip give scoped manual correction for the remaining 7 rows without a bulk-edit footgun.
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-15T10:25:12.468Z
-Stopped at: Completed 01-04-PLAN.md
+Last session: 2026-06-15T10:53:50.777Z
+Stopped at: Completed 01-05-PLAN.md
 Resume file: None
