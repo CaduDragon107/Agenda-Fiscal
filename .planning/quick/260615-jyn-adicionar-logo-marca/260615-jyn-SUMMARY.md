@@ -66,7 +66,7 @@ Each task was committed atomically:
 2. **Task 2: Adicionar logo no CardHeader do login** - `1554cc1` (feat)
 3. **Task 3: Verificar build e lint** - sem commit (apenas verificação, nenhum arquivo alterado)
 
-**Plan metadata:** (pendente - commit de documentação a seguir)
+**Plan metadata:** `f804414` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/app/(app)/app-sidebar.tsx` - SidebarHeader agora renderiza `<Image src="/logo-branco.png" .../>` (h-8, w-auto) dentro de um container `bg-neutral-900 rounded-md px-2 py-1.5`, escondido em modo colapsado; `Image` importado de `next/image`; `Building2` mantido para o item de menu "Empresas"; bloco de texto "Agenda Fiscal" removido, subtítulo "Visão geral" preservado para `isDono`
