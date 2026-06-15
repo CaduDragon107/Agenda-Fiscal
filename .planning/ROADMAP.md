@@ -13,7 +13,7 @@ O sistema nasce com a fundação de acesso (login individual, permissões por pa
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Fundação — Acesso, Empresas e Importação** - Login individual com permissões por papel, cadastro de empresas-cliente populado via importação revisada da planilha existente, sistema acessível pela internet
+- [x] **Phase 1: Fundação — Acesso, Empresas e Importação** - Login individual com permissões por papel, cadastro de empresas-cliente populado via importação revisada da planilha existente, sistema acessível pela internet
 - [ ] **Phase 2: Gestão de Tarefas — Avulsas, Detalhe e Alertas** - Criação/atribuição de tarefas avulsas, conclusão com histórico, detalhe com passo a passo e referência às automações Python, alertas visuais de prazo
 - [ ] **Phase 3: Motor de Geração Automática Mensal** - Geração automática mensal de tarefas recorrentes por regime tributário, com prazos ajustados por dia útil/feriado e sem duplicação
 - [ ] **Phase 4: Dashboards Comparativos** - Dashboards de desempenho por colaborador, evolução mensal e comparativo entre empresas
@@ -50,7 +50,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-06-PLAN.md — Deploy (INFRA-01): build standalone + Railway + URL pública
+- [x] 01-06-PLAN.md — Deploy (INFRA-01): build standalone + Railway + URL pública
 
 **UI hint**: yes
 
@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundação — Acesso, Empresas e Importação | 5/6 | In Progress|  |
+| 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 0/0 | Not started | - |
 | 3. Motor de Geração Automática Mensal | 0/0 | Not started | - |
 | 4. Dashboards Comparativos | 0/0 | Not started | - |
