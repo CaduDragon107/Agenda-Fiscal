@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-06-12T18:45:39.852Z"
+stopped_at: Completed 01-04-PLAN.md
+last_updated: "2026-06-15T10:25:12.475Z"
 last_activity: 2026-06-12 -- Phase 01 execution started
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 01 (funda-o-acesso-empresas-e-importa-o) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-06-12 -- Phase 01 execution started
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P01 | 35min | 4 tasks | 52 files |
 | Phase 01 P02 | 18min | 2 tasks | 10 files |
 | Phase 01 P03 | 7 min | 2 tasks | 8 files |
+| Phase 01 P04 | 35min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [01-02] Tipos de Session/JWT (id+role) também são aumentados via @auth/core/types e @auth/core/jwt diretamente, pois a reexportacao de next-auth/next-auth-jwt nao propaga module augmentation
 - [Phase 01]: [01-03] SessionUser.role tipado como 'COLABORADOR' | 'DONO' (maiusculas) em src/lib/visibility-scope.ts, alinhado ao enum Prisma Role e ao AppRole de 01-02 -- sem camada de normalizacao de casing
 - [Phase 01]: [01-03] tests/setup.ts atualizado de role 'colaborador'/'dono' (minusculas, convencao do stub 01-01) para 'COLABORADOR'/'DONO', para refletir o contrato real de sessao
+- [Phase 01-04]: criarEmpresa writes the first EmpresaRegimeHistorico entry at creation (regime atual, dataInicio = now), keeping regime history coherent from v1
+- [Phase 01-04]: Server Actions return { ok: true, id } | { ok: false, error } instead of throwing, simplifying client-side toast handling
+- [Phase 01-04]: Edit page uses Next.js notFound() (404) when buscarEmpresaPorId returns null, satisfying 'nao encontrado, never 403' for the IDOR read path
 
 ### Pending Todos
 
@@ -94,6 +98,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-12T18:45:39.844Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-06-15T10:25:12.468Z
+Stopped at: Completed 01-04-PLAN.md
 Resume file: None
