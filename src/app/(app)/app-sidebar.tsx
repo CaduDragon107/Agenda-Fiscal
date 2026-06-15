@@ -29,6 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ModeToggle } from "@/components/mode-toggle";
 
 type AppSidebarUser = {
   nome?: string | null;
@@ -115,6 +116,8 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
                 <span className="text-xs text-muted-foreground">{user.email}</span>
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <ModeToggle />
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/login" })}>
               <LogOut />
