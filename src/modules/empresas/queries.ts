@@ -64,3 +64,21 @@ export async function buscarEmpresaPorId(user: SessionUser, id: string) {
     select: EMPRESA_SELECT,
   });
 }
+
+/**
+ * Lista os usuários elegíveis como "Responsável" de uma empresa (select do
+ * formulário de criação/edição). Não tem escopo de visibilidade — qualquer
+ * usuário autenticado pode atribuir qualquer colaborador/dono como
+ * responsável de uma empresa dentro do seu próprio escopo de edição.
+ *
+ * `select` explícito — nunca inclui `senhaHash`.
+ */
+export async function listarResponsaveis() {
+  return db.usuario.findMany({
+    select: {
+      id: true,
+      nome: true,
+    },
+    orderBy: { nome: "asc" },
+  });
+}
