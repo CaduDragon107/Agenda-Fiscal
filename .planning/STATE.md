@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 Phase: 01 (funda-o-acesso-empresas-e-importa-o) — EXECUTING
 Plan: 6 of 6
 Status: Ready to execute
-Last activity: 2026-06-15 - Completed quick task 260615-ci1: Adicionar toggle de modo escuro (dark mode) na interface usando next-themes + shadcn
+Last activity: 2026-06-15 - Completed quick task 260615-d0j: Corrigir rota raiz '/' para redirecionar conforme sessao (era template create-next-app)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -97,6 +97,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260615-ci1 | Adicionar toggle de modo escuro (dark mode) na interface usando next-themes + shadcn | 2026-06-15 | f70d98c | [260615-ci1-adicionar-toggle-de-modo-escuro-dark-mod](./quick/260615-ci1-adicionar-toggle-de-modo-escuro-dark-mod/) |
+| 260615-d0j | Corrigir rota raiz '/' (servia template create-next-app) para redirecionar para /empresas ou /login conforme sessao | 2026-06-15 | 2c61912 | [260615-d0j-corrigir-redirect-pagina-raiz](./quick/260615-d0j-corrigir-redirect-pagina-raiz/) |
 
 ## Deferred Items
 
