@@ -100,6 +100,7 @@ None yet.
 | 260615-ci1 | Adicionar toggle de modo escuro (dark mode) na interface usando next-themes + shadcn | 2026-06-15 | f70d98c | [260615-ci1-adicionar-toggle-de-modo-escuro-dark-mod](./quick/260615-ci1-adicionar-toggle-de-modo-escuro-dark-mod/) |
 | 260615-d0j | Corrigir rota raiz '/' (servia template create-next-app) para redirecionar para /empresas ou /login conforme sessao | 2026-06-15 | 2c61912 | [260615-d0j-corrigir-redirect-pagina-raiz](./quick/260615-d0j-corrigir-redirect-pagina-raiz/) |
 | 260615-jyn | Adicionar logo da empresa (logo-branco.png) na sidebar e no header do login, sobre fundo escuro fixo (visivel em light/dark) | 2026-06-15 | 878f089 | [260615-jyn-adicionar-logo-marca](./quick/260615-jyn-adicionar-logo-marca/) |
+| 260615-mt3 | Renomear colaborador1-4 para Caio/Jessica/Heitor/Felipe + script de sync responsavelId por CNPJ (atribuicao pendente: empresa table vazia em prod) | 2026-06-16 | b8cf152 | [260615-mt3-atualizar-empresa-responsavelid-197-empr](./quick/260615-mt3-atualizar-empresa-responsavelid-197-empr/) |
 
 ## Deferred Items
 
