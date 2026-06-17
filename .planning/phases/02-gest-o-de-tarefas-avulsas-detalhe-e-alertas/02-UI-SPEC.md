@@ -55,18 +55,20 @@ Exceções:
 
 Mesma escala da Fase 1. Não introduzir novos tamanhos.
 
+Escala de 2 pesos exatos. Não introduzir `font-medium (500)` nem `font-bold (700)` nesta fase.
+
 | Role | Size (Tailwind) | Weight | Line Height | Uso nesta fase |
 |------|----------------|--------|-------------|----------------|
 | Body | text-sm (14px) | font-normal (400) | leading-normal (1.5) | Células da tabela de tarefas, labels do formulário, corpo do card de empresa no detalhe |
-| Label | text-xs (12px) | font-medium (500) | leading-tight (1.25) | Badge de status (PENDENTE/CONCLUÍDA), badge de prazo, label do contador sidebar, captions do card de empresa |
+| Label | text-xs (12px) | font-normal (400) | leading-tight (1.25) | Badge de status (PENDENTE/CONCLUÍDA), badge de prazo, label do contador sidebar, captions do card de empresa |
 | Heading | text-xl (20px) | font-semibold (600) | leading-tight (1.25) | Título da página `/tarefas`; título da página `/tarefas/[id]` |
-| Display | text-2xl (24px) | font-bold (700) | leading-tight (1.2) | Não usado nesta fase — reservado para dashboards (Fase 4) |
+| Display | text-2xl (24px) | font-semibold (600) | leading-tight (1.2) | Não usado nesta fase — reservado para dashboards (Fase 4) |
 
 Regras:
-- Título da tarefa na lista: `text-sm font-medium` (destaque sem quebrar o grid da tabela)
-- Cabeçalhos de coluna da tabela: `text-sm font-medium text-muted-foreground` (padrão shadcn TableHead)
+- Título da tarefa na lista: `text-sm font-normal` (corpo padrão, sem peso adicional para não quebrar o grid da tabela)
+- Cabeçalhos de coluna da tabela: `text-sm font-normal text-muted-foreground` (padrão shadcn TableHead adaptado a 2 pesos)
 - Prazo em texto na coluna: `text-sm` com variação de cor por estado (ver seção Cor)
-- Nome da empresa no card de detalhe: `text-base (16px) font-semibold`
+- Nome da empresa no card de detalhe: `text-sm (14px) font-semibold`
 
 ---
 
@@ -106,7 +108,7 @@ O projeto usa shadcn neutral com oklch. Não há cor de marca definida além do 
 | LUCRO_PRESUMIDO | `"bg-amber-500 text-white"` |
 
 **Badge de contador na sidebar:**
-- Classe: `"ml-auto bg-destructive text-destructive-foreground text-xs font-medium min-w-5 h-5 flex items-center justify-center rounded-full px-1"`
+- Classe: `"ml-auto bg-destructive text-destructive-foreground text-xs font-normal min-w-5 h-5 flex items-center justify-center rounded-full px-1"`
 - Visível apenas quando contador > 0
 - Oculto quando sidebar está colapsada em modo ícone (respeitar `group-data-[collapsible=icon]:hidden`)
 
@@ -140,7 +142,7 @@ Accent reservado exclusivamente para: botão "Nova tarefa" (CTA primário), item
 | Sucesso ao concluir tarefa | "Tarefa marcada como concluída." |
 | Confirmação de exclusão (título) | "Excluir tarefa?" |
 | Confirmação de exclusão (body) | "Esta ação não pode ser desfeita. O histórico de conclusões associado também será removido." |
-| Botão confirmar exclusão | "Excluir" |
+| Botão confirmar exclusão | "Excluir tarefa" |
 | Label campo empresa (formulário) | "Empresa" |
 | Label campo título (formulário) | "Título" |
 | Label campo descrição (formulário) | "Descrição (opcional)" |
@@ -175,6 +177,8 @@ Accent reservado exclusivamente para: botão "Nova tarefa" (CTA primário), item
   <NovasTarefasDialog />
 </page>
 ```
+
+**Ponto focal primário da página:** Botão "Nova tarefa" (header direito, `variant="default"`, accent) e a coluna Prazo com badge de alerta — esses dois elementos ancoram a urgência visual e devem permanecer visíveis sem scroll em qualquer viewport >= 768px.
 
 **Colunas da TarefasTable (TanStack Table, replicar padrão empresas-table.tsx):**
 
@@ -255,7 +259,7 @@ Accent reservado exclusivamente para: botão "Nova tarefa" (CTA primário), item
       <ListChecks />
       <span>Tarefas</span>
       {contador > 0 && (
-        <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-medium
+        <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-normal
                          min-w-5 h-5 flex items-center justify-center rounded-full px-1
                          group-data-[collapsible=icon]:hidden">
           {contador > 99 ? "99+" : contador}
@@ -345,7 +349,7 @@ Accent reservado exclusivamente para: botão "Nova tarefa" (CTA primário), item
 </page>
 ```
 
-**Labels `<dt>`:** `text-xs font-medium text-muted-foreground uppercase tracking-wide`
+**Labels `<dt>`:** `text-xs font-normal text-muted-foreground uppercase tracking-wide`
 **Valores `<dd>`:** `text-sm text-foreground`
 
 ### Estados de Carregamento
@@ -401,7 +405,7 @@ Accent reservado exclusivamente para: botão "Nova tarefa" (CTA primário), item
 ### Navegação para detalhe
 
 - Clique no ícone Eye (Lucide) na coluna "Ações" navega para `/tarefas/{id}`
-- Título da tarefa na coluna "Tarefa" também é um link para `/tarefas/{id}` (`<Link>` com `text-sm font-medium hover:underline`)
+- Título da tarefa na coluna "Tarefa" também é um link para `/tarefas/{id}` (`<Link>` com `text-sm font-normal hover:underline`)
 
 ---
 
