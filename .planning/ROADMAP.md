@@ -67,7 +67,24 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Para tarefas de ICMS/PIS-COFINS, o passo a passo referencia/conecta com as ferramentas de automação Python já existentes do usuário (link/instrução, sem execução).
   5. Tarefas com prazo próximo ou já atrasado aparecem destacadas visualmente (cores/badges) na lista de tarefas.
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Schema Prisma (Tarefa + TarefaHistorico + TarefaStatus) + withTarefaScope + calcularAlertaPrazo + stubs de teste Wave 0
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02-PLAN.md — Backend: modules/tarefas/queries.ts + schema.ts + tarefas/actions.ts (TASK-03, TASK-04, TASK-05)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 02-03-PLAN.md — UI Lista: /tarefas page + TarefasTable + NovaTarefaDialog + sidebar badge (TASK-03, TASK-04, ALRT-01)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 02-04-PLAN.md — UI Detalhe: /tarefas/[id] + loading.tsx (TASK-05, TASK-06)
+
 **UI hint**: yes
 
 ### Phase 3: Motor de Geração Automática Mensal
@@ -105,6 +122,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
-| 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 0/0 | Not started | - |
+| 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 0/4 | In progress | - |
 | 3. Motor de Geração Automática Mensal | 0/0 | Not started | - |
 | 4. Dashboards Comparativos | 0/0 | Not started | - |
