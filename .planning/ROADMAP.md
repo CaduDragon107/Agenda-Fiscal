@@ -71,7 +71,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Schema Prisma (Tarefa + TarefaHistorico + TarefaStatus) + withTarefaScope + calcularAlertaPrazo + stubs de teste Wave 0
+- [x] 02-01-PLAN.md — Schema Prisma (Tarefa + TarefaHistorico + TarefaStatus) + withTarefaScope + calcularAlertaPrazo + stubs de teste Wave 0
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

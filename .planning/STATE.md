@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
+status: executing
 stopped_at: Phase 2 planning complete — 4 plans ready for execution
-last_updated: "2026-06-17T12:00:00.000Z"
-last_activity: 2026-06-15 -- Phase 01 marked complete
+last_updated: "2026-06-17T11:14:23.894Z"
+last_activity: 2026-06-17 -- Phase 02 execution started
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
-  percent: 25
+  total_plans: 10
+  completed_plans: 7
+  percent: 30
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** A equipe nunca perde um prazo fiscal de nenhum cliente, e o dono sempre sabe em tempo real o status de tudo.
-**Current focus:** Phase 01 — funda-o-acesso-empresas-e-importa-o
+**Current focus:** Phase 02 — gest-o-de-tarefas-avulsas-detalhe-e-alertas
 
 ## Current Position
 
-Phase: 01 — COMPLETE
-Plan: 6 of 6
-Status: Phase 01 complete
-Last activity: 2026-06-15 -- Phase 01 marked complete
+Phase: 02 (gest-o-de-tarefas-avulsas-detalhe-e-alertas) — EXECUTING
+Plan: 2 of 4
+Status: Executing Phase 02
+Last activity: 2026-06-17 -- Phase 02 Plan 01 completed (schema + alert helper + Wave 0 stubs)
 
-Progress: [███░░░░░░░] 25%
+Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 01 P04 | 35min | 2 tasks | 11 files |
 | Phase 01 P05 | 70min | 3 tasks | 13 files |
 | Phase 01 P06 | 12min | 2 tasks | 3 files |
+| Phase 02 P01 | 3 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,10 @@ Recent decisions affecting current work:
 - [Phase 01-05]: RESEARCH.md Pattern 3.5 documented 61/80/50/7=198; verified real total is 61/79/50/7=197 (CNPJ uniqueness check: 197 unique CNPJs, zero duplicates). A merged-cell 'MEI ' sub-header in SIMPLES NACIONAL was miscounted as a company in the prior research. All count references (inspect-planilha.mjs, import.test.ts) corrected to 197/79.
 - [Phase 01-05]: parseUploadAction validates ZIP/OOXML magic bytes (PK\x03\x04) before XLSX.read, because SheetJS's CSV/text fallback does not throw on arbitrary non-xlsx bytes -- extension check + try/catch alone was insufficient to reject corrupted .xlsx uploads (T-01-UPLOAD).
 - [Phase 01-05]: The 'Marcar todas como Lucro Real' bulk action was removed (not generalized). The parser pre-populates regimeTributario for 190/197 rows via section labels; the per-row Regime Select (3 values) plus the 'Sem regime' filter chip give scoped manual correction for the remaining 7 rows without a bulk-edit footgun.
+- [Phase 02-01]: withTarefaScope segue o padrão idêntico a withVisibilityScope — DONO → {}, COLABORADOR → { responsavelId: user.id } retornando Prisma.TarefaWhereInput
+- [Phase 02-01]: calcularAlertaPrazo é helper puro sem dependências externas (usa Date.now() diretamente, sem date-fns nesta plan de infraestrutura)
+- [Phase 02-01]: Wave 0 stubs usam it.todo sem callbacks para não importar módulos inexistentes nas plans seguintes
+- [Phase 02-01]: npx prisma db push usado em vez de prisma migrate dev (ambiente Neon sem shadow database)
 
 ### Pending Todos
 
@@ -113,6 +118,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-17T12:00:00.000Z
-Stopped at: Phase 2 planning complete — 4 plans ready for execution
-Resume file: .planning/phases/02-gest-o-de-tarefas-avulsas-detalhe-e-alertas/02-01-PLAN.md
+Last session: 2026-06-17T11:22:00.000Z
+Stopped at: Completed Phase 02 Plan 01 — schema + alert helper + Wave 0 stubs
+Resume file: .planning/phases/02-gest-o-de-tarefas-avulsas-detalhe-e-alertas/02-02-PLAN.md
