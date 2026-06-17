@@ -34,3 +34,18 @@ export function withVisibilityScope(
   }
   return { responsavelId: user.id };
 }
+
+/**
+ * Aplica escopo de visibilidade de tarefas conforme papel do usuário.
+ * - DONO: vê todas as tarefas → retorna {} (per D-14)
+ * - COLABORADOR: vê apenas tarefas onde responsavelId === user.id → retorna { responsavelId: user.id }
+ *
+ * Toda query de Tarefa DEVE espalhar este retorno no where.
+ * NUNCA chamar db.tarefa.findMany sem withTarefaScope(user).
+ */
+export function withTarefaScope(user: SessionUser): Prisma.TarefaWhereInput {
+  if (user.role === "DONO") {
+    return {};
+  }
+  return { responsavelId: user.id };
+}
