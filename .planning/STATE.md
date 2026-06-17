@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed Phase 02 Plan 02 — queries, schema Zod, Server Actions, 59/59 testes verdes
-last_updated: "2026-06-17T11:28:00.000Z"
-last_activity: 2026-06-17 -- Phase 02 Plan 02 completed
+stopped_at: Completed Phase 02 Plan 01 — schema + alert helper + Wave 0 stubs
+last_updated: "2026-06-17T11:39:40.917Z"
+last_activity: 2026-06-17 -- Phase 02 Plan 02 completed (queries, schema Zod, Server Actions, testes verdes)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
-  percent: 33
+  completed_plans: 9
+  percent: 25
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 02 (gest-o-de-tarefas-avulsas-detalhe-e-alertas) — EXECUTING
-Plan: 3 of 4
-Status: Executing Phase 02
+Plan: 4 of 4
+Status: Ready to execute
 Last activity: 2026-06-17 -- Phase 02 Plan 02 completed (queries, schema Zod, Server Actions, testes verdes)
 
 Progress: [███░░░░░░░] 30%
@@ -60,6 +60,7 @@ Progress: [███░░░░░░░] 30%
 | Phase 01 P06 | 12min | 2 tasks | 3 files |
 | Phase 02 P01 | 3 min | 3 tasks | 7 files |
 | Phase 02 P02 | 4 min | 3 tasks | 7 files |
+| Phase 02 P03 | 5min | - tasks | - files |
 
 ## Accumulated Context
 
@@ -91,6 +92,8 @@ Recent decisions affecting current work:
 - [Phase 02-02]: findFirst (não findUnique) em todas queries/mutations com escopo composto — findUnique não aceita filtros além de campos únicos
 - [Phase 02-02]: db.$transaction([update, create]) para concluirTarefa — atomicidade garante status CONCLUIDA nunca fica sem TarefaHistorico
 - [Phase 02-02]: date-fns ^4.4.0 instalado na Wave 2 para estar disponível nas plans de UI Wave 3
+- [Phase ?]: [02-03] novaTarefaFormSchema sem .transform() no cliente — transform exclusivo na action server-side (RESEARCH.md Pattern 8)
+- [Phase ?]: [02-03] userId passado como prop para TarefasTable — defense in depth T-02-IDOR-UI (botao Excluir oculto para COLABORADOR em tarefas alheias)
 
 ### Pending Todos
 
@@ -123,6 +126,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-17T11:22:00.000Z
+Last session: 2026-06-17T11:39:20.248Z
 Stopped at: Completed Phase 02 Plan 01 — schema + alert helper + Wave 0 stubs
 Resume file: .planning/phases/02-gest-o-de-tarefas-avulsas-detalhe-e-alertas/02-02-PLAN.md

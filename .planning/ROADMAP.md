@@ -79,7 +79,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-03-PLAN.md — UI Lista: /tarefas page + TarefasTable + NovaTarefaDialog + sidebar badge (TASK-03, TASK-04, ALRT-01)
+- [x] 02-03-PLAN.md — UI Lista: /tarefas page + TarefasTable + NovaTarefaDialog + sidebar badge (TASK-03, TASK-04, ALRT-01)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -122,6 +122,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
-| 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 2/4 | In Progress|  |
+| 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 3/4 | In Progress|  |
 | 3. Motor de Geração Automática Mensal | 0/0 | Not started | - |
 | 4. Dashboards Comparativos | 0/0 | Not started | - |

@@ -21,14 +21,14 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **TASK-01**: Geração automática mensal de tarefas recorrentes por empresa, conforme regime tributário (Lucro Real: ICMS + PIS/COFINS + SPED; Simples Nacional: DAS)
 - [ ] **TASK-02**: Prazo fixo por tipo de obrigação, ajustado automaticamente quando cai em fim de semana/feriado nacional
-- [ ] **TASK-03**: Marcar tarefa como concluída (checkbox simples)
-- [ ] **TASK-04**: Criação de tarefas avulsas (não-recorrentes) por qualquer membro da equipe, atribuíveis a qualquer pessoa
+- [x] **TASK-03**: Marcar tarefa como concluída (checkbox simples)
+- [x] **TASK-04**: Criação de tarefas avulsas (não-recorrentes) por qualquer membro da equipe, atribuíveis a qualquer pessoa
 - [ ] **TASK-05**: Detalhe de cada tarefa: passo a passo da obrigação, dados relevantes da empresa, histórico de conclusões anteriores
 - [ ] **TASK-06**: Passo a passo das tarefas de ICMS/PIS-COFINS referencia/conecta com as ferramentas de automação Python já existentes do usuário
 
 ### Alertas
 
-- [ ] **ALRT-01**: Alertas visuais dentro do site para tarefas com prazo próximo ou atrasado
+- [x] **ALRT-01**: Alertas visuais dentro do site para tarefas com prazo próximo ou atrasado
 
 ### Dashboards (Diferencial Comparativo)
 
@@ -74,11 +74,11 @@ Explicitly excluded. Documented to prevent scope creep.
 | EMPR-02 | Phase 1 | Complete |
 | TASK-01 | Phase 3 | Pending |
 | TASK-02 | Phase 3 | Pending |
-| TASK-03 | Phase 2 | Pending |
-| TASK-04 | Phase 2 | Pending |
+| TASK-03 | Phase 2 | Complete |
+| TASK-04 | Phase 2 | Complete |
 | TASK-05 | Phase 2 | Pending |
 | TASK-06 | Phase 2 | Pending |
-| ALRT-01 | Phase 2 | Pending |
+| ALRT-01 | Phase 2 | Complete |
 | DASH-01 | Phase 4 | Pending |
 | DASH-02 | Phase 4 | Pending |
 | DASH-03 | Phase 4 | Pending |
