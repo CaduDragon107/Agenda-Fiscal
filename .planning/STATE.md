@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed Phase 02 Plan 01 — schema + alert helper + Wave 0 stubs
-last_updated: "2026-06-17T11:39:40.917Z"
+status: verifying
+stopped_at: Completed Phase 02 Plan 04 — página de detalhe /tarefas/[id]
+last_updated: "2026-06-17T11:45:37.474Z"
 last_activity: 2026-06-17 -- Phase 02 Plan 02 completed (queries, schema Zod, Server Actions, testes verdes)
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 10
-  completed_plans: 9
-  percent: 25
+  completed_plans: 10
+  percent: 50
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 
 Phase: 02 (gest-o-de-tarefas-avulsas-detalhe-e-alertas) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-17 -- Phase 02 Plan 02 completed (queries, schema Zod, Server Actions, testes verdes)
 
 Progress: [███░░░░░░░] 30%
@@ -61,6 +61,7 @@ Progress: [███░░░░░░░] 30%
 | Phase 02 P01 | 3 min | 3 tasks | 7 files |
 | Phase 02 P02 | 4 min | 3 tasks | 7 files |
 | Phase 02 P03 | 5min | - tasks | - files |
+| Phase 02 P04 | 8min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,8 @@ Recent decisions affecting current work:
 - [Phase 02-02]: date-fns ^4.4.0 instalado na Wave 2 para estar disponível nas plans de UI Wave 3
 - [Phase ?]: [02-03] novaTarefaFormSchema sem .transform() no cliente — transform exclusivo na action server-side (RESEARCH.md Pattern 8)
 - [Phase ?]: [02-03] userId passado como prop para TarefasTable — defense in depth T-02-IDOR-UI (botao Excluir oculto para COLABORADOR em tarefas alheias)
+- [Phase ?]: [02-04] await params para id em rotas dinamicas — Next.js 15 App Router params e Promise em Server Components
+- [Phase ?]: [02-04] ConcluirButton em arquivo separado com 'use client' — impossivel misturar server/client no mesmo arquivo; router.refresh() para revalidar Server Component apos conclusao
 
 ### Pending Todos
 
@@ -126,6 +129,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-17T11:39:20.248Z
-Stopped at: Completed Phase 02 Plan 01 — schema + alert helper + Wave 0 stubs
-Resume file: .planning/phases/02-gest-o-de-tarefas-avulsas-detalhe-e-alertas/02-02-PLAN.md
+Last session: 2026-06-17T11:45:37.466Z
+Stopped at: Completed Phase 02 Plan 04 — página de detalhe /tarefas/[id]
+Resume file: None
