@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ConcluirButton } from "./concluir-button"
+import type { RegimeTributario } from "@prisma/client"
 
 // -------------------------------------------------------------------------
 // Helpers de formatação (copiados de empresas-table.tsx — sem criar módulo
@@ -25,7 +26,6 @@ function formatarCnpj(cnpj: string): string {
   )
 }
 
-type RegimeTributario = "LUCRO_REAL" | "LUCRO_PRESUMIDO" | "SIMPLES_NACIONAL"
 
 const REGIME_LABEL: Record<RegimeTributario, string> = {
   LUCRO_REAL: "Lucro Real",
@@ -59,7 +59,7 @@ export default async function TarefaDetalhePage({
   if (!tarefa) notFound() // anti-IDOR: tarefa inexistente OU fora do escopo = 404
 
   const alerta = calcularAlertaPrazo(tarefa.prazo, tarefa.status)
-  const regime = tarefa.empresa.regimeTributario as RegimeTributario
+  const regime = tarefa.empresa.regimeTributario
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -168,8 +168,8 @@ export default async function TarefaDetalhePage({
                   Regime
                 </dt>
                 <dd>
-                  <Badge className={REGIME_BADGE_CLASS[regime]}>
-                    {REGIME_LABEL[regime]}
+                  <Badge className={(REGIME_BADGE_CLASS as Record<string, string>)[regime] ?? ""}>
+                    {(REGIME_LABEL as Record<string, string>)[regime] ?? regime}
                   </Badge>
                 </dd>
               </div>
