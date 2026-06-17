@@ -45,7 +45,12 @@ function iniciais(nome?: string | null, email?: string | null): string {
   return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
 }
 
-export function AppSidebar({ user }: { user: AppSidebarUser }) {
+type AppSidebarProps = {
+  user: AppSidebarUser;
+  contadorAlertas: number;
+};
+
+export function AppSidebar({ user, contadorAlertas }: AppSidebarProps) {
   const pathname = usePathname();
   const isDono = user.role === "DONO";
 
@@ -84,9 +89,19 @@ export function AppSidebar({ user }: { user: AppSidebarUser }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton disabled>
-                  <ListChecks />
-                  <span>Tarefas</span>
+                <SidebarMenuButton asChild isActive={pathname?.startsWith("/tarefas")}>
+                  <Link href="/tarefas">
+                    <ListChecks />
+                    <span>Tarefas</span>
+                    {contadorAlertas > 0 && (
+                      <span
+                        className="ml-auto bg-destructive text-destructive-foreground text-xs font-normal min-w-5 h-5 flex items-center justify-center rounded-full px-1 group-data-[collapsible=icon]:hidden"
+                        aria-label={`${contadorAlertas} tarefas com alertas de prazo`}
+                      >
+                        {contadorAlertas > 99 ? "99+" : contadorAlertas}
+                      </span>
+                    )}
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

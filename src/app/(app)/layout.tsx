@@ -7,6 +7,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { contarAlertasTarefas } from "@/modules/tarefas/queries";
 
 /**
  * Shell autenticado (AUTH-01): toda rota sob app/(app) exige sessão válida.
@@ -23,9 +24,11 @@ export default async function AppLayout({
     redirect("/login");
   }
 
+  const contadorAlertas = await contarAlertasTarefas(session.user);
+
   return (
     <SidebarProvider>
-      <AppSidebar user={session.user} />
+      <AppSidebar user={session.user} contadorAlertas={contadorAlertas} />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
