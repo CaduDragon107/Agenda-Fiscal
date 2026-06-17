@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 planning complete — 4 plans ready for execution
-last_updated: "2026-06-17T11:14:23.894Z"
-last_activity: 2026-06-17 -- Phase 02 execution started
+stopped_at: Completed Phase 02 Plan 02 — queries, schema Zod, Server Actions, 59/59 testes verdes
+last_updated: "2026-06-17T11:28:00.000Z"
+last_activity: 2026-06-17 -- Phase 02 Plan 02 completed
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 10
-  completed_plans: 7
-  percent: 30
+  completed_plans: 8
+  percent: 33
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 02 (gest-o-de-tarefas-avulsas-detalhe-e-alertas) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Executing Phase 02
-Last activity: 2026-06-17 -- Phase 02 Plan 01 completed (schema + alert helper + Wave 0 stubs)
+Last activity: 2026-06-17 -- Phase 02 Plan 02 completed (queries, schema Zod, Server Actions, testes verdes)
 
 Progress: [███░░░░░░░] 30%
 
@@ -59,6 +59,7 @@ Progress: [███░░░░░░░] 30%
 | Phase 01 P05 | 70min | 3 tasks | 13 files |
 | Phase 01 P06 | 12min | 2 tasks | 3 files |
 | Phase 02 P01 | 3 min | 3 tasks | 7 files |
+| Phase 02 P02 | 4 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,10 @@ Recent decisions affecting current work:
 - [Phase 02-01]: calcularAlertaPrazo é helper puro sem dependências externas (usa Date.now() diretamente, sem date-fns nesta plan de infraestrutura)
 - [Phase 02-01]: Wave 0 stubs usam it.todo sem callbacks para não importar módulos inexistentes nas plans seguintes
 - [Phase 02-01]: npx prisma db push usado em vez de prisma migrate dev (ambiente Neon sem shadow database)
+- [Phase 02-02]: prazo transformado em Date(year, month-1, day, 23:59:59) local para evitar UTC drift em prazos fiscais (RESEARCH.md Pattern 8)
+- [Phase 02-02]: findFirst (não findUnique) em todas queries/mutations com escopo composto — findUnique não aceita filtros além de campos únicos
+- [Phase 02-02]: db.$transaction([update, create]) para concluirTarefa — atomicidade garante status CONCLUIDA nunca fica sem TarefaHistorico
+- [Phase 02-02]: date-fns ^4.4.0 instalado na Wave 2 para estar disponível nas plans de UI Wave 3
 
 ### Pending Todos
 
