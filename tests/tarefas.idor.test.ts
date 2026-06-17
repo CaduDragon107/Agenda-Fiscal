@@ -1,29 +1,108 @@
-import { describe, it } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { mockColaboradorUser } from "./setup";
 
 /**
  * tests/tarefas.idor.test.ts
  *
- * Wave 0 stubs — cobre T-02-IDOR: COLABORADOR não pode concluir nem excluir
- * tarefa de outro colaborador via Server Action direta (IDOR prevention).
- * Todos os testes são .todo (sem callback) para evitar imports de módulos que
- * ainda não existem.
+ * Cobre T-02-IDOR: COLABORADOR não pode concluir nem excluir tarefa de outro
+ * colaborador via Server Action direta (IDOR prevention).
  *
- * Ao implementar a Plan 02-02, substituir os .todo pelos testes reais,
- * seguindo o padrão de vi.mock de tests/empresas.idor.test.ts:
- *   - vi.mock("@/lib/db") com findFirst retornando null (escopo COLABORADOR não encontra)
- *   - vi.mock("@/auth") com authMock retornando { user: colaboradorA }
- *   - Verificar que a action retorna { ok: false, error: "não encontrado" }
- *   - Verificar que updateMock / deleteMock NÃO foram chamados
+ * Contrato (T-02-IDOR): toda mutação de tarefa por id deve usar
+ * findFirst({ where: { id, ...withTarefaScope(session.user) } }) e retornar
+ * "não encontrado" quando fora do escopo — sem alterar o registro.
+ *
+ * `db` e `auth` são mockados via vi.mock — nenhuma conexão real ao Postgres.
  */
 
+const findFirstMock = vi.fn();
+const updateMock = vi.fn();
+const deleteMock = vi.fn();
+const transactionMock = vi.fn();
+const historicoCreateMock = vi.fn();
+const authMock = vi.fn();
+
+vi.mock("@/lib/db", () => ({
+  db: {
+    tarefa: {
+      findFirst: (...args: unknown[]) => findFirstMock(...args),
+      update: (...args: unknown[]) => updateMock(...args),
+      delete: (...args: unknown[]) => deleteMock(...args),
+    },
+    tarefaHistorico: {
+      create: (...args: unknown[]) => historicoCreateMock(...args),
+    },
+    $transaction: (...args: unknown[]) => transactionMock(...args),
+  },
+}));
+
+vi.mock("@/auth", () => ({
+  auth: () => authMock(),
+}));
+
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
 describe("IDOR — concluirTarefa", () => {
-  it.todo(
-    "COLABORADOR não pode concluir tarefa de outro colaborador — retorna { ok: false } com 'não encontrado'"
-  );
+  beforeEach(() => {
+    findFirstMock.mockReset();
+    updateMock.mockReset();
+    historicoCreateMock.mockReset();
+    transactionMock.mockReset();
+    authMock.mockReset();
+  });
+
+  it("COLABORADOR não pode concluir tarefa de outro colaborador — retorna { ok: false } com 'não encontrado'", async () => {
+    const { concluirTarefa } = await import("@/app/(app)/tarefas/actions");
+    const colaboradorA = mockColaboradorUser();
+
+    authMock.mockResolvedValue({ user: colaboradorA });
+    // findFirst escopado retorna null — tarefa existe mas pertence a outro colaborador
+    findFirstMock.mockResolvedValue(null);
+
+    const resultado = await concluirTarefa("tarefa_de_b");
+
+    expect(resultado).toEqual({ ok: false, error: "não encontrado" });
+    // Nenhuma escrita deve ocorrer
+    expect(transactionMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(historicoCreateMock).not.toHaveBeenCalled();
+
+    // Verifica que o where inclui responsavelId do colaboradorA (escopo RBAC)
+    const arg = findFirstMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(arg.where).toMatchObject({
+      id: "tarefa_de_b",
+      responsavelId: colaboradorA.id,
+    });
+  });
 });
 
 describe("IDOR — excluirTarefa", () => {
-  it.todo(
-    "COLABORADOR não pode excluir tarefa de outro colaborador — retorna { ok: false } com 'não encontrado'"
-  );
+  beforeEach(() => {
+    findFirstMock.mockReset();
+    deleteMock.mockReset();
+    authMock.mockReset();
+  });
+
+  it("COLABORADOR não pode excluir tarefa de outro colaborador — retorna { ok: false } com 'não encontrado'", async () => {
+    const { excluirTarefa } = await import("@/app/(app)/tarefas/actions");
+    const colaboradorA = mockColaboradorUser();
+
+    authMock.mockResolvedValue({ user: colaboradorA });
+    // findFirst escopado retorna null — tarefa fora do escopo de colaboradorA
+    findFirstMock.mockResolvedValue(null);
+
+    const resultado = await excluirTarefa("tarefa_de_b");
+
+    expect(resultado).toEqual({ ok: false, error: "não encontrado" });
+    // Delete não deve ser chamado
+    expect(deleteMock).not.toHaveBeenCalled();
+
+    // Verifica que o where inclui responsavelId do colaboradorA (escopo RBAC)
+    const arg = findFirstMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(arg.where).toMatchObject({
+      id: "tarefa_de_b",
+      responsavelId: colaboradorA.id,
+    });
+  });
 });

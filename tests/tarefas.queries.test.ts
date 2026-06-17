@@ -1,21 +1,94 @@
-import { describe, it } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { mockColaboradorUser, mockDonoUser } from "./setup";
 
 /**
  * tests/tarefas.queries.test.ts
  *
- * Wave 0 stubs — cobre TASK-05: buscarTarefaPorId com escopo de visibilidade.
- * Todos os testes são .todo (sem callback) para evitar imports de módulos que
- * ainda não existem (src/modules/tarefas/queries.ts será criado na Plan 02-02).
+ * Cobre TASK-05: buscarTarefaPorId com escopo de visibilidade (anti-IDOR).
+ * Segue o padrão de vi.mock de tests/empresas.idor.test.ts.
  *
- * Ao implementar a Plan 02-02, substituir os .todo pelos testes reais,
- * seguindo o padrão de vi.mock de tests/empresas.queries.test.ts:
- *   - vi.mock("@/lib/db") com findFirst mockado
- *   - Verificar que o where inclui responsavelId para COLABORADOR (withTarefaScope)
- *   - Verificar que DONO recebe where sem responsavelId
+ * Verifica que withTarefaScope é aplicado corretamente:
+ * - COLABORADOR: where inclui responsavelId (restrição de escopo)
+ * - DONO: where sem responsavelId (visão geral)
  */
 
+const findFirstMock = vi.fn();
+
+vi.mock("@/lib/db", () => ({
+  db: {
+    tarefa: {
+      findFirst: (...args: unknown[]) => findFirstMock(...args),
+      findMany: vi.fn(),
+      count: vi.fn(),
+    },
+  },
+}));
+
 describe("buscarTarefaPorId", () => {
-  it.todo("retorna null para tarefa fora do escopo do COLABORADOR");
-  it.todo("DONO consegue buscar qualquer tarefa por id");
-  it.todo("retorna a tarefa correta para o COLABORADOR responsável");
+  beforeEach(() => {
+    findFirstMock.mockReset();
+  });
+
+  it("retorna null para tarefa fora do escopo do COLABORADOR", async () => {
+    const { buscarTarefaPorId } = await import("@/modules/tarefas/queries");
+    const colaborador = mockColaboradorUser();
+
+    // findFirst escopado retorna null — tarefa existe mas pertence a outro responsável
+    findFirstMock.mockResolvedValue(null);
+
+    const resultado = await buscarTarefaPorId(colaborador, "tarefa_de_outro");
+
+    expect(resultado).toBeNull();
+    expect(findFirstMock).toHaveBeenCalledTimes(1);
+    const arg = findFirstMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    // Verifica que o where inclui responsavelId do colaborador (withTarefaScope)
+    expect(arg.where).toMatchObject({
+      id: "tarefa_de_outro",
+      responsavelId: colaborador.id,
+    });
+  });
+
+  it("DONO consegue buscar qualquer tarefa por id", async () => {
+    const { buscarTarefaPorId } = await import("@/modules/tarefas/queries");
+    const dono = mockDonoUser();
+
+    const mockTarefa = {
+      id: "tarefa_de_qualquer",
+      titulo: "SPED Fiscal",
+      status: "PENDENTE",
+    };
+    findFirstMock.mockResolvedValue(mockTarefa);
+
+    const resultado = await buscarTarefaPorId(dono, "tarefa_de_qualquer");
+
+    expect(resultado).toEqual(mockTarefa);
+    expect(findFirstMock).toHaveBeenCalledTimes(1);
+    const arg = findFirstMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    // DONO: where tem id mas NÃO tem responsavelId (withTarefaScope retorna {})
+    expect(arg.where).toMatchObject({ id: "tarefa_de_qualquer" });
+    expect(arg.where.responsavelId).toBeUndefined();
+  });
+
+  it("retorna a tarefa correta para o COLABORADOR responsável", async () => {
+    const { buscarTarefaPorId } = await import("@/modules/tarefas/queries");
+    const colaborador = mockColaboradorUser();
+
+    const mockTarefa = {
+      id: "tarefa_propria",
+      titulo: "DAS Simples",
+      responsavelId: colaborador.id,
+      status: "PENDENTE",
+    };
+    findFirstMock.mockResolvedValue(mockTarefa);
+
+    const resultado = await buscarTarefaPorId(colaborador, "tarefa_propria");
+
+    expect(resultado).toEqual(mockTarefa);
+    // Verifica escopo correto no where
+    const arg = findFirstMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(arg.where).toMatchObject({
+      id: "tarefa_propria",
+      responsavelId: colaborador.id,
+    });
+  });
 });
