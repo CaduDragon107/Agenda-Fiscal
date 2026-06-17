@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   type ColumnDef,
   type SortingState,
@@ -106,6 +107,7 @@ export function TarefasTable({ tarefas, responsaveis, isDono, userId }: TarefasT
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
 
   // Suprimir warning de isPending não utilizado diretamente
   void isPending;
@@ -149,6 +151,7 @@ export function TarefasTable({ tarefas, responsaveis, isDono, userId }: TarefasT
         toast.error("Nao foi possivel registrar a conclusao. Tente novamente.");
       } else {
         toast.success("Tarefa marcada como concluida.");
+        router.refresh();
       }
     });
   }
@@ -163,6 +166,7 @@ export function TarefasTable({ tarefas, responsaveis, isDono, userId }: TarefasT
       toast.error("Nao foi possivel excluir a tarefa. Tente novamente.");
     } else {
       toast.success("Tarefa excluida com sucesso.");
+      router.refresh();
     }
   }
 
@@ -279,8 +283,7 @@ export function TarefasTable({ tarefas, responsaveis, isDono, userId }: TarefasT
         },
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isDono, pendingIds]
+    [isDono, pendingIds, userId]
   );
 
   const table = useReactTable({
