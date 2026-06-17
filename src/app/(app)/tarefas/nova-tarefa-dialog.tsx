@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -48,6 +49,7 @@ type NovaTarefaDialogProps = {
 };
 
 export function NovaTarefaDialog({ responsaveis, empresas }: NovaTarefaDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
 
@@ -82,6 +84,7 @@ export function NovaTarefaDialog({ responsaveis, empresas }: NovaTarefaDialogPro
     toast.success("Tarefa criada com sucesso.");
     setOpen(false);
     reset();
+    router.refresh(); // Atualiza o Server Component pai para exibir a nova tarefa
   }
 
   function handleCancel() {
