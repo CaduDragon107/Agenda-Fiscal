@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { tarefaSchema } from "@/modules/tarefas/schema";
-import { withTarefaScope } from "@/lib/visibility-scope";
+import { withTarefaScope, withVisibilityScope } from "@/lib/visibility-scope";
 
 /**
  * Resultado padrão das Server Actions de Tarefa.
@@ -23,8 +23,10 @@ export type AcaoTarefaResult =
  * CRÍTICO (T-02-UNAUTH, T-02-INPUT):
  * - Guard de sessão como primeira instrução
  * - tarefaSchema.safeParse valida campos antes de qualquer escrita
- * - Zod + Prisma FK garantem integridade dos dados (empresaId, responsavelId
- *   precisam existir no banco — FK constraint rejeita se inválido)
+ * - Verificação de propriedade da empresa (anti-IDOR para create):
+ *   COLABORADOR só pode criar tarefas para empresas das quais é responsável.
+ * - COLABORADOR só pode se atribuir como responsável (não pode atribuir a outros).
+ * - DONO pode criar tarefas para qualquer empresa e atribuir a qualquer usuário.
  */
 export async function criarTarefa(
   formData: FormData
@@ -57,19 +59,45 @@ export async function criarTarefa(
 
   const dados = parsed.data;
 
-  const tarefa = await db.tarefa.create({
-    data: {
-      titulo: dados.titulo,
-      descricao: dados.descricao,
-      empresaId: dados.empresaId,
-      responsavelId: dados.responsavelId,
-      prazo: dados.prazo,
-      status: "PENDENTE",
-    },
+  // Anti-IDOR para create: verificar que a empresa está dentro do escopo de
+  // visibilidade do usuário autenticado. COLABORADOR só pode criar tarefas
+  // para empresas das quais é responsável (withVisibilityScope retorna
+  // { responsavelId: user.id } para COLABORADOR). DONO pode criar para
+  // qualquer empresa (withVisibilityScope retorna {}).
+  const empresaAutorizada = await db.empresa.findFirst({
+    where: { id: dados.empresaId, ...withVisibilityScope(session.user) },
+    select: { id: true },
   });
+  if (!empresaAutorizada) {
+    return { ok: false, error: "não encontrado" };
+  }
 
-  revalidatePath("/tarefas");
-  return { ok: true, id: tarefa.id };
+  // COLABORADOR só pode se atribuir como responsável — não pode atribuir
+  // tarefas a outros usuários. DONO pode atribuir livremente.
+  if (
+    session.user.role === "COLABORADOR" &&
+    dados.responsavelId !== session.user.id
+  ) {
+    return { ok: false, error: "não autorizado" };
+  }
+
+  try {
+    const tarefa = await db.tarefa.create({
+      data: {
+        titulo: dados.titulo,
+        descricao: dados.descricao,
+        empresaId: dados.empresaId,
+        responsavelId: dados.responsavelId,
+        prazo: dados.prazo,
+        status: "PENDENTE",
+      },
+    });
+
+    revalidatePath("/tarefas");
+    return { ok: true, id: tarefa.id };
+  } catch {
+    return { ok: false, error: "Erro ao criar tarefa. Tente novamente." };
+  }
 }
 
 /**
@@ -107,19 +135,23 @@ export async function concluirTarefa(id: string): Promise<AcaoTarefaResult> {
     return { ok: true };
   }
 
-  await db.$transaction([
-    db.tarefa.update({
-      where: { id },
-      data: { status: "CONCLUIDA" },
-    }),
-    db.tarefaHistorico.create({
-      data: {
-        tarefaId: id,
-        concluidoPorId: session.user.id,
-        concluidoEm: new Date(),
-      },
-    }),
-  ]);
+  try {
+    await db.$transaction([
+      db.tarefa.update({
+        where: { id },
+        data: { status: "CONCLUIDA" },
+      }),
+      db.tarefaHistorico.create({
+        data: {
+          tarefaId: id,
+          concluidoPorId: session.user.id,
+          concluidoEm: new Date(),
+        },
+      }),
+    ]);
+  } catch {
+    return { ok: false, error: "Erro ao concluir tarefa. Tente novamente." };
+  }
 
   revalidatePath("/tarefas");
   revalidatePath(`/tarefas/${id}`);
@@ -150,7 +182,11 @@ export async function excluirTarefa(id: string): Promise<AcaoTarefaResult> {
     return { ok: false, error: "não encontrado" };
   }
 
-  await db.tarefa.delete({ where: { id } });
+  try {
+    await db.tarefa.delete({ where: { id } });
+  } catch {
+    return { ok: false, error: "Erro ao excluir tarefa. Tente novamente." };
+  }
 
   revalidatePath("/tarefas");
   return { ok: true };
