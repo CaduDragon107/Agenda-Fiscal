@@ -22,6 +22,11 @@ enum RegimeTributario {
   SIMPLES_NACIONAL
 }
 
+enum TarefaStatus {
+  PENDENTE
+  CONCLUIDA
+}
+
 model Usuario {
   id        String   @id @default(cuid())
   nome      String
@@ -32,6 +37,9 @@ model Usuario {
   updatedAt DateTime @updatedAt
 
   empresas  Empresa[] @relation("ResponsavelEmpresa")
+
+  tarefasResponsavel  Tarefa[]          @relation("ResponsavelTarefa")
+  tarefasConcluidas   TarefaHistorico[] @relation("ConcluiuTarefa")
 
   @@map("usuarios")
 }
@@ -50,6 +58,7 @@ model Empresa {
   updatedAt        DateTime          @updatedAt
 
   regimeHistorico  EmpresaRegimeHistorico[]
+  tarefas          Tarefa[]
 
   @@index([responsavelId])
   @@index([regimeTributario])
@@ -66,4 +75,38 @@ model EmpresaRegimeHistorico {
 
   @@index([empresaId, dataInicio])
   @@map("empresa_regime_historico")
+}
+
+model Tarefa {
+  id            String       @id @default(cuid())
+  titulo        String
+  descricao     String?
+  empresaId     String
+  empresa       Empresa      @relation(fields: [empresaId], references: [id])
+  responsavelId String
+  responsavel   Usuario      @relation("ResponsavelTarefa", fields: [responsavelId], references: [id])
+  prazo         DateTime
+  status        TarefaStatus @default(PENDENTE)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  historico     TarefaHistorico[]
+
+  @@index([responsavelId])
+  @@index([empresaId])
+  @@index([prazo])
+  @@index([status])
+  @@map("tarefas")
+}
+
+model TarefaHistorico {
+  id             String   @id @default(cuid())
+  tarefaId       String
+  tarefa         Tarefa   @relation(fields: [tarefaId], references: [id], onDelete: Cascade)
+  concluidoPorId String
+  concluidoPor   Usuario  @relation("ConcluiuTarefa", fields: [concluidoPorId], references: [id])
+  concluidoEm    DateTime @default(now())
+
+  @@index([tarefaId])
+  @@map("tarefa_historico")
 }
