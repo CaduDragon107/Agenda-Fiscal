@@ -107,7 +107,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 03-02-PLAN.md — Orquestração executarGeracaoMensal (createMany skipDuplicates, idempotência) + node-cron via instrumentation (TASK-01)
+- [x] 03-02-PLAN.md — Orquestração executarGeracaoMensal (createMany skipDuplicates, idempotência) + node-cron via instrumentation (TASK-01)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -137,5 +137,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 4/4 | Complete   | 2026-06-17 |
-| 3. Motor de Geração Automática Mensal | 1/3 | In Progress|  |
+| 3. Motor de Geração Automática Mensal | 2/3 | In Progress|  |
 | 4. Dashboards Comparativos | 0/0 | Not started | - |

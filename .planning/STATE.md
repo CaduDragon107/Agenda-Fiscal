@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-06-18T15:58:44.845Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-06-18T16:05:33.003Z"
 last_activity: 2026-06-18 -- Phase 03 execution started
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 13
-  completed_plans: 11
+  completed_plans: 12
   percent: 50
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 03 (motor-de-gera-o-autom-tica-mensal) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-06-18 -- Phase 03 execution started
 
@@ -63,6 +63,7 @@ Progress: [███░░░░░░░] 30%
 | Phase 02 P03 | 5min | - tasks | - files |
 | Phase 02 P04 | 8min | 1 tasks | 3 files |
 | Phase 03 P01 | 18min | 3 tasks | 7 files |
+| Phase 03 P02 | 12min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [03-01] node-cron instalado nesta plan mesmo sem uso de codigo ainda, mandatado junto com date-holidays; uso real e Plan 02
 - [Phase ?]: [03-01] prisma db push --accept-data-loss aplicado na Tarefa apos verificar que a tabela tinha 0 linhas - sem perda real de dados
 - [Phase ?]: [03-01] hd.isHoliday(date) === false e a checagem de dia util correta (nunca === true) - testado contra Independencia 07/09/2026 e Sexta-feira Santa 03/04/2026
+- [Phase 03-02]: executarGeracaoMensal le Empresa.regimeTributario diretamente (nunca EmpresaRegimeHistorico), sem withTarefaScope/withVisibilityScope - D-12, cron nao tem usuario autenticado
+- [Phase 03-02]: instrumentation.ts criado na raiz do projeto (nao em src/) - contrato exato do Next.js 15 App Router para o boot hook ser descoberto
 
 ### Pending Todos
 
@@ -133,6 +136,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-18T15:58:44.837Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-06-18T16:05:32.995Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
