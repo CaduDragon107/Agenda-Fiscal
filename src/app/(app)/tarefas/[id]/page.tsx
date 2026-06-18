@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ConcluirButton } from "./concluir-button"
+import { MotivoPendenciaForm } from "./motivo-pendencia-form"
 import type { RegimeTributario } from "@prisma/client"
 
 // -------------------------------------------------------------------------
@@ -198,6 +199,29 @@ export default async function TarefaDetalhePage({
           </CardContent>
         </Card>
       </div>
+
+      {/* Motivo de pendência — editável quando PENDENTE, somente leitura quando CONCLUIDA */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Motivo de pendência</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {tarefa.status === "PENDENTE" ? (
+            <MotivoPendenciaForm
+              tarefaId={tarefa.id}
+              motivoInicial={tarefa.motivoPendencia}
+            />
+          ) : tarefa.motivoPendencia ? (
+            <p className="text-sm whitespace-pre-wrap">
+              {tarefa.motivoPendencia}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Nenhum motivo registrado.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Botão de conclusão — apenas PENDENTE (per D-05) */}
       {tarefa.status === "PENDENTE" && (
