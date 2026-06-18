@@ -27,6 +27,14 @@ enum TarefaStatus {
   CONCLUIDA
 }
 
+enum TipoObrigacao {
+  ICMS
+  PIS_COFINS
+  SPED_FISCAL
+  SPED_CONTRIBUICOES
+  DAS
+}
+
 model Usuario {
   id        String   @id @default(cuid())
   nome      String
@@ -87,15 +95,19 @@ model Tarefa {
   responsavel   Usuario      @relation("ResponsavelTarefa", fields: [responsavelId], references: [id])
   prazo         DateTime
   status        TarefaStatus @default(PENDENTE)
+  tipoObrigacao TipoObrigacao?
+  competencia   String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
   historico     TarefaHistorico[]
 
+  @@unique([empresaId, tipoObrigacao, competencia])
   @@index([responsavelId])
   @@index([empresaId])
   @@index([prazo])
   @@index([status])
+  @@index([competencia])
   @@map("tarefas")
 }
 
