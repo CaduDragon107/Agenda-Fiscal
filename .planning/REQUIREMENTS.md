@@ -19,8 +19,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Tarefas (Geração, Execução e Histórico)
 
-- [ ] **TASK-01**: Geração automática mensal de tarefas recorrentes por empresa, conforme regime tributário (Lucro Real: ICMS + PIS/COFINS + SPED; Simples Nacional: DAS)
-- [ ] **TASK-02**: Prazo fixo por tipo de obrigação, ajustado automaticamente quando cai em fim de semana/feriado nacional
+- [x] **TASK-01**: Geração automática mensal de tarefas recorrentes por empresa, conforme regime tributário (Lucro Real: ICMS + PIS/COFINS + SPED; Simples Nacional: DAS)
+- [x] **TASK-02**: Prazo fixo por tipo de obrigação, ajustado automaticamente quando cai em fim de semana/feriado nacional
 - [x] **TASK-03**: Marcar tarefa como concluída (checkbox simples)
 - [x] **TASK-04**: Criação de tarefas avulsas (não-recorrentes) por qualquer membro da equipe, atribuíveis a qualquer pessoa
 - [x] **TASK-05**: Detalhe de cada tarefa: passo a passo da obrigação, dados relevantes da empresa, histórico de conclusões anteriores
@@ -72,8 +72,8 @@ Explicitly excluded. Documented to prevent scope creep.
 | AUTH-02 | Phase 1 | Complete |
 | EMPR-01 | Phase 1 | Complete |
 | EMPR-02 | Phase 1 | Complete |
-| TASK-01 | Phase 3 | Pending |
-| TASK-02 | Phase 3 | Pending |
+| TASK-01 | Phase 3 | Complete |
+| TASK-02 | Phase 3 | Complete |
 | TASK-03 | Phase 2 | Complete |
 | TASK-04 | Phase 2 | Complete |
 | TASK-05 | Phase 2 | Complete |

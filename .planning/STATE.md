@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-06-18T13:58:07.593Z"
-last_activity: 2026-06-17 -- Phase 02 Plan 02 completed (queries, schema Zod, Server Actions, testes verdes)
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-06-18T15:58:44.845Z"
+last_activity: 2026-06-18 -- Phase 03 execution started
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 13
+  completed_plans: 11
   percent: 50
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** A equipe nunca perde um prazo fiscal de nenhum cliente, e o dono sempre sabe em tempo real o status de tudo.
-**Current focus:** Phase 02 — gest-o-de-tarefas-avulsas-detalhe-e-alertas
+**Current focus:** Phase 03 — motor-de-gera-o-autom-tica-mensal
 
 ## Current Position
 
-Phase: 02 (gest-o-de-tarefas-avulsas-detalhe-e-alertas) — EXECUTING
-Plan: 4 of 4
+Phase: 03 (motor-de-gera-o-autom-tica-mensal) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-06-17 -- Phase 02 Plan 02 completed (queries, schema Zod, Server Actions, testes verdes)
+Last activity: 2026-06-18 -- Phase 03 execution started
 
 Progress: [███░░░░░░░] 30%
 
@@ -62,6 +62,7 @@ Progress: [███░░░░░░░] 30%
 | Phase 02 P02 | 4 min | 3 tasks | 7 files |
 | Phase 02 P03 | 5min | - tasks | - files |
 | Phase 02 P04 | 8min | 1 tasks | 3 files |
+| Phase 03 P01 | 18min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [02-03] userId passado como prop para TarefasTable — defense in depth T-02-IDOR-UI (botao Excluir oculto para COLABORADOR em tarefas alheias)
 - [Phase ?]: [02-04] await params para id em rotas dinamicas — Next.js 15 App Router params e Promise em Server Components
 - [Phase ?]: [02-04] ConcluirButton em arquivo separado com 'use client' — impossivel misturar server/client no mesmo arquivo; router.refresh() para revalidar Server Component apos conclusao
+- [Phase ?]: [03-01] node-cron instalado nesta plan mesmo sem uso de codigo ainda, mandatado junto com date-holidays; uso real e Plan 02
+- [Phase ?]: [03-01] prisma db push --accept-data-loss aplicado na Tarefa apos verificar que a tabela tinha 0 linhas - sem perda real de dados
+- [Phase ?]: [03-01] hd.isHoliday(date) === false e a checagem de dia util correta (nunca === true) - testado contra Independencia 07/09/2026 e Sexta-feira Santa 03/04/2026
 
 ### Pending Todos
 
@@ -129,6 +133,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-18T13:33:20.924Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-motor-de-gera-o-autom-tica-mensal/03-CONTEXT.md
+Last session: 2026-06-18T15:58:44.837Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: None

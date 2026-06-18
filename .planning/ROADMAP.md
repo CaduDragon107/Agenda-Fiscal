@@ -103,7 +103,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Schema (enum TipoObrigacao + Tarefa.tipoObrigacao/competencia + @@unique) + db push + libs puras dia-util/geracao-tarefas/competencia + testes Wave 0 (TASK-01, TASK-02)
+- [x] 03-01-PLAN.md — Schema (enum TipoObrigacao + Tarefa.tipoObrigacao/competencia + @@unique) + db push + libs puras dia-util/geracao-tarefas/competencia + testes Wave 0 (TASK-01, TASK-02)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -137,5 +137,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 4/4 | Complete   | 2026-06-17 |
-| 3. Motor de Geração Automática Mensal | 0/3 | Planned | - |
+| 3. Motor de Geração Automática Mensal | 1/3 | In Progress|  |
 | 4. Dashboards Comparativos | 0/0 | Not started | - |
