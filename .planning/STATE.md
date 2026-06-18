@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 Phase: 03 (motor-de-gera-o-autom-tica-mensal) — COMPLETE
 Plan: 3 of 3 (all complete)
 Status: Phase 3 done; Phase 4 (Dashboards Comparativos) not yet planned
-Last activity: 2026-06-18 - Completed quick task 260618-kbg: Adicionar campo de motivo de pendencia na tarefa, visivel/editavel no detalhe da tarefa (acessado pelo icone de olho)
+Last activity: 2026-06-18 - Completed quick task 260618-kk8: Adicionar opcao de filtro Pendentes na tela de tarefas
 
 Progress: [███████░░░] 75%
 
@@ -129,6 +129,7 @@ None yet.
 | 260615-mt3 | Renomear colaborador1-4 para Caio/Jessica/Heitor/Felipe + script de sync responsavelId por CNPJ (atribuicao pendente: empresa table vazia em prod) | 2026-06-16 | b8cf152 | [260615-mt3-atualizar-empresa-responsavelid-197-empr](./quick/260615-mt3-atualizar-empresa-responsavelid-197-empr/) |
 | 260616-ie1 | Importar 197 empresas de EMPRESAS RESPONSAVEL.xlsx no banco Neon (responsavelId + EmpresaRegimeHistorico por empresa; 28 MEI→SIMPLES_NACIONAL) | 2026-06-16 | f7ec2c4 | [260616-ie1-importar-197-empresas-planilha-responsavel](./quick/260616-ie1-importar-197-empresas-planilha-responsavel/) |
 | 260618-kbg | Adicionar campo de motivo de pendencia na tarefa, visivel/editavel no detalhe da tarefa (acessado pelo icone de olho) | 2026-06-18 | 54970c1 | [260618-kbg-adicionar-campo-de-motivo-de-pendencia-n](./quick/260618-kbg-adicionar-campo-de-motivo-de-pendencia-n/) |
+| 260618-kk8 | Adicionar opcao de filtro Pendentes na tela de tarefas | 2026-06-18 | 3bbb2e5 | [260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t](./quick/260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t/) |
 
 ## Deferred Items
 
