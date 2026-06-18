@@ -99,7 +99,7 @@ function PrazoCell({ tarefa }: { tarefa: TarefaRow }) {
 
 export function TarefasTable({ tarefas, responsaveis, isDono, userId }: TarefasTableProps) {
   const [busca, setBusca] = useState("");
-  const [mostrarConcluidas, setMostrarConcluidas] = useState(false);
+  const [statusFiltro, setStatusFiltro] = useState<"PENDENTE" | "CONCLUIDA" | "TODOS">("PENDENTE");
   const [responsavelFiltro, setResponsavelFiltro] = useState("TODOS");
   const [sorting, setSorting] = useState<SortingState>([{ id: "prazo", desc: false }]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -115,9 +115,9 @@ export function TarefasTable({ tarefas, responsaveis, isDono, userId }: TarefasT
   const dadosFiltrados = useMemo(() => {
     let dados = tarefas;
 
-    // Filtrar concluídas (per D-08, Pitfall 6: carregar todas do servidor e filtrar client-side)
-    if (!mostrarConcluidas) {
-      dados = dados.filter((t) => t.status !== "CONCLUIDA");
+    // Filtrar por status (per D-08, Pitfall 6: carregar todas do servidor e filtrar client-side)
+    if (statusFiltro !== "TODOS") {
+      dados = dados.filter((t) => t.status === statusFiltro);
     }
 
     // Filtrar por responsável (somente DONO vê este filtro)
@@ -136,7 +136,7 @@ export function TarefasTable({ tarefas, responsaveis, isDono, userId }: TarefasT
     }
 
     return dados;
-  }, [tarefas, mostrarConcluidas, responsavelFiltro, isDono, busca]);
+  }, [tarefas, statusFiltro, responsavelFiltro, isDono, busca]);
 
   function handleConcluir(id: string) {
     setPendingIds((prev) => new Set(prev).add(id));
@@ -343,14 +343,19 @@ export function TarefasTable({ tarefas, responsaveis, isDono, userId }: TarefasT
             </SelectContent>
           </Select>
         )}
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <Checkbox
-            checked={mostrarConcluidas}
-            onCheckedChange={(val) => setMostrarConcluidas(val === true)}
-            id="mostrar-concluidas"
-          />
-          Mostrar concluidas
-        </label>
+        <Select
+          value={statusFiltro}
+          onValueChange={(v) => setStatusFiltro(v as typeof statusFiltro)}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="PENDENTE">Pendentes</SelectItem>
+            <SelectItem value="CONCLUIDA">Concluidas</SelectItem>
+            <SelectItem value="TODOS">Todas</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Estado vazio após filtros */}
