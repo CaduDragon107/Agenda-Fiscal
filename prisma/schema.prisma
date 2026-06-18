@@ -97,6 +97,7 @@ model Tarefa {
   status        TarefaStatus @default(PENDENTE)
   tipoObrigacao TipoObrigacao?
   competencia   String?
+  motivoPendencia String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 

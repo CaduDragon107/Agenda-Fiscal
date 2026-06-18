@@ -202,6 +202,63 @@ export async function excluirTarefa(id: string): Promise<AcaoTarefaResult> {
 }
 
 /**
+ * Salva (ou limpa) o motivo de pendência de uma tarefa.
+ *
+ * CRÍTICO (T-02-IDOR): mesmo padrão de concluirTarefa/excluirTarefa —
+ * findFirst escopado via withTarefaScope ANTES de qualquer write; se a
+ * tarefa não existir ou estiver fora do escopo do usuário, retorna
+ * "não encontrado" (nunca 403).
+ *
+ * Regra de negócio (alinhada a D-05): o motivo só pode ser editado enquanto
+ * a tarefa está PENDENTE — uma vez CONCLUIDA, o motivo se torna somente
+ * leitura na UI, e a action recusa a escrita mesmo se chamada diretamente.
+ *
+ * Normaliza a entrada com trim(); string vazia é gravada como null para
+ * manter o campo limpo. Limite defensivo de 1000 caracteres.
+ */
+export async function salvarMotivoPendencia(
+  id: string,
+  motivo: string
+): Promise<AcaoTarefaResult> {
+  const session = await auth();
+  if (!session?.user) {
+    return { ok: false, error: "Não autenticado" };
+  }
+
+  const existente = await db.tarefa.findFirst({
+    where: { id, ...withTarefaScope(session.user) },
+    select: { id: true, status: true },
+  });
+
+  if (!existente) {
+    return { ok: false, error: "não encontrado" };
+  }
+
+  if (existente.status === "CONCLUIDA") {
+    return { ok: false, error: "Tarefa concluída não pode ter o motivo alterado." };
+  }
+
+  const valor = motivo.trim();
+  if (valor.length > 1000) {
+    return { ok: false, error: "Motivo muito longo (máximo 1000 caracteres)." };
+  }
+  const valorFinal = valor.length === 0 ? null : valor;
+
+  try {
+    await db.tarefa.update({
+      where: { id },
+      data: { motivoPendencia: valorFinal },
+    });
+  } catch {
+    return { ok: false, error: "Erro ao salvar o motivo. Tente novamente." };
+  }
+
+  revalidatePath("/tarefas");
+  revalidatePath(`/tarefas/${id}`);
+  return { ok: true };
+}
+
+/**
  * Dispara manualmente a geração mensal de tarefas (D-08, fallback caso o
  * cron falhe ou seja necessário acionar antes do dia 1).
  *

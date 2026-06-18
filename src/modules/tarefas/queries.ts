@@ -14,6 +14,7 @@ const TAREFA_SELECT = {
   descricao: true,
   prazo: true,
   status: true,
+  motivoPendencia: true,
   createdAt: true,
   empresaId: true,
   responsavelId: true,
