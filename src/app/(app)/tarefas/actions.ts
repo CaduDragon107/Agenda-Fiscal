@@ -5,6 +5,15 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { tarefaSchema } from "@/modules/tarefas/schema";
 import { withTarefaScope, withVisibilityScope } from "@/lib/visibility-scope";
+import { executarGeracaoMensal } from "@/modules/tarefas/geracao";
+import { competenciaAtual, competenciaSchema } from "@/lib/competencia";
+
+/**
+ * Resultado da geração manual de tarefas do mês.
+ */
+export type AcaoGeracaoResult =
+  | { ok: true; criadas: number; puladas: number }
+  | { ok: false; error: string };
 
 /**
  * Resultado padrão das Server Actions de Tarefa.
@@ -190,4 +199,61 @@ export async function excluirTarefa(id: string): Promise<AcaoTarefaResult> {
 
   revalidatePath("/tarefas");
   return { ok: true };
+}
+
+/**
+ * Dispara manualmente a geração mensal de tarefas (D-08, fallback caso o
+ * cron falhe ou seja necessário acionar antes do dia 1).
+ *
+ * CRÍTICO (T-3-01, V4 Access Control): guard de role é o PRIMEIRO check
+ * após `auth()`, ANTES de qualquer acesso ao banco — protege contra um
+ * COLABORADOR chamando a action diretamente mesmo com o botão oculto
+ * client-side (a UI escondendo o botão é só defesa em profundidade, nunca
+ * a única barreira).
+ *
+ * CRÍTICO (T-3-05): guard de autenticação primeiro, mesmo padrão das
+ * demais actions deste arquivo.
+ *
+ * CRÍTICO (T-3-06, V5 Pitfall 4): se uma competência for informada, é
+ * validada com `competenciaSchema` antes de chegar em `executarGeracaoMensal`
+ * — evita uma string não canônica (ex.: "2026-1") quebrar a idempotência
+ * da constraint única. Sem argumento, usa `competenciaAtual()` (date-fns),
+ * sempre canônica.
+ *
+ * Reusa a mesma `executarGeracaoMensal` chamada pelo cron (Plano 02) — a
+ * idempotência via `createMany({ skipDuplicates: true })` garante que
+ * disparar manualmente a mesma competência do cron não duplica tarefas.
+ */
+export async function gerarTarefasDoMesAction(
+  competencia?: string
+): Promise<AcaoGeracaoResult> {
+  const session = await auth();
+  if (!session?.user) {
+    return { ok: false, error: "Não autenticado" };
+  }
+
+  if (session.user.role !== "DONO") {
+    return { ok: false, error: "não autorizado" };
+  }
+
+  let competenciaResolvida: string;
+  if (competencia !== undefined) {
+    const parsed = competenciaSchema.safeParse(competencia);
+    if (!parsed.success) {
+      return { ok: false, error: "Competência inválida." };
+    }
+    competenciaResolvida = parsed.data;
+  } else {
+    competenciaResolvida = competenciaAtual();
+  }
+
+  try {
+    const { criadas, puladas } = await executarGeracaoMensal(
+      competenciaResolvida
+    );
+    revalidatePath("/tarefas");
+    return { ok: true, criadas, puladas };
+  } catch {
+    return { ok: false, error: "Erro ao gerar tarefas. Tente novamente." };
+  }
 }
