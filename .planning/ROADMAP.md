@@ -99,7 +99,21 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Executar a geração mensal mais de uma vez para a mesma competência não cria tarefas duplicadas (idempotência verificada na tabela `tarefas`).
   4. As tarefas geradas automaticamente aparecem nas listas e na tela de detalhe construídas na Fase 2, já com os alertas visuais de prazo funcionando normalmente.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — Schema (enum TipoObrigacao + Tarefa.tipoObrigacao/competencia + @@unique) + db push + libs puras dia-util/geracao-tarefas/competencia + testes Wave 0 (TASK-01, TASK-02)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-02-PLAN.md — Orquestração executarGeracaoMensal (createMany skipDuplicates, idempotência) + node-cron via instrumentation (TASK-01)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-03-PLAN.md — Server Action DONO-only gerarTarefasDoMesAction + botão manual em /tarefas + teste RBAC (TASK-01)
+
+**UI hint**: yes
 
 ### Phase 4: Dashboards Comparativos
 
@@ -123,5 +137,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 4/4 | Complete   | 2026-06-17 |
-| 3. Motor de Geração Automática Mensal | 0/0 | Not started | - |
+| 3. Motor de Geração Automática Mensal | 0/3 | Planned | - |
 | 4. Dashboards Comparativos | 0/0 | Not started | - |
