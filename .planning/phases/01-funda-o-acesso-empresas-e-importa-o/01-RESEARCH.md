@@ -103,24 +103,37 @@ Os valores acima (`5.0.0-beta.x`, `bcryptjs ^3.x`, etc.) foram obtidos via WebSe
 
 ## Package Legitimacy Audit
 
-> Esta sessão de pesquisa não teve acesso a ferramenta de execução de comandos (sem Bash/shell), portanto `gsd-tools query package-legitimacy check` e `npm view` não puderam ser executados. Todos os pacotes abaixo são pacotes amplamente conhecidos e estabelecidos (confirmados por múltiplas fontes WebSearch independentes — npm registry pages, GitHub releases, Snyk/Socket.dev), mas a tabela abaixo reflete status `[ASSUMED]` para verificação formal de registry. **O planner deve inserir uma tarefa `checkpoint:human-verify` (ou equivalente: rodar `npm view <pkg> version` e `npm view <pkg> scripts.postinstall`) antes do `npm install` em massa no Wave 0.**
+> **ATUALIZADO no Wave 0 (Plano 01-01, Task 1) — auditoria real via `npm view` executada.** Todos os pacotes abaixo foram verificados via `npm view <pkg> version` / `npm view <pkg> dist.tarball` nesta sessão de execução. Nenhum pacote recebeu verdict `[SLOP]` ou `[SUS]`. Versões reais resolvidas (substituem os valores `[ASSUMED]` da pesquisa original):
 
-| Package | Registry | Age | Downloads | Source Repo | Verdict | Disposition |
-|---------|----------|-----|-----------|-------------|---------|-------------|
-| next-auth (`@beta` tag = v5) | npm | anos (pacote estabelecido, v5 em beta há tempo) | muito alto (milhões/semana) | github.com/nextauthjs/next-auth | [ASSUMED — não verificado via npm view] | Manter — verificar versão exata no Wave 0 |
-| @auth/prisma-adapter | npm | anos | alto | github.com/nextauthjs/next-auth (monorepo) | [ASSUMED] | **Avaliar se será usado** — recomendação é omitir nesta fase (ver Supporting Libraries) |
-| bcryptjs | npm | anos (pacote maduro) | muito alto | github.com/dcodeIO/bcrypt.js (ou kelektiv fork) | [ASSUMED] | Manter — confirmar versão `^2.4` (CLAUDE.md) vs `^3.x` (mais recente) no Wave 0 |
-| prisma / @prisma/client | npm | anos | muito alto | github.com/prisma/prisma | [ASSUMED] | Manter — confirmar `6.x` ainda é a major recomendada (Prisma 7 já existe, ver CLAUDE.md) |
-| @tanstack/react-table | npm | anos | muito alto | github.com/TanStack/table | [ASSUMED] | Manter |
-| zod | npm | anos | muito alto | github.com/colinhacks/zod | [ASSUMED] | Manter — confirmar `^3.x` vs v4 com o usuário (flag de discretion) |
-| react-hook-form | npm | anos | muito alto | github.com/react-hook-form/react-hook-form | [ASSUMED] | Manter |
-| @hookform/resolvers | npm | anos | alto | github.com/react-hook-form/resolvers | [ASSUMED] | Manter |
-| xlsx (SheetJS, via CDN tarball, NÃO npm registry) | CDN cdn.sheetjs.com (não npm) | pacote maduro, CDN mantido pelo autor original do SheetJS | N/A (CDN, não medido por downloads npm) | github.com/SheetJS/sheetjs | [OK — fonte oficial confirmada por CLAUDE.md e docs.sheetjs.com] | Aprovado — **NUNCA** `npm install xlsx` puro (resolve para 0.18.5, vulnerável) |
+| Package | Resolved Version | Registry | Source Repo | Verdict | Disposition |
+|---------|-------------------|----------|-------------|---------|-------------|
+| next-auth (`@beta` tag = v5) | 5.0.0-beta.31 | npm | github.com/nextauthjs/next-auth | OK | Manter — versão real confirmada |
+| bcryptjs | 3.0.3 | npm | github.com/dcodeIO/bcrypt.js | OK | Manter — 3.x é estável; CLAUDE.md citava `^2.4`, mas 3.x confirmado como atual e API-compatível |
+| @types/bcryptjs | 3.0.0 | npm | DefinitelyTyped | OK | Manter (devDependency) |
+| prisma | pin 6.19.3 (latest é 7.8.0, mas CLAUDE.md mandata 6.x) | npm | github.com/prisma/prisma | OK | Manter pin 6.19.3 |
+| @prisma/client | pin 6.19.3 (deve casar com major de `prisma`) | npm | github.com/prisma/prisma | OK | Manter pin 6.19.3 |
+| @tanstack/react-table | 8.21.3 | npm | github.com/TanStack/table | OK | Manter |
+| zod | pin 3.25.76 (latest é 4.4.3, mas CLAUDE.md mandata ^3.x) | npm | github.com/colinhacks/zod | OK | Manter pin ^3.25.76 |
+| react-hook-form | 7.78.0 | npm | github.com/react-hook-form/react-hook-form | OK | Manter |
+| @hookform/resolvers | 5.4.0 | npm | github.com/react-hook-form/resolvers | OK | Manter |
+| xlsx (SheetJS, via CDN tarball, NÃO npm registry) | 0.20.3 via `https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz` | CDN cdn.sheetjs.com (não npm) | github.com/SheetJS/sheetjs | OK | Aprovado — **NUNCA** `npm install xlsx` puro (resolve para 0.18.5, vulnerável) |
+
+**@auth/prisma-adapter:** OMITIDO desta fase, conforme recomendação original (Pitfall 2 — Credentials + JWT strategy não precisa de adapter de banco). Não instalado.
 
 **Packages removed due to [SLOP] verdict:** none
-**Packages flagged as suspicious [SUS]:** none — todos são pacotes estabelecidos e amplamente reconhecidos, mas nenhum foi formalmente verificado via `npm view`/`gsd-tools query package-legitimacy check` nesta sessão por falta de ferramenta de execução.
+**Packages flagged as suspicious [SUS]:** none — auditoria `npm view` concluída, todos os 9 pacotes (+ xlsx via CDN) confirmados legítimos.
 
-**Ação obrigatória para o planner:** adicionar uma tarefa inicial (Wave 0) do tipo `checkpoint:human-verify` ou tarefa automatizada que rode `npm view <pkg> version` para cada pacote acima antes do primeiro `npm install`, registrando as versões reais resolvidas no `package.json`.
+**Wave 0 concluído:** versões reais registradas em `package.json` durante o Task 2 deste plano.
+
+## Decisão de Hospedagem do Banco — Neon (em vez de Railway-internal Postgres)
+
+> **ATUALIZADO no Wave 0 (Plano 01-01, Task 1).** A pesquisa original assumia Postgres gerenciado pelo Railway (mesmo projeto, rede privada interna — ver Architecture Patterns e seção "Hospedagem" do CLAUDE.md). O usuário, durante a execução, optou por provisionar um banco **Neon Postgres** (free tier) em vez de criar o serviço Postgres dentro do projeto Railway.
+
+**Implicações:**
+- `DATABASE_URL` aponta para um endpoint **pooled** do Neon (`-pooler` no hostname, PgBouncer transaction pooling) — usado em runtime pela aplicação.
+- `DIRECT_URL` (variável adicional) aponta para o endpoint **direto** (sem `-pooler`, mesmas credenciais/banco) — necessário porque o motor de migração do Prisma (`prisma db push`/`migrate`) usa locks de advisory de sessão que quebram sob pooling de transação do PgBouncer. `prisma/schema.prisma` declara `directUrl = env("DIRECT_URL")` no bloco `datasource db`.
+- A conexão ocorre pela internet pública (`sslmode=require&channel_binding=require`), não por rede privada interna de projeto — diferente do modelo Railway-internal assumido originalmente.
+- **Sem impacto na Fase 1 além do schema/env.** O hosting da aplicação (Railway, Plano 01-06 / INFRA-01) permanece inalterado — Railway pode conectar a um Postgres externo (Neon) via variáveis de ambiente normalmente. Apenas a seção "Hospedagem" do CLAUDE.md (que assumia Postgres-no-mesmo-projeto-Railway) fica parcialmente desatualizada quanto à origem do banco; isso não bloqueia o plano de deploy, só remove a vantagem de "rede privada interna sem custo de egress" — tráfego Railway↔Neon é egress público (ambos free/baixo custo nesta escala).
 
 ## Architecture Patterns
 

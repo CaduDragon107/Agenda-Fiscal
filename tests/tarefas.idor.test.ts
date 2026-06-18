@@ -15,6 +15,8 @@ import { mockColaboradorUser } from "./setup";
  */
 
 const findFirstMock = vi.fn();
+const empresaFindFirstMock = vi.fn();
+const tarefaCreateMock = vi.fn();
 const updateMock = vi.fn();
 const deleteMock = vi.fn();
 const transactionMock = vi.fn();
@@ -23,7 +25,11 @@ const authMock = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   db: {
+    empresa: {
+      findFirst: (...args: unknown[]) => empresaFindFirstMock(...args),
+    },
     tarefa: {
+      create: (...args: unknown[]) => tarefaCreateMock(...args),
       findFirst: (...args: unknown[]) => findFirstMock(...args),
       update: (...args: unknown[]) => updateMock(...args),
       delete: (...args: unknown[]) => deleteMock(...args),
@@ -108,13 +114,6 @@ describe("IDOR — excluirTarefa", () => {
 });
 
 describe("IDOR — criarTarefa", () => {
-  // O mock de `db` acima não inclui empresa.findFirst — necessário para CR-01.
-  // Os mocks de empresa são injetados em vi.mock de forma extendida aqui.
-  // Como vi.mock é hoisted e o objeto já existe, usamos um módulo auxiliar:
-  // adicionamos empresa ao db mock como propriedade de teste.
-  const empresaFindFirstMock = vi.fn();
-  const tarefaCreateMock = vi.fn();
-
   beforeEach(() => {
     findFirstMock.mockReset();
     empresaFindFirstMock.mockReset();
@@ -123,26 +122,6 @@ describe("IDOR — criarTarefa", () => {
   });
 
   it("COLABORADOR não pode criar tarefa para empresa de outro colaborador", async () => {
-    // O mock de db precisa incluir empresa.findFirst para testar o guard CR-01.
-    // Re-mocamos o módulo localmente para esta suite.
-    vi.doMock("@/lib/db", () => ({
-      db: {
-        empresa: {
-          findFirst: (...args: unknown[]) => empresaFindFirstMock(...args),
-        },
-        tarefa: {
-          findFirst: (...args: unknown[]) => findFirstMock(...args),
-          create: (...args: unknown[]) => tarefaCreateMock(...args),
-          update: (...args: unknown[]) => updateMock(...args),
-          delete: (...args: unknown[]) => deleteMock(...args),
-        },
-        tarefaHistorico: {
-          create: (...args: unknown[]) => historicoCreateMock(...args),
-        },
-        $transaction: (...args: unknown[]) => transactionMock(...args),
-      },
-    }));
-
     const { criarTarefa } = await import("@/app/(app)/tarefas/actions");
     const colaboradorA = mockColaboradorUser();
 
@@ -152,6 +131,7 @@ describe("IDOR — criarTarefa", () => {
 
     const formData = new FormData();
     formData.set("titulo", "Tarefa teste");
+    formData.set("descricao", "");
     formData.set("empresaId", "empresa_de_b");
     formData.set("responsavelId", colaboradorA.id);
     formData.set("prazo", "2026-12-31");
@@ -173,24 +153,6 @@ describe("IDOR — criarTarefa", () => {
   });
 
   it("COLABORADOR não pode atribuir tarefa para outro responsável", async () => {
-    vi.doMock("@/lib/db", () => ({
-      db: {
-        empresa: {
-          findFirst: (...args: unknown[]) => empresaFindFirstMock(...args),
-        },
-        tarefa: {
-          findFirst: (...args: unknown[]) => findFirstMock(...args),
-          create: (...args: unknown[]) => tarefaCreateMock(...args),
-          update: (...args: unknown[]) => updateMock(...args),
-          delete: (...args: unknown[]) => deleteMock(...args),
-        },
-        tarefaHistorico: {
-          create: (...args: unknown[]) => historicoCreateMock(...args),
-        },
-        $transaction: (...args: unknown[]) => transactionMock(...args),
-      },
-    }));
-
     const { criarTarefa } = await import("@/app/(app)/tarefas/actions");
     const colaboradorA = mockColaboradorUser();
 
@@ -200,6 +162,7 @@ describe("IDOR — criarTarefa", () => {
 
     const formData = new FormData();
     formData.set("titulo", "Tarefa teste");
+    formData.set("descricao", "");
     formData.set("empresaId", "empresa_de_a");
     // Tenta atribuir a um responsável diferente
     formData.set("responsavelId", "outro_user_id");

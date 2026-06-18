@@ -12,6 +12,7 @@ import { mockColaboradorUser, mockDonoUser } from "./setup";
 
 const createMock = vi.fn();
 const findFirstMock = vi.fn();
+const empresaFindFirstMock = vi.fn();
 const updateMock = vi.fn();
 const deleteMock = vi.fn();
 const transactionMock = vi.fn();
@@ -20,6 +21,9 @@ const authMock = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   db: {
+    empresa: {
+      findFirst: (...args: unknown[]) => empresaFindFirstMock(...args),
+    },
     tarefa: {
       create: (...args: unknown[]) => createMock(...args),
       findFirst: (...args: unknown[]) => findFirstMock(...args),
@@ -55,6 +59,7 @@ describe("criarTarefa", () => {
   beforeEach(() => {
     createMock.mockReset();
     findFirstMock.mockReset();
+    empresaFindFirstMock.mockReset();
     authMock.mockReset();
   });
 
@@ -63,6 +68,7 @@ describe("criarTarefa", () => {
     const colaborador = mockColaboradorUser();
 
     authMock.mockResolvedValue({ user: colaborador });
+    empresaFindFirstMock.mockResolvedValue({ id: "empresa_abc" });
     createMock.mockResolvedValue({ id: "tarefa_nova_1" });
 
     const resultado = await criarTarefa(buildFormData());
