@@ -15,16 +15,22 @@ const findManyMock = vi.fn();
 const createManyMock = vi.fn();
 const authMock = vi.fn();
 
-vi.mock("@/lib/db", () => ({
-  db: {
+vi.mock("@/lib/db", () => {
+  const tx = {
     empresa: {
       findMany: (...args: unknown[]) => findManyMock(...args),
     },
     tarefa: {
       createMany: (...args: unknown[]) => createManyMock(...args),
     },
-  },
-}));
+  };
+  return {
+    db: {
+      ...tx,
+      $transaction: (fn: (tx: unknown) => unknown) => fn(tx),
+    },
+  };
+});
 
 vi.mock("@/auth", () => ({
   auth: () => authMock(),

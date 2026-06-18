@@ -23,27 +23,29 @@ import { gerarTarefasDoMes } from "@/lib/geracao-tarefas";
 export async function executarGeracaoMensal(
   competencia: string
 ): Promise<{ criadas: number; puladas: number }> {
-  const empresas = await db.empresa.findMany({
-    where: { ativo: true },
-    select: { id: true, regimeTributario: true, responsavelId: true },
+  return db.$transaction(async (tx) => {
+    const empresas = await tx.empresa.findMany({
+      where: { ativo: true },
+      select: { id: true, regimeTributario: true, responsavelId: true },
+    });
+
+    const tarefas = gerarTarefasDoMes(empresas, competencia);
+
+    if (tarefas.length === 0) {
+      return { criadas: 0, puladas: 0 };
+    }
+
+    const resultado = await tx.tarefa.createMany({
+      data: tarefas.map((t) => ({
+        ...t,
+        status: "PENDENTE" as const,
+      })),
+      skipDuplicates: true, // apoia-se em @@unique([empresaId, tipoObrigacao, competencia])
+    });
+
+    return {
+      criadas: resultado.count,
+      puladas: tarefas.length - resultado.count,
+    };
   });
-
-  const tarefas = gerarTarefasDoMes(empresas, competencia);
-
-  if (tarefas.length === 0) {
-    return { criadas: 0, puladas: 0 };
-  }
-
-  const resultado = await db.tarefa.createMany({
-    data: tarefas.map((t) => ({
-      ...t,
-      status: "PENDENTE" as const,
-    })),
-    skipDuplicates: true, // apoia-se em @@unique([empresaId, tipoObrigacao, competencia])
-  });
-
-  return {
-    criadas: resultado.count,
-    puladas: tarefas.length - resultado.count,
-  };
 }

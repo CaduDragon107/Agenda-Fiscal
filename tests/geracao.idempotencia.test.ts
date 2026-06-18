@@ -11,16 +11,22 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const empresaFindManyMock = vi.fn();
 const createManyMock = vi.fn();
 
-vi.mock("@/lib/db", () => ({
-  db: {
+vi.mock("@/lib/db", () => {
+  const tx = {
     empresa: {
       findMany: (...args: unknown[]) => empresaFindManyMock(...args),
     },
     tarefa: {
       createMany: (...args: unknown[]) => createManyMock(...args),
     },
-  },
-}));
+  };
+  return {
+    db: {
+      ...tx,
+      $transaction: (fn: (tx: unknown) => unknown) => fn(tx),
+    },
+  };
+});
 
 describe("executarGeracaoMensal — idempotencia", () => {
   beforeEach(() => {
