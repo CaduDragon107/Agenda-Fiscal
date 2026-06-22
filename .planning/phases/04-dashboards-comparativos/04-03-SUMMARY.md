@@ -99,3 +99,7 @@ None - no external service configuration required.
 ---
 *Phase: 04-dashboards-comparativos*
 *Completed: 2026-06-22*
+
+## Self-Check: PASSED
+
+All created/modified files verified present on disk (`src/modules/dashboards/queries.ts`, `tests/dashboards.queries.test.ts`, this SUMMARY.md); all 3 commit hashes (fa0988e, 5959cc6, 62aad40) verified present in git log.
