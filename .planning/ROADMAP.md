@@ -130,7 +130,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 1**
 
-- [ ] 04-01-PLAN.md — Fundação: model DesempenhoMensal + db push, shadcn chart install, mesesSchema, scaffolds de teste Wave 0 (DASH-01/02/03)
+- [x] 04-01-PLAN.md — Fundação: model DesempenhoMensal + db push, shadcn chart install, mesesSchema, scaffolds de teste Wave 0 (DASH-01/02/03)
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -155,4 +155,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 4/4 | Complete   | 2026-06-17 |
 | 3. Motor de Geração Automática Mensal | 3/3 | Complete | 2026-06-18 |
-| 4. Dashboards Comparativos | 0/5 | Planned | - |
+| 4. Dashboards Comparativos | 1/5 | In Progress|  |
