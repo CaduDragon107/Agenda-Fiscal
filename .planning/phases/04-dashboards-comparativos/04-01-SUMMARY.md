@@ -114,3 +114,7 @@ None - no external service configuration required. The `DesempenhoMensal` table 
 ---
 *Phase: 04-dashboards-comparativos*
 *Completed: 2026-06-22*
+
+## Self-Check: PASSED
+
+All created files verified present on disk; all 4 task/docs commit hashes (077c4b8, 97feb9f, 590bd13, 664fa0c) verified present in git log.
