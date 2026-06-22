@@ -567,17 +567,17 @@ See Patterns 1-7 above for complete, ready-to-adapt code for: schema (Pattern 1)
 | A3 | Single page with 3 stacked sections (not tabs/separate pages) for dashboard navigation (Claude's Discretion explicitly defers this) | Project Structure | Low risk — purely a layout/route decision, easy to restructure into tabs later without touching data layer |
 | A4 | Snapshot uses `Tarefa.responsavelId` (not `Empresa.responsavelId`) to attribute closed-month performance, to avoid drift if empresa reassignment happens mid-month | Pitfall 3 | Low-medium risk — if the team's mental model expects "current colaborador for that empresa" instead of "colaborador assigned to the task at creation time," displayed historical numbers could look surprising after a reassignment; worth a one-line confirmation during planning |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should DASH-03 (empresa ranking) eventually get a frozen snapshot too, for month-over-month empresa trend comparison?**
+   - **RESOLVED:** DASH-03 stays **live-only for v1** (Pattern 6). Baked into Plan 04-03 `listarRankingEmpresas` (computed on-the-fly, no `DesempenhoMensal` row for empresas) and Plan 04-04 (live consumption). A future phase that wants empresa trend-over-time can add an `empresaId`-keyed table mirroring `DesempenhoMensal` at that point — not built now.
    - What we know: CONTEXT.md only requires DASH-03 to be a single-period ranking ("ordenar do maior para o menor"), not an explicit trend-over-time requirement like DASH-02.
-   - What's unclear: Whether a future iteration wants "which empresas got worse this month vs last" — not in v1 scope per the phase boundary, but worth flagging.
-   - Recommendation: Build DASH-03 live-only for v1 (Pattern 6); if a future phase needs empresa trend-over-time, add an `empresaId`-keyed table mirroring `DesempenhoMensal`'s structure at that point — don't over-build now.
+   - What's unclear (at research time): Whether a future iteration wants "which empresas got worse this month vs last" — not in v1 scope per the phase boundary, but worth flagging.
 
 2. **What date range bounds DASH-03's "período"?**
+   - **RESOLVED:** Default período window = **"últimos 3 meses"** (rolling window). Baked into Plan 04-03 (`listarRankingEmpresas` JSDoc documents the 3-month default) and Plan 04-04 (consumer passes the last-3-months range). `listarEvolucaoMensal` also defaults to `quantidadeMeses = 3` for consistency. Kept as a function parameter so the dono can adjust without schema change.
    - What we know: D-06 specifies the ratio (atrasadas / total no período) but CONTEXT.md defers the exact period length to Claude's Discretion.
-   - What's unclear: Whether "all-time" or "last N months" is more useful for the dono's recurring-problem-empresa use case.
-   - Recommendation: Default to "últimos 3 meses" (rolling window) as a reasonable middle ground between noise (1 month) and staleness (all-time, which dilutes recently-improved empresas) — make it a simple parameter so the planner/dono can adjust easily; this is a UI/query parameter, not a schema decision, so it's cheap to change later.
+   - What's unclear (at research time): Whether "all-time" or "last N months" is more useful for the dono's recurring-problem-empresa use case — resolved to a 3-month rolling window as a middle ground between noise (1 month) and staleness (all-time).
 
 ## Environment Availability
 

@@ -2,7 +2,7 @@
 phase: 4
 slug: dashboards-comparativos
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-22
 ---
@@ -43,6 +43,7 @@ created: 2026-06-22
 | 04-02-01 | 02 | 0 | DASH-02 | — | Closed-month snapshot never recalculated on read (D-05) — `db.tarefa.findMany` NOT called for closed competências | unit | `npx vitest run tests/dashboards.snapshot.test.ts -t "frozen"` | ❌ W0 | ⬜ pending |
 | 04-02-02 | 02 | 0 | DASH-02 | — | Snapshot write is idempotent (`createMany` + `skipDuplicates` against `@@unique`) | unit | `npx vitest run tests/dashboards.snapshot.test.ts -t "idempot"` | ❌ W0 | ⬜ pending |
 | 04-02-03 | 02 | 0 | DASH-02 | — | Snapshot closes the correct prior month relative to the competência passed to `executarGeracaoMensal` (boundary/off-by-one) | unit | `npx vitest run tests/dashboards.snapshot.test.ts -t "boundary"` | ❌ W0 | ⬜ pending |
+| 04-02-04 | 02 | 0 | DASH-02 | — | Snapshot population filters by `concluidoEm`-in-range (matches live query), includes ad-hoc tasks (competencia=null) — no live→frozen discontinuity | unit | `npx vitest run tests/dashboards.snapshot.test.ts -t "avulsa"` | ❌ W0 | ⬜ pending |
 | 04-03-01 | 03 | 1 | DASH-03 | — | "Atrasada" includes PENDENTE with `prazo < now()` (D-06), distinct from D-02's rule | unit | `npx vitest run tests/dashboards.queries.test.ts -t "ranking"` | ❌ W0 | ⬜ pending |
 | 04-03-02 | 03 | 1 | DASH-03 | — | Ranking sorted descending by % atraso | unit | `npx vitest run tests/dashboards.queries.test.ts -t "ranking"` | ❌ W0 | ⬜ pending |
 | 04-04-01 | 04 | 1 | DASH-01/02/03 | T-4-01 | DONO-only access — COLABORADOR and unauthenticated rejected before any DB query | unit | `npx vitest run tests/dashboards.rbac.test.ts` | ❌ W0 | ⬜ pending |
@@ -55,7 +56,7 @@ created: 2026-06-22
 ## Wave 0 Requirements
 
 - [ ] `tests/dashboards.queries.test.ts` — covers DASH-01, DASH-03 calculation rules
-- [ ] `tests/dashboards.snapshot.test.ts` — covers DASH-02 freeze/idempotency/boundary rules
+- [ ] `tests/dashboards.snapshot.test.ts` — covers DASH-02 freeze/idempotency/boundary/avulsa rules
 - [ ] `tests/dashboards.rbac.test.ts` — covers DONO-only guard for all 3 dashboard queries/page
 - [ ] Prisma migration for `DesempenhoMensal` — run `npx prisma db push` (no shadow database, per STATE.md Phase 2 precedent)
 - [ ] `npx shadcn@latest add chart` — installs `recharts` + `src/components/ui/chart.tsx` before any chart component can be written
@@ -72,11 +73,11 @@ created: 2026-06-22
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 15s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 15s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved
