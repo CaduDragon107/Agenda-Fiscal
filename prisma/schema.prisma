@@ -48,6 +48,7 @@ model Usuario {
 
   tarefasResponsavel  Tarefa[]          @relation("ResponsavelTarefa")
   tarefasConcluidas   TarefaHistorico[] @relation("ConcluiuTarefa")
+  desempenhoMensal    DesempenhoMensal[]
 
   @@map("usuarios")
 }
@@ -122,4 +123,21 @@ model TarefaHistorico {
 
   @@index([tarefaId])
   @@map("tarefa_historico")
+}
+
+model DesempenhoMensal {
+  id                  String   @id @default(cuid())
+  competencia         String
+  colaboradorId       String
+  colaborador         Usuario  @relation(fields: [colaboradorId], references: [id])
+  totalConcluidas     Int
+  concluidasNoPrazo   Int
+  totalEmpresas       Int
+  totalTarefasPeriodo Int
+  createdAt           DateTime @default(now())
+
+  @@unique([competencia, colaboradorId])
+  @@index([competencia])
+  @@index([colaboradorId])
+  @@map("desempenho_mensal")
 }
