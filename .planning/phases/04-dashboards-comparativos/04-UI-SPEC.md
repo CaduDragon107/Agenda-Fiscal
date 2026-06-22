@@ -47,18 +47,16 @@ Exceptions: Chart containers require an explicit minimum height outside the 8-po
 
 ## Typography
 
-Reuses the project's existing type scale (no new sizes/weights introduced — confirmed by scanning `tarefas-table.tsx`, `app-sidebar.tsx`: only `text-xs`, `text-sm`, `text-xl font-semibold`, `font-medium` appear project-wide).
+Reuses the project's existing type scale (no new sizes introduced — confirmed by scanning `tarefas-table.tsx`, `app-sidebar.tsx`: only `text-xs`, `text-sm`, `text-xl font-semibold` appear project-wide for the roles below; `font-medium`/500 is NOT used by this phase, see note below).
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body / table cells | 14px (`text-sm`) | 400 (regular) | 1.5 |
 | Label / metadata / muted context (volume counts, "X empresas") | 12px (`text-xs`) | 400 (regular) | 1.5 |
-| Card title / chart heading | 16px (`text-base`, `font-medium`) | 500 (medium) — matches `font-medium` already used for table headers/links | 1.2 |
-| Page heading ("Dashboards") | 20px (`text-xl`) | 600 (semibold) — matches empty-state heading pattern (`text-xl font-semibold`) in `tarefas-table.tsx` | 1.2 |
+| Card title / chart heading | 16px (`text-base font-semibold`) | 600 (semibold) | 1.2 |
+| Page heading ("Dashboards") / KPI headline figure | 20px (`text-xl font-semibold`) | 600 (semibold) — matches empty-state heading pattern (`text-xl font-semibold`) in `tarefas-table.tsx` | 1.2 |
 
-Declared sizes: 12, 14, 16, 20px (4 sizes — within the 3-4 ceiling). Declared weights: 400 regular, 600 semibold (treating the existing `font-medium` 500 as the project's established secondary weight for labels/links — do not introduce a third distinct weight for this phase; reuse 400/600 as the two canonical weights, with `font-medium` reserved for inline links/table headers exactly as already used elsewhere).
-
-Large numeric KPI callouts (e.g., "87% no prazo" headline figure) use 28px/600 (`text-2xl font-semibold`) — acceptable as the "Display" role per template, used sparingly (one figure per dashboard card, not repeated per row).
+Declared sizes: 12, 14, 16, 20px — exactly 4 sizes total this phase, within the 3-4 ceiling. The KPI headline figure (e.g., "87% no prazo") reuses the 20px/600 page-heading role rather than introducing a separate "Display" size — there is no 5th size this phase. Declared weights: 400 regular, 600 semibold — exactly 2 weights total this phase. The Card title / chart heading role uses 600 (`font-semibold`), not the project's pre-existing `font-medium`/500 utility; `font-medium` remains in use elsewhere in the codebase (e.g., table headers/links) but is explicitly NOT part of this phase's active type roles, so it does not count toward this phase's weight budget.
 
 ---
 
