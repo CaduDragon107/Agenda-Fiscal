@@ -131,3 +131,7 @@ None — no external service configuration required. All changes are pure Next.j
 ---
 *Phase: 04-dashboards-comparativos*
 *Completed: 2026-06-22*
+
+## Self-Check: PASSED
+
+All created files verified present on disk (`page.tsx`, `guard.ts`, 3 chart/table components, this SUMMARY.md); all 3 commit hashes (a183386, 63f054e, e9b4a68) verified present in git log.
