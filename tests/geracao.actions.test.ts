@@ -14,14 +14,25 @@ import { mockDonoUser, mockColaboradorUser } from "./setup";
 const findManyMock = vi.fn();
 const createManyMock = vi.fn();
 const authMock = vi.fn();
+// NOVO (Plan 04-02): executarGeracaoMensal agora tambem chama
+// calcularSnapshotMensal (tarefa.findMany + empresa.groupBy) e
+// desempenhoMensal.createMany dentro da mesma transacao, antes da geracao.
+const tarefaFindManyMock = vi.fn();
+const empresaGroupByMock = vi.fn();
+const desempenhoMensalCreateManyMock = vi.fn();
 
 vi.mock("@/lib/db", () => {
   const tx = {
     empresa: {
       findMany: (...args: unknown[]) => findManyMock(...args),
+      groupBy: (...args: unknown[]) => empresaGroupByMock(...args),
     },
     tarefa: {
       createMany: (...args: unknown[]) => createManyMock(...args),
+      findMany: (...args: unknown[]) => tarefaFindManyMock(...args),
+    },
+    desempenhoMensal: {
+      createMany: (...args: unknown[]) => desempenhoMensalCreateManyMock(...args),
     },
   };
   return {
@@ -45,6 +56,13 @@ describe("gerarTarefasDoMesAction — RBAC", () => {
     findManyMock.mockReset();
     createManyMock.mockReset();
     authMock.mockReset();
+    tarefaFindManyMock.mockReset();
+    empresaGroupByMock.mockReset();
+    desempenhoMensalCreateManyMock.mockReset();
+
+    tarefaFindManyMock.mockResolvedValue([]);
+    empresaGroupByMock.mockResolvedValue([]);
+    desempenhoMensalCreateManyMock.mockResolvedValue({ count: 0 });
   });
 
   it("RBAC: chamador não autenticado é rejeitado sem tocar no banco", async () => {
@@ -81,6 +99,13 @@ describe("gerarTarefasDoMesAction — sucesso DONO", () => {
     findManyMock.mockReset();
     createManyMock.mockReset();
     authMock.mockReset();
+    tarefaFindManyMock.mockReset();
+    empresaGroupByMock.mockReset();
+    desempenhoMensalCreateManyMock.mockReset();
+
+    tarefaFindManyMock.mockResolvedValue([]);
+    empresaGroupByMock.mockResolvedValue([]);
+    desempenhoMensalCreateManyMock.mockResolvedValue({ count: 0 });
   });
 
   it("DONO autenticado dispara a geração e retorna { ok: true, criadas, puladas }", async () => {
