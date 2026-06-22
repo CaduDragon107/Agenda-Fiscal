@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: executing
-stopped_at: Phase 04 planned and verified (5 plans, 4 waves)
-last_updated: "2026-06-22T11:57:38.451Z"
-last_activity: "2026-06-22 - Completed quick task 260622-lty: Trocar grafico Evolucao Mensal para barras agrupadas com 5 categorias"
+milestone: v2.0
+milestone_name: Expansao Multi-Setor (DP e Contabil)
+status: planning
+last_updated: "2026-06-22T23:39:37.146Z"
+last_activity: 2026-06-22
 progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 18
-  completed_plans: 13
-  percent: 72
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,12 +24,10 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 
 ## Current Position
 
-Phase: 04 (dashboards-comparativos) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 04
-Last activity: 2026-06-22 - Completed quick task 260622-r6n: Mudar paleta de cores dos graficos do dashboard para esquema semaforo
-
-Progress: [███████░░░] 75%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-22 — Milestone v2.0 started
 
 ## Performance Metrics
 
