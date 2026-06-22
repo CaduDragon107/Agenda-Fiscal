@@ -32,9 +32,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Dashboards (Diferencial Comparativo)
 
-- [ ] **DASH-01**: Dashboard comparativo de desempenho entre os funcionários (no prazo vs atrasado)
-- [ ] **DASH-02**: Dashboard de evolução mensal (tendências de cumprimento de prazos ao longo do tempo)
-- [ ] **DASH-03**: Dashboard comparativo entre empresas (quais geram mais atraso/problema recorrente)
+- [x] **DASH-01**: Dashboard comparativo de desempenho entre os funcionários (no prazo vs atrasado)
+- [x] **DASH-02**: Dashboard de evolução mensal (tendências de cumprimento de prazos ao longo do tempo)
+- [x] **DASH-03**: Dashboard comparativo entre empresas (quais geram mais atraso/problema recorrente)
 
 ### Infraestrutura
 
@@ -79,9 +79,9 @@ Explicitly excluded. Documented to prevent scope creep.
 | TASK-05 | Phase 2 | Complete |
 | TASK-06 | Phase 2 | Complete |
 | ALRT-01 | Phase 2 | Complete |
-| DASH-01 | Phase 4 | Pending |
-| DASH-02 | Phase 4 | Pending |
-| DASH-03 | Phase 4 | Pending |
+| DASH-01 | Phase 4 | Complete |
+| DASH-02 | Phase 4 | Complete |
+| DASH-03 | Phase 4 | Complete |
 | INFRA-01 | Phase 1 | Complete |
 
 **Coverage:**
