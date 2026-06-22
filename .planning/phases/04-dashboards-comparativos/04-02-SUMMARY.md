@@ -125,3 +125,7 @@ None — no external service configuration required. All changes are pure TypeSc
 ---
 *Phase: 04-dashboards-comparativos*
 *Completed: 2026-06-22*
+
+## Self-Check: PASSED
+
+All created/modified files verified present on disk; all 3 commit hashes (577af18, 99a5005, a5f0f8f) verified present in git log.
