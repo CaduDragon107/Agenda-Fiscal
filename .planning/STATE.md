@@ -5,7 +5,7 @@ milestone_name: milestone
 status: executing
 stopped_at: Phase 04 planned and verified (5 plans, 4 waves)
 last_updated: "2026-06-22T11:57:38.451Z"
-last_activity: 2026-06-22 -- Phase 04 execution started
+last_activity: "2026-06-22 - Completed quick task 260622-lty: Trocar grafico Evolucao Mensal para barras agrupadas com 5 categorias"
 progress:
   total_phases: 4
   completed_phases: 3
@@ -130,6 +130,7 @@ None yet.
 | 260616-ie1 | Importar 197 empresas de EMPRESAS RESPONSAVEL.xlsx no banco Neon (responsavelId + EmpresaRegimeHistorico por empresa; 28 MEI→SIMPLES_NACIONAL) | 2026-06-16 | f7ec2c4 | [260616-ie1-importar-197-empresas-planilha-responsavel](./quick/260616-ie1-importar-197-empresas-planilha-responsavel/) |
 | 260618-kbg | Adicionar campo de motivo de pendencia na tarefa, visivel/editavel no detalhe da tarefa (acessado pelo icone de olho) | 2026-06-18 | 54970c1 | [260618-kbg-adicionar-campo-de-motivo-de-pendencia-n](./quick/260618-kbg-adicionar-campo-de-motivo-de-pendencia-n/) |
 | 260618-kk8 | Adicionar opcao de filtro Pendentes na tela de tarefas | 2026-06-18 | 3bbb2e5 | [260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t](./quick/260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t/) |
+| 260622-lty | Trocar grafico Evolucao Mensal de Area/Line para barras agrupadas com 5 categorias (criadas/concluidas/pendentes/pendentes-com-motivo/vencidas) | 2026-06-22 | c393331 | [260622-lty-trocar-grafico-evolucao-mensal-para-barr](./quick/260622-lty-trocar-grafico-evolucao-mensal-para-barr/) |
 
 ## Deferred Items
 
