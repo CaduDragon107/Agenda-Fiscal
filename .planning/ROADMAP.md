@@ -126,7 +126,24 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. O dono visualiza um dashboard de evolução mensal mostrando a tendência de cumprimento de prazos ao longo do tempo, com números de meses fechados estáveis (não recalculados retroativamente a cada acesso).
   3. O dono visualiza um dashboard comparando empresas, destacando quais geram mais atrasos/problemas recorrentes.
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Fundação: model DesempenhoMensal + db push, shadcn chart install, mesesSchema, scaffolds de teste Wave 0 (DASH-01/02/03)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 04-02-PLAN.md — Snapshot: calcularSnapshotMensal + executarGeracaoMensal congela mês anterior, idempotente (DASH-02)
+- [ ] 04-03-PLAN.md — Queries: desempenho colaborador live + evolução snapshot/live + ranking empresas D-06 (DASH-01/02/03)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 04-04-PLAN.md — UI: page /dashboards DONO-only (notFound) + 3 charts/tabela + sidebar + teste RBAC (DASH-01/02/03)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 04-05-PLAN.md — Checkpoint visual: verificação humana de rendering dos 3 gráficos + gate de acesso
 
 ## Progress
 
@@ -138,4 +155,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 4/4 | Complete   | 2026-06-17 |
 | 3. Motor de Geração Automática Mensal | 3/3 | Complete | 2026-06-18 |
-| 4. Dashboards Comparativos | 0/0 | Not started | - |
+| 4. Dashboards Comparativos | 0/5 | Planned | - |
