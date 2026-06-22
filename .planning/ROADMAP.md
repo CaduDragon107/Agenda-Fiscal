@@ -139,7 +139,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 04-04-PLAN.md — UI: page /dashboards DONO-only (notFound) + 3 charts/tabela + sidebar + teste RBAC (DASH-01/02/03)
+- [x] 04-04-PLAN.md — UI: page /dashboards DONO-only (notFound) + 3 charts/tabela + sidebar + teste RBAC (DASH-01/02/03)
 
 **Wave 4** *(blocked on Wave 3)*
 
@@ -155,4 +155,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 4/4 | Complete   | 2026-06-17 |
 | 3. Motor de Geração Automática Mensal | 3/3 | Complete | 2026-06-18 |
-| 4. Dashboards Comparativos | 3/5 | In Progress|  |
+| 4. Dashboards Comparativos | 4/5 | In Progress|  |
