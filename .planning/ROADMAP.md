@@ -134,8 +134,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 04-02-PLAN.md — Snapshot: calcularSnapshotMensal + executarGeracaoMensal congela mês anterior, idempotente (DASH-02)
-- [ ] 04-03-PLAN.md — Queries: desempenho colaborador live + evolução snapshot/live + ranking empresas D-06 (DASH-01/02/03)
+- [x] 04-02-PLAN.md — Snapshot: calcularSnapshotMensal + executarGeracaoMensal congela mês anterior, idempotente (DASH-02)
+- [x] 04-03-PLAN.md — Queries: desempenho colaborador live + evolução snapshot/live + ranking empresas D-06 (DASH-01/02/03)
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -155,4 +155,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
 | 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 4/4 | Complete   | 2026-06-17 |
 | 3. Motor de Geração Automática Mensal | 3/3 | Complete | 2026-06-18 |
-| 4. Dashboards Comparativos | 1/5 | In Progress|  |
+| 4. Dashboards Comparativos | 3/5 | In Progress|  |
