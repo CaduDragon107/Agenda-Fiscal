@@ -10,14 +10,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const empresaFindManyMock = vi.fn();
 const createManyMock = vi.fn();
+// NOVO (Plan 04-02): executarGeracaoMensal agora tambem chama
+// calcularSnapshotMensal (tarefa.findMany + empresa.groupBy) e
+// desempenhoMensal.createMany dentro da mesma transacao, antes da geracao.
+const tarefaFindManyMock = vi.fn();
+const empresaGroupByMock = vi.fn();
+const desempenhoMensalCreateManyMock = vi.fn();
 
 vi.mock("@/lib/db", () => {
   const tx = {
     empresa: {
       findMany: (...args: unknown[]) => empresaFindManyMock(...args),
+      groupBy: (...args: unknown[]) => empresaGroupByMock(...args),
     },
     tarefa: {
       createMany: (...args: unknown[]) => createManyMock(...args),
+      findMany: (...args: unknown[]) => tarefaFindManyMock(...args),
+    },
+    desempenhoMensal: {
+      createMany: (...args: unknown[]) => desempenhoMensalCreateManyMock(...args),
     },
   };
   return {
@@ -32,6 +43,16 @@ describe("executarGeracaoMensal — idempotencia", () => {
   beforeEach(() => {
     empresaFindManyMock.mockReset();
     createManyMock.mockReset();
+    tarefaFindManyMock.mockReset();
+    empresaGroupByMock.mockReset();
+    desempenhoMensalCreateManyMock.mockReset();
+
+    // Snapshot do mes anterior: por padrao, sem tarefas concluidas no range
+    // (mantem os testes de geracao de tarefas focados em D-10/D-11/D-12,
+    // sem produzir linhas de snapshot incidentais).
+    tarefaFindManyMock.mockResolvedValue([]);
+    empresaGroupByMock.mockResolvedValue([]);
+    desempenhoMensalCreateManyMock.mockResolvedValue({ count: 0 });
   });
 
   it("primeira execução cria tarefas e a segunda execução (mesma competência) não cria nenhuma nova — idempotencia D-10", async () => {

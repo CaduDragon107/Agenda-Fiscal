@@ -29,6 +29,22 @@
 import { endOfMonth, startOfMonth } from "date-fns";
 import type { Prisma } from "@prisma/client";
 
+/**
+ * Converte uma competência "YYYY-MM" num Date local no dia 1 desse mês.
+ *
+ * CRÍTICO: `new Date("YYYY-MM-01")` é interpretado pelo motor JS como
+ * meia-noite UTC (formato ISO 8601 date-only) — em fusos horários negativos
+ * (ex.: GMT-03:00, Brasil), isso renderiza como o ÚLTIMO DIA DO MÊS ANTERIOR
+ * em horário local, deslocando `startOfMonth`/`endOfMonth` (date-fns, que
+ * operam em horário local) um mês inteiro para trás. Construir o Date via
+ * `new Date(ano, mesIndex, 1)` (construtor de 3 argumentos, sempre local)
+ * evita esse off-by-one independente do fuso horário da máquina.
+ */
+function competenciaParaDataLocal(competencia: string): Date {
+  const [ano, mes] = competencia.split("-").map(Number);
+  return new Date(ano, mes - 1, 1);
+}
+
 export type LinhaSnapshotMensal = {
   competencia: string;
   colaboradorId: string;
@@ -42,7 +58,7 @@ export async function calcularSnapshotMensal(
   tx: Prisma.TransactionClient,
   competencia: string
 ): Promise<LinhaSnapshotMensal[]> {
-  const inicio = startOfMonth(new Date(`${competencia}-01`));
+  const inicio = startOfMonth(competenciaParaDataLocal(competencia));
   const fim = endOfMonth(inicio);
 
   // 1 query: todas as tarefas cujo concluidoEm cai no range do mes-alvo,

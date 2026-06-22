@@ -223,8 +223,11 @@ describe("executarGeracaoMensal — congelamento do mes anterior (snapshot)", ()
       where: { historico: { some: { concluidoEm: { gte: Date; lte: Date } } } };
     };
     const { gte, lte } = arg.where.historico.some.concluidoEm;
-    expect(gte.getUTCMonth()).toBe(1); // Fevereiro (0-indexed)
-    expect(lte.getUTCMonth()).toBe(1);
+    // startOfMonth/endOfMonth (date-fns) operam em horario local — usar
+    // getMonth() local, nao getUTCMonth(), para evitar falso-negativo
+    // dependente do fuso horario da maquina que roda o teste.
+    expect(gte.getMonth()).toBe(1); // Fevereiro (0-indexed)
+    expect(lte.getMonth()).toBe(1);
 
     expect(desempenhoMensalCreateManyMock).toHaveBeenCalledWith(
       expect.objectContaining({
