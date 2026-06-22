@@ -62,7 +62,8 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
     const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
     const { tx, tarefaFindManyMock, empresaGroupByMock } = criarTxMock();
 
-    tarefaFindManyMock.mockResolvedValue([
+    // 1a chamada (query concluidoEm-no-range), 2a chamada (query "criadas").
+    tarefaFindManyMock.mockResolvedValueOnce([
       {
         responsavelId: "user_1",
         prazo: new Date("2026-02-20T23:59:59"),
@@ -79,6 +80,7 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
         historico: [{ concluidoEm: new Date("2026-02-20T10:00:00") }], // no prazo
       },
     ]);
+    tarefaFindManyMock.mockResolvedValueOnce([]); // populacao "criadas" vazia neste teste
     empresaGroupByMock.mockResolvedValue([
       { responsavelId: "user_1", _count: { id: 30 } },
       { responsavelId: "user_2", _count: { id: 20 } },
@@ -96,6 +98,11 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
       concluidasNoPrazo: 1,
       totalEmpresas: 30,
       totalTarefasPeriodo: 2,
+      totalCriadas: 0,
+      totalConcluidasNoPeriodo: 0,
+      totalPendentesSemMotivo: 0,
+      totalPendentesComMotivo: 0,
+      totalVencidas: 0,
     });
     expect(linhaUser2).toEqual({
       competencia: "2026-02",
@@ -104,6 +111,11 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
       concluidasNoPrazo: 1,
       totalEmpresas: 20,
       totalTarefasPeriodo: 1,
+      totalCriadas: 0,
+      totalConcluidasNoPeriodo: 0,
+      totalPendentesSemMotivo: 0,
+      totalPendentesComMotivo: 0,
+      totalVencidas: 0,
     });
   });
 
@@ -113,7 +125,8 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
 
     // Simula o filtro real do banco: where status=CONCLUIDA já exclui PENDENTE,
     // então o mock simplesmente não retorna nenhuma linha PENDENTE.
-    tarefaFindManyMock.mockResolvedValue([]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
     empresaGroupByMock.mockResolvedValue([]);
 
     const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
@@ -130,7 +143,8 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
     const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
     const { tx, tarefaFindManyMock, empresaGroupByMock } = criarTxMock();
 
-    tarefaFindManyMock.mockResolvedValue([]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
     empresaGroupByMock.mockResolvedValue([]);
 
     await calcularSnapshotMensal(tx as never, "2026-02");
@@ -141,6 +155,153 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
     expect(arg.select).toHaveProperty("responsavelId", true);
     expect(arg.select).not.toHaveProperty("responsavel");
     expect(arg.select).not.toHaveProperty("colaborador");
+  });
+});
+
+describe("calcularSnapshotMensal — populacao 'criadas' (quick task 260622-lty, DASH-02)", () => {
+  it("tarefa recorrente com competencia igual ao mes-alvo entra na populacao 'criadas', independente de createdAt", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([]); // concluidoEm-no-range vazia
+    tarefaFindManyMock.mockResolvedValueOnce([
+      {
+        responsavelId: "user_1",
+        status: "PENDENTE",
+        motivoPendencia: null,
+        prazo: new Date("2026-02-28T23:59:59"),
+      },
+    ]);
+    empresaGroupByMock.mockResolvedValue([]);
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+
+    const linhaUser1 = resultado.find((r) => r.colaboradorId === "user_1");
+    expect(linhaUser1?.totalCriadas).toBe(1);
+
+    const segundaChamada = tarefaFindManyMock.mock.calls[1][0] as {
+      where: { OR: Array<Record<string, unknown>> };
+    };
+    expect(segundaChamada.where.OR).toEqual(
+      expect.arrayContaining([{ competencia: "2026-02" }])
+    );
+  });
+
+  it("tarefa avulsa (competencia=null) com createdAt no range do mes-alvo entra na populacao; fora do range nao entra", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    // O mock simula o filtro real do Prisma: apenas a avulsa DENTRO do range
+    // e retornada (a logica de filtro por createdAt e responsabilidade do
+    // banco real — aqui validamos que a funcao usa o resultado corretamente).
+    tarefaFindManyMock.mockResolvedValueOnce([
+      {
+        responsavelId: "user_2",
+        status: "PENDENTE",
+        motivoPendencia: null,
+        prazo: new Date("2026-02-20T23:59:59"),
+      },
+    ]);
+    empresaGroupByMock.mockResolvedValue([]);
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+
+    const linhaUser2 = resultado.find((r) => r.colaboradorId === "user_2");
+    expect(linhaUser2?.totalCriadas).toBe(1);
+
+    const segundaChamada = tarefaFindManyMock.mock.calls[1][0] as {
+      where: { OR: Array<{ competencia?: null; createdAt?: { gte: Date; lte: Date } }> };
+    };
+    const clausulaAvulsa = segundaChamada.where.OR.find((c) => c.competencia === null);
+    expect(clausulaAvulsa).toBeDefined();
+    expect(clausulaAvulsa?.createdAt?.gte.getMonth()).toBe(1); // Fevereiro (0-indexed)
+    expect(clausulaAvulsa?.createdAt?.lte.getMonth()).toBe(1);
+  });
+
+  it("totalCriadas = total da populacao; totalConcluidasNoPeriodo = subset status CONCLUIDA", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    tarefaFindManyMock.mockResolvedValueOnce([
+      { responsavelId: "user_1", status: "CONCLUIDA", motivoPendencia: null, prazo: new Date("2026-02-10T23:59:59") },
+      { responsavelId: "user_1", status: "CONCLUIDA", motivoPendencia: null, prazo: new Date("2026-02-15T23:59:59") },
+      { responsavelId: "user_1", status: "PENDENTE", motivoPendencia: null, prazo: new Date("2026-02-25T23:59:59") },
+    ]);
+    empresaGroupByMock.mockResolvedValue([]);
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+    const linha = resultado.find((r) => r.colaboradorId === "user_1");
+
+    expect(linha?.totalCriadas).toBe(3);
+    expect(linha?.totalConcluidasNoPeriodo).toBe(2);
+  });
+
+  it("totalPendentesSemMotivo / totalPendentesComMotivo particionam corretamente as PENDENTE", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    tarefaFindManyMock.mockResolvedValueOnce([
+      { responsavelId: "user_1", status: "PENDENTE", motivoPendencia: null, prazo: new Date("2026-02-25T23:59:59") },
+      { responsavelId: "user_1", status: "PENDENTE", motivoPendencia: "Cliente sem documentos", prazo: new Date("2026-02-25T23:59:59") },
+    ]);
+    empresaGroupByMock.mockResolvedValue([]);
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+    const linha = resultado.find((r) => r.colaboradorId === "user_1");
+
+    expect(linha?.totalPendentesSemMotivo).toBe(1);
+    expect(linha?.totalPendentesComMotivo).toBe(1);
+  });
+
+  it("totalVencidas = PENDENTE com prazo < agora — pode sobrepor com pendentes sem/com motivo (lente de urgencia, nao particao exclusiva)", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock } = criarTxMock();
+
+    const passado = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const futuro = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    tarefaFindManyMock.mockResolvedValueOnce([
+      { responsavelId: "user_1", status: "PENDENTE", motivoPendencia: null, prazo: passado }, // vencida + sem motivo
+      { responsavelId: "user_1", status: "PENDENTE", motivoPendencia: "x", prazo: passado }, // vencida + com motivo
+      { responsavelId: "user_1", status: "PENDENTE", motivoPendencia: null, prazo: futuro }, // nao vencida
+    ]);
+    empresaGroupByMock.mockResolvedValue([]);
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+    const linha = resultado.find((r) => r.colaboradorId === "user_1");
+
+    expect(linha?.totalVencidas).toBe(2);
+    expect(linha?.totalPendentesSemMotivo).toBe(2);
+    expect(linha?.totalPendentesComMotivo).toBe(1);
+  });
+
+  it("campos existentes (totalConcluidas, concluidasNoPrazo, totalEmpresas, totalTarefasPeriodo) permanecem com os mesmos valores de antes, mesmo com populacao 'criadas' presente", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([
+      {
+        responsavelId: "user_1",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-15T10:00:00") }],
+      },
+    ]);
+    tarefaFindManyMock.mockResolvedValueOnce([
+      { responsavelId: "user_1", status: "PENDENTE", motivoPendencia: null, prazo: new Date("2026-02-25T23:59:59") },
+    ]);
+    empresaGroupByMock.mockResolvedValue([{ responsavelId: "user_1", _count: { id: 7 } }]);
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+    const linha = resultado.find((r) => r.colaboradorId === "user_1");
+
+    expect(linha?.totalConcluidas).toBe(1);
+    expect(linha?.concluidasNoPrazo).toBe(1);
+    expect(linha?.totalEmpresas).toBe(7);
+    expect(linha?.totalTarefasPeriodo).toBe(1);
   });
 });
 

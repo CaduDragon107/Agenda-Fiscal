@@ -134,6 +134,16 @@ model DesempenhoMensal {
   concluidasNoPrazo   Int
   totalEmpresas       Int
   totalTarefasPeriodo Int
+  // Populacao PARALELA "criadas" (DASH-02 quick task 260622-lty) — distinta da
+  // populacao concluidoEm-no-range acima. Recorrentes filtradas por
+  // Tarefa.competencia; avulsas (competencia=null) filtradas por createdAt no
+  // range do mes-alvo. @default(0) preserva linhas ja existentes sem perda de
+  // dados ao aplicar via `npx prisma db push`.
+  totalCriadas             Int      @default(0)
+  totalConcluidasNoPeriodo Int      @default(0)
+  totalPendentesSemMotivo  Int      @default(0)
+  totalPendentesComMotivo  Int      @default(0)
+  totalVencidas            Int      @default(0)
   createdAt           DateTime @default(now())
 
   @@unique([competencia, colaboradorId])
