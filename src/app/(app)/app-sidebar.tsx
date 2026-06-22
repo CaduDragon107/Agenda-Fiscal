@@ -104,12 +104,19 @@ export function AppSidebar({ user, contadorAlertas }: AppSidebarProps) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled>
-                  <LayoutDashboard />
-                  <span>Dashboards</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {isDono && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname?.startsWith("/dashboards")}
+                  >
+                    <Link href="/dashboards">
+                      <LayoutDashboard />
+                      <span>Dashboards</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
