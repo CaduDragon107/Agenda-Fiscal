@@ -161,7 +161,15 @@ describe("listarEvolucaoMensal", () => {
     desempenhoMensalGroupByMock.mockResolvedValue([
       {
         competencia: "2026-05",
-        _sum: { totalConcluidas: 10, concluidasNoPrazo: 8 },
+        _sum: {
+          totalConcluidas: 10,
+          concluidasNoPrazo: 8,
+          totalCriadas: 12,
+          totalConcluidasNoPeriodo: 9,
+          totalPendentesSemMotivo: 1,
+          totalPendentesComMotivo: 1,
+          totalVencidas: 1,
+        },
       },
     ]);
     // mês corrente (live) — sem tarefas, sem carteira.
@@ -172,12 +180,69 @@ describe("listarEvolucaoMensal", () => {
     const resultado = await listarEvolucaoMensal(2);
 
     expect(desempenhoMensalGroupByMock).toHaveBeenCalledTimes(1);
-    // tarefa.findMany é chamado apenas 1x (o ponto live do mês corrente),
-    // nunca por competência fechada.
-    expect(tarefaFindManyMock).toHaveBeenCalledTimes(1);
+    // tarefa.findMany é chamado 2x para o ponto live do mês corrente
+    // (1x dentro de listarDesempenhoColaboradoresMesAtual, 1x dentro de
+    // calcularCategoriasCriadas) — nunca por competência fechada.
+    expect(tarefaFindManyMock).toHaveBeenCalledTimes(2);
 
     const pontoFechado = resultado.find((p) => p.competencia === "2026-05");
     expect(pontoFechado?.percentual).toBe(80);
+    expect(pontoFechado?.totalCriadas).toBe(12);
+    expect(pontoFechado?.totalConcluidasNoPeriodo).toBe(9);
+    expect(pontoFechado?.totalPendentesSemMotivo).toBe(1);
+    expect(pontoFechado?.totalPendentesComMotivo).toBe(1);
+    expect(pontoFechado?.totalVencidas).toBe(1);
+  });
+
+  it("ponto live do mes corrente usa a mesma populacao 'criadas' (filtro competencia/createdAt), sem degrau live→frozen", async () => {
+    const { listarEvolucaoMensal } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    desempenhoMensalGroupByMock.mockResolvedValue([]);
+    // 1a chamada de tarefaFindMany (dentro de
+    // listarDesempenhoColaboradoresMesAtual) — populacao concluidoEm-no-range.
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    // 2a chamada (calcularCategoriasCriadas) — populacao "criadas".
+    tarefaFindManyMock.mockResolvedValueOnce([
+      { status: "PENDENTE", motivoPendencia: null, prazo: new Date(Date.now() + 86400000) },
+    ]);
+    empresaGroupByMock.mockResolvedValue([]);
+    usuarioFindManyMock.mockResolvedValue([]);
+
+    const resultado = await listarEvolucaoMensal(1);
+
+    const pontoLive = resultado[resultado.length - 1];
+    expect(pontoLive.totalCriadas).toBe(1);
+    expect(pontoLive.totalPendentesSemMotivo).toBe(1);
+
+    const segundaChamada = tarefaFindManyMock.mock.calls[1][0] as {
+      where: { OR: Array<Record<string, unknown>> };
+    };
+    expect(segundaChamada.where.OR).toBeDefined();
+  });
+
+  it("cada ponto contém competencia, percentual, e os 5 novos campos", async () => {
+    const { listarEvolucaoMensal } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    desempenhoMensalGroupByMock.mockResolvedValue([]);
+    tarefaFindManyMock.mockResolvedValue([]);
+    empresaGroupByMock.mockResolvedValue([]);
+    usuarioFindManyMock.mockResolvedValue([]);
+
+    const resultado = await listarEvolucaoMensal(3);
+
+    for (const ponto of resultado) {
+      expect(ponto).toHaveProperty("competencia");
+      expect(ponto).toHaveProperty("percentual");
+      expect(ponto).toHaveProperty("totalCriadas");
+      expect(ponto).toHaveProperty("totalConcluidasNoPeriodo");
+      expect(ponto).toHaveProperty("totalPendentesSemMotivo");
+      expect(ponto).toHaveProperty("totalPendentesComMotivo");
+      expect(ponto).toHaveProperty("totalVencidas");
+    }
   });
 
   it("retorna o array em ordem cronológica com o mês corrente por último", async () => {

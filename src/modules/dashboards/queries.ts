@@ -123,7 +123,83 @@ export async function listarDesempenhoColaboradoresMesAtual(
 type PontoEvolucao = {
   competencia: string;
   percentual: number;
+  totalCriadas: number;
+  totalConcluidasNoPeriodo: number;
+  totalPendentesSemMotivo: number;
+  totalPendentesComMotivo: number;
+  totalVencidas: number;
 };
+
+type CategoriasCriadas = {
+  totalCriadas: number;
+  totalConcluidasNoPeriodo: number;
+  totalPendentesSemMotivo: number;
+  totalPendentesComMotivo: number;
+  totalVencidas: number;
+};
+
+/**
+ * Calcula as 5 categorias da populacao PARALELA "criadas" (quick task
+ * 260622-lty, DASH-02) para um mes de referencia, agregadas para a equipe
+ * inteira (sem quebra por colaborador — usado apenas para o ponto LIVE do
+ * gráfico de evolucao mensal).
+ *
+ * CRITICO: replica EXATAMENTE a mesma definicao de populacao usada em
+ * `calcularSnapshotMensal` (src/modules/dashboards/snapshot.ts) — recorrentes
+ * filtradas por `Tarefa.competencia` igual ao mes-alvo; avulsas
+ * (`competencia=null`) filtradas por `createdAt` no range
+ * [startOfMonth, endOfMonth] do mes-alvo. Isso garante continuidade
+ * live→frozen sem degrau visivel no gráfico quando o mes corrente vira mes
+ * fechado (mesmo padrao de `listarDesempenhoColaboradoresMesAtual` acima).
+ */
+async function calcularCategoriasCriadas(
+  mes: Date,
+  competencia: string
+): Promise<CategoriasCriadas> {
+  const inicio = startOfMonth(mes);
+  const fim = endOfMonth(mes);
+  const agora = new Date();
+
+  const tarefas = await db.tarefa.findMany({
+    where: {
+      OR: [
+        { competencia },
+        { competencia: null, createdAt: { gte: inicio, lte: fim } },
+      ],
+    },
+    select: {
+      status: true,
+      motivoPendencia: true,
+      prazo: true,
+    },
+  });
+
+  const totais: CategoriasCriadas = {
+    totalCriadas: 0,
+    totalConcluidasNoPeriodo: 0,
+    totalPendentesSemMotivo: 0,
+    totalPendentesComMotivo: 0,
+    totalVencidas: 0,
+  };
+
+  for (const t of tarefas) {
+    totais.totalCriadas += 1;
+    if (t.status === "CONCLUIDA") {
+      totais.totalConcluidasNoPeriodo += 1;
+    } else if (t.status === "PENDENTE") {
+      if (t.motivoPendencia == null) {
+        totais.totalPendentesSemMotivo += 1;
+      } else {
+        totais.totalPendentesComMotivo += 1;
+      }
+      if (t.prazo < agora) {
+        totais.totalVencidas += 1; // lente de urgencia, nao particao exclusiva
+      }
+    }
+  }
+
+  return totais;
+}
 
 /**
  * Evolução mensal de desempenho (DASH-02): mistura competências FECHADAS,
@@ -145,13 +221,22 @@ export async function listarEvolucaoMensal(
   ).reverse();
 
   // competências fechadas: UMA query agregada em db.desempenhoMensal — NUNCA
-  // db.tarefa para essas competências (D-05).
+  // db.tarefa para essas competências (D-05). _sum inclui os 5 campos novos
+  // da populacao "criadas" (quick task 260622-lty, DASH-02).
   const snapshots =
     competenciasFechadas.length > 0
       ? await db.desempenhoMensal.groupBy({
           by: ["competencia"],
           where: { competencia: { in: competenciasFechadas } },
-          _sum: { totalConcluidas: true, concluidasNoPrazo: true },
+          _sum: {
+            totalConcluidas: true,
+            concluidasNoPrazo: true,
+            totalCriadas: true,
+            totalConcluidasNoPeriodo: true,
+            totalPendentesSemMotivo: true,
+            totalPendentesComMotivo: true,
+            totalVencidas: true,
+          },
         })
       : [];
 
@@ -162,11 +247,20 @@ export async function listarEvolucaoMensal(
     return {
       competencia: c,
       percentual: total ? Math.round((noPrazo / total) * 100) : 0,
+      // default 0 quando snapshot ausente (meses congelados antigos, antes
+      // da migracao dos 5 campos novos).
+      totalCriadas: s?._sum.totalCriadas ?? 0,
+      totalConcluidasNoPeriodo: s?._sum.totalConcluidasNoPeriodo ?? 0,
+      totalPendentesSemMotivo: s?._sum.totalPendentesSemMotivo ?? 0,
+      totalPendentesComMotivo: s?._sum.totalPendentesComMotivo ?? 0,
+      totalVencidas: s?._sum.totalVencidas ?? 0,
     };
   });
 
   // 1 ponto live: mês corrente, NUNCA persistido (D-05), mesmo critério de
-  // população do snapshot (concluidoEm-no-range).
+  // população do snapshot (concluidoEm-no-range) para `percentual`, e mesma
+  // populacao "criadas" (calcularCategoriasCriadas) para os 5 novos campos —
+  // garantindo continuidade live→frozen sem degrau no boundary.
   const colaboradores = await listarDesempenhoColaboradoresMesAtual(new Date());
   const totalAtual = colaboradores.reduce(
     (acc, c) => ({
@@ -177,11 +271,16 @@ export async function listarEvolucaoMensal(
     }),
     { total: 0, noPrazo: 0 }
   );
+  const categoriasCriadasAtual = await calcularCategoriasCriadas(
+    new Date(),
+    mesAtual
+  );
   const pontoAtual: PontoEvolucao = {
     competencia: mesAtual,
     percentual: totalAtual.total
       ? Math.round((totalAtual.noPrazo / totalAtual.total) * 100)
       : 0,
+    ...categoriasCriadasAtual,
   };
 
   return [...pontosFechados, pontoAtual];
