@@ -40,7 +40,45 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **INFRA-01**: Acesso ao sistema pela internet, não restrito à rede local do escritório
 
-## v2 Requirements
+## v2.0 Requirements — Expansão Multi-Setor (DP e Contábil)
+
+**Defined:** 2026-06-23
+**Goal:** Replicar a estrutura validada do setor Fiscal (geração automática, tarefas avulsas, dashboards) para os setores DP e Contábil, atendendo a mesma carteira de ~197 empresas.
+
+### Fundação Multi-Setor
+
+- [ ] **SETOR-01**: Empresa passa a ter 1 responsável por setor (fiscal/DP/contábil), substituindo o responsável único atual — migração de schema com backfill verificado das 197 empresas existentes para o setor Fiscal
+- [ ] **SETOR-02**: Usuário ganha campo Setor (FISCAL/DP/CONTABIL); sistema é populado com 7 colaboradores placeholder (4 DP + 3 Contábil), renomeáveis depois
+- [ ] **SETOR-03**: Seletores de atribuição de tarefa avulsa e responsável de empresa filtram colaboradores pelo setor relevante
+
+### Empresas
+
+- [ ] **EMPR-03**: Empresa ganha campo "tem funcionários CLT?" (sim/não), usado para decidir se gera obrigações de DP — evita tarefas falsas para empresas só com pró-labore
+
+### Departamento Pessoal (DP)
+
+- [ ] **DP-01**: Geração automática mensal de Folha de Pagamento, por empresa com funcionários CLT
+- [ ] **DP-02**: Geração automática mensal de FGTS
+- [ ] **DP-03**: Geração automática mensal de INSS
+- [ ] **DP-04**: Geração automática mensal de eventos periódicos de eSocial
+- [ ] **DP-05**: Tarefas avulsas atribuíveis aos colaboradores de DP (reuso do mecanismo existente)
+- [ ] **DP-06**: Dashboard de desempenho por colaborador DP (no prazo vs atrasado)
+- [ ] **DP-07**: Dashboard de evolução mensal DP
+- [ ] **DP-08**: Dashboard de ranking de empresas problemáticas no DP
+
+### Contábil
+
+- [ ] **CONT-01**: Geração automática mensal de Escrituração/Balancete Contábil, para todas as empresas
+- [ ] **CONT-02**: Motor de geração estendido para suportar periodicidade ANUAL, além da mensal já existente
+- [ ] **CONT-03**: Geração automática anual de ECD (Escrituração Contábil Digital) para empresas Lucro Real
+- [ ] **CONT-04**: Geração automática anual de ECF (Escrituração Contábil Fiscal)
+- [ ] **CONT-05**: Geração automática anual de DEFIS para empresas Simples Nacional
+- [ ] **CONT-06**: Tarefas avulsas atribuíveis aos colaboradores Contábil (reuso do mecanismo existente)
+- [ ] **CONT-07**: Dashboard de desempenho por colaborador Contábil (no prazo vs atrasado)
+- [ ] **CONT-08**: Dashboard de evolução mensal Contábil
+- [ ] **CONT-09**: Dashboard de ranking de empresas problemáticas no Contábil
+
+## Future Requirements (v2.x / v3+)
 
 Deferred to future release. Tracked but not in current roadmap.
 
@@ -51,6 +89,16 @@ Deferred to future release. Tracked but not in current roadmap.
 ### Comprovantes
 
 - **ATCH-01**: Upload de anexos/comprovantes ao marcar tarefa como concluída
+
+### DP avançado
+
+- **DP-09**: Rescisão/desligamento como obrigação com prazo derivado de evento, não fixo por competência
+- **DP-10**: Férias e 13º salário como lembretes/obrigações semi-recorrentes (datas variam por funcionário)
+- **EMPR-04**: Campo "quantidade de funcionários" na Empresa (não só booleano)
+
+### Visão cross-setor
+
+- **DASH-10**: Visão unificada de dashboard entre os 3 setores (explicitamente fora de escopo da v2.0)
 
 ## Out of Scope
 
@@ -63,6 +111,11 @@ Explicitly excluded. Documented to prevent scope creep.
 | Construtor visual de regras/templates de obrigação (admin no-code) | Apenas 2 regimes e ~4 tipos de obrigação no v1 — regras vivem como dados/seed, não precisam de UI de configuração |
 | Time tracking / billing por tarefa | Sistema é um tracker de cumprimento de prazos, não uma ferramenta de faturamento por hora |
 | Portal do cliente (acesso externo de clientes) | Uso 100% interno da equipe no v1; adicionar usuários externos dobraria a superfície de segurança/UX |
+| Cálculo automático de folha de pagamento dentro do sistema | Domínio de software de folha dedicado (tabelas INSS/IRRF, convenções coletivas); sistema permanece um gestor de tarefas, referenciando a ferramenta externa já usada pelo escritório |
+| Execução/integração automática com eSocial (envio de eventos) | Exige certificado digital, assinatura e validação de schema XML — fora do core value ("nunca perder prazo" é sobre visibilidade, não automação de envio); mesma decisão já tomada para ICMS/PIS-COFINS no v1.0 |
+| Cadastro completo de funcionários (mini-RH) | Duplicaria dados já existentes no software de folha do escritório, criando dois lugares de verdade e risco de dados trabalhistas (LGPD) desatualizados |
+| Visão unificada de dashboard entre os 3 setores | Decisão explícita do usuário nesta milestone; combinar métricas de cadências diferentes (mensal vs anual) complica a UI sem necessidade validada |
+| Calendário de convenções coletivas por categoria/sindicato | Varia por sindicato/região e muda anualmente — escopo de produto jurídico-trabalhista dedicado, fora do core value |
 
 ## Traceability
 
@@ -83,13 +136,37 @@ Explicitly excluded. Documented to prevent scope creep.
 | DASH-02 | Phase 4 | Complete |
 | DASH-03 | Phase 4 | Complete |
 | INFRA-01 | Phase 1 | Complete |
+| SETOR-01 | TBD | Pending roadmap |
+| SETOR-02 | TBD | Pending roadmap |
+| SETOR-03 | TBD | Pending roadmap |
+| EMPR-03 | TBD | Pending roadmap |
+| DP-01 | TBD | Pending roadmap |
+| DP-02 | TBD | Pending roadmap |
+| DP-03 | TBD | Pending roadmap |
+| DP-04 | TBD | Pending roadmap |
+| DP-05 | TBD | Pending roadmap |
+| DP-06 | TBD | Pending roadmap |
+| DP-07 | TBD | Pending roadmap |
+| DP-08 | TBD | Pending roadmap |
+| CONT-01 | TBD | Pending roadmap |
+| CONT-02 | TBD | Pending roadmap |
+| CONT-03 | TBD | Pending roadmap |
+| CONT-04 | TBD | Pending roadmap |
+| CONT-05 | TBD | Pending roadmap |
+| CONT-06 | TBD | Pending roadmap |
+| CONT-07 | TBD | Pending roadmap |
+| CONT-08 | TBD | Pending roadmap |
+| CONT-09 | TBD | Pending roadmap |
 
 **Coverage:**
 
 - v1 requirements: 15 total
 - Mapped to phases: 15
 - Unmapped: 0 ✓
+- v2.0 requirements: 21 total
+- Mapped to phases: 0 (roadmap pending)
+- Unmapped: 21 — to be resolved by gsd-roadmapper
 
 ---
-*Requirements defined: 2026-06-11*
-*Last updated: 2026-06-11 after roadmap creation (4 phases, Vertical MVP structure)*
+*Requirements defined: 2026-06-11 (v1) / 2026-06-23 (v2.0)*
+*Last updated: 2026-06-23 — v2.0 requirements defined, roadmap not yet created*
