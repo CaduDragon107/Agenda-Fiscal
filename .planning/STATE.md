@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Expansao Multi-Setor (DP e Contabil)
-current_phase: 5
-current_phase_name: Fundação Multi-Setor — Schema, Autorização e Empresas
-status: roadmapped
+current_phase: 05
+current_phase_name: funda-o-multi-setor-schema-autoriza-o-e-empresas
+status: executing
 stopped_at: Phase 5 UI-SPEC approved
-last_updated: "2026-06-23T17:23:17.537Z"
+last_updated: "2026-06-23T20:43:30.523Z"
 last_activity: 2026-06-23
-last_activity_desc: Milestone v2.0 roadmap created (Phases 5-8)
+last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
+  total_plans: 4
   completed_plans: 0
   percent: 0
 ---
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** A equipe nunca perde um prazo — fiscal, de pessoal ou contábil — de nenhum cliente, e o dono sempre sabe em tempo real o status de tudo, em qualquer setor.
-**Current focus:** Phase 5 — fundacao-multi-setor
+**Current focus:** Phase 05 — funda-o-multi-setor-schema-autoriza-o-e-empresas
 
 ## Current Position
 
-Phase: 5 (Fundação Multi-Setor — Schema, Autorização e Empresas) — planned, not started
-Plan: 4 plans across 4 waves (05-01 schema/backfill, 05-02 setor-aware scope, 05-03 backend empresas, 05-04 UI + checkpoint)
-Status: Planned — ready for /gsd-execute-phase 5
-Last activity: 2026-06-23 — Phase 5 planned (research, UI-SPEC, pattern map, 4 plans, plan-checker passed)
+Phase: 05 (funda-o-multi-setor-schema-autoriza-o-e-empresas) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 05
+Last activity: 2026-06-23 — Phase 05 execution started
 
 ## Performance Metrics
 
