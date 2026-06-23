@@ -40,7 +40,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Um colaborador de DP só vê/edita as empresas onde ele é o responsável de DP, mesmo que outra pessoa seja a responsável Fiscal da mesma empresa — testado tanto pela UI quanto por chamada direta (sem regressão nos testes de IDOR/visibilidade já existentes do Fiscal).
   5. Toda empresa tem o campo "tem funcionários CLT?" definido (sim/não), visível e editável no cadastro.
 
-**Plans**: 2/4 plans executed
+**Plans**: 3/4 plans executed
 **Wave 1**
 
 - [x] 05-01-PLAN.md — Schema multi-setor (enum Setor, junction, Usuario.setor, CLT), db push e backfills verificados (197 FISCAL + 4 colaboradores) + seed dos 7 placeholders
@@ -51,7 +51,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 05-03-PLAN.md — Backend de empresas: schema Zod 3 responsáveis + CLT, listarResponsaveis(setor), actions transacionais com guard DONO-only (D-02)
+- [x] 05-03-PLAN.md — Backend de empresas: schema Zod 3 responsáveis + CLT, listarResponsaveis(setor), actions transacionais com guard DONO-only (D-02)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -111,7 +111,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 5. Fundação Multi-Setor — Schema, Autorização e Empresas | 2/4 | In Progress|  |
+| 5. Fundação Multi-Setor — Schema, Autorização e Empresas | 3/4 | In Progress|  |
 | 6. Motor de Geração — Departamento Pessoal | 0/TBD | Not started | - |
 | 7. Motor de Geração — Contábil (mensal e anual) | 0/TBD | Not started | - |
 | 8. Dashboards Multi-Setor — DP e Contábil | 0/TBD | Not started | - |
