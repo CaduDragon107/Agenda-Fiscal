@@ -10,6 +10,18 @@ import { validarCNPJ } from "@/lib/cnpj";
  * texto do select, mas isso está desatualizado em relação ao RESEARCH.md
  * Pattern 3.5, que é a fonte autoritativa: as 198 empresas reais cobrem os
  * 3 regimes).
+ *
+ * v2.0 (Plano 05-03, SETOR-01/D-01/D-02): o campo único `responsavelId` foi
+ * substituído por TRÊS campos distintos, um por setor, com optionalidade
+ * distinta:
+ * - `responsavelFiscalId`: obrigatório, espelha o comportamento anterior
+ *   (toda empresa sempre teve um responsável Fiscal).
+ * - `responsavelDpId`/`responsavelContabilId`: opcionais/nullable — D-01
+ *   define que as 197 empresas existentes começam sem responsável DP/Contábil
+ *   atribuído.
+ * `temFuncionariosClt` (EMPR-03) é um boolean simples, default `false`, que
+ * habilitará a geração futura das obrigações de Folha/FGTS/INSS/eSocial
+ * (Fase 6) apenas para empresas marcadas.
  */
 export const empresaSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório"),
@@ -19,7 +31,10 @@ export const empresaSchema = z.object({
     "LUCRO_PRESUMIDO",
     "SIMPLES_NACIONAL",
   ]),
-  responsavelId: z.string().min(1, "Responsável é obrigatório"),
+  responsavelFiscalId: z.string().min(1, "Responsável Fiscal é obrigatório"),
+  responsavelDpId: z.string().optional().nullable(),
+  responsavelContabilId: z.string().optional().nullable(),
+  temFuncionariosClt: z.boolean().default(false),
   contatos: z.string().optional(),
   particularidades: z.string().optional(),
 });

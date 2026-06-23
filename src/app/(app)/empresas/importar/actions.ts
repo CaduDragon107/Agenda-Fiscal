@@ -18,10 +18,13 @@ import { parseEmpresasXlsx, type LinhaImportada } from "@/lib/excel/parse-empres
  *   genérica "Arquivo inválido. Envie um arquivo .xlsx válido.", nunca o erro
  *   real do SheetJS (stack trace, mensagem interna, caminho de arquivo).
  * - confirmarImportacao valida cada linha incluída com `empresaSchema`
- *   (CNPJ módulo 11 + regimeTributario enum + responsavelId obrigatório,
- *   Pitfall 5) ANTES de qualquer `db.empresa.create`. Linhas que não passam
- *   (sem regime, sem responsável, CNPJ inválido) ou com `incluida=false` são
- *   ignoradas silenciosamente — a revisão humana no Step 2 é o gate.
+ *   (CNPJ módulo 11 + regimeTributario enum + responsavelFiscalId
+ *   obrigatório, Pitfall 5) ANTES de qualquer `db.empresa.create`. O único
+ *   responsável atribuído pelo wizard (Step 2, `linha.responsavelId`) é
+ *   mapeado para `responsavelFiscalId` (v2.0, Plano 05-03) — DP/Contábil
+ *   ficam null (D-01). Linhas que não passam (sem regime, sem responsável,
+ *   CNPJ inválido) ou com `incluida=false` são ignoradas silenciosamente —
+ *   a revisão humana no Step 2 é o gate.
  * - Cada empresa persistida grava também a primeira entrada de
  *   EmpresaRegimeHistorico (regime atual, dataInicio = agora), consistente
  *   com `criarEmpresa` (src/app/(app)/actions.ts, Plano 04).
@@ -123,7 +126,12 @@ export async function confirmarImportacao(
       nome: linha.nome,
       cnpj: linha.cnpj,
       regimeTributario: linha.regimeTributario,
-      responsavelId: linha.responsavelId,
+      // O wizard de importação atribui um único responsável por linha
+      // (Step 2), que corresponde ao responsável Fiscal — v2.0 (Plano
+      // 05-03) renomeou o campo único `responsavelId` para
+      // `responsavelFiscalId`; DP/Contábil ficam null (D-01: as 197
+      // empresas importadas começam sem responsável DP/Contábil atribuído).
+      responsavelFiscalId: linha.responsavelId,
       contatos: linha.contatos,
       particularidades: linha.particularidades,
     });
@@ -136,7 +144,8 @@ export async function confirmarImportacao(
         nome: dados.nome,
         cnpj: dados.cnpj,
         regimeTributario: dados.regimeTributario,
-        responsavelId: dados.responsavelId,
+        responsavelId: dados.responsavelFiscalId,
+        temFuncionariosClt: dados.temFuncionariosClt,
         contatos: dados.contatos,
         particularidades: dados.particularidades,
         regimeHistorico: {

@@ -4,10 +4,16 @@ import { withVisibilityScope, type SessionUser } from "@/lib/visibility-scope";
 /**
  * Campos retornados para listagem/detalhe de empresa.
  *
- * `select` explícito — NUNCA inclui a relação `responsavel` com
+ * `select` explícito — NUNCA inclui a relação `responsavel`/`usuario` com
  * `senhaHash` (esse campo só é lido em src/auth.ts, ver CRITICAL ali).
  * Caso o nome do responsável seja necessário na UI, expor apenas
  * `responsavel: { select: { id: true, nome: true } }`.
+ *
+ * `responsaveisPorSetor` (v2.0, Plano 05-03, SETOR-01) expõe a relação
+ * junction `EmpresaResponsavelSetor` — até 3 linhas por empresa (uma por
+ * setor FISCAL/DP/CONTABIL). `responsavelId`/`responsavel` (forma legada)
+ * permanecem no select por compatibilidade Fiscal (RESEARCH.md Pitfall B1 —
+ * coluna mantida ativa por 1 ciclo de release).
  */
 const EMPRESA_SELECT = {
   id: true,
@@ -15,6 +21,7 @@ const EMPRESA_SELECT = {
   cnpj: true,
   regimeTributario: true,
   responsavelId: true,
+  temFuncionariosClt: true,
   contatos: true,
   particularidades: true,
   ativo: true,
@@ -24,6 +31,17 @@ const EMPRESA_SELECT = {
     select: {
       id: true,
       nome: true,
+    },
+  },
+  responsaveisPorSetor: {
+    select: {
+      setor: true,
+      usuario: {
+        select: {
+          id: true,
+          nome: true,
+        },
+      },
     },
   },
 } as const;
@@ -71,10 +89,17 @@ export async function buscarEmpresaPorId(user: SessionUser, id: string) {
  * usuário autenticado pode atribuir qualquer colaborador/dono como
  * responsável de uma empresa dentro do seu próprio escopo de edição.
  *
+ * `setor` (v2.0, Plano 05-03, SETOR-03) filtra os usuários elegíveis pelo
+ * setor informado — usado pelos 3 seletores distintos do formulário
+ * (Fiscal/DP/Contábil), cada um chamando esta função com seu próprio setor
+ * fixo. Sem argumento, retorna TODOS os usuários (comportamento anterior,
+ * preservado para qualquer chamador que ainda não precise do filtro).
+ *
  * `select` explícito — nunca inclui `senhaHash`.
  */
-export async function listarResponsaveis() {
+export async function listarResponsaveis(setor?: "FISCAL" | "DP" | "CONTABIL") {
   return db.usuario.findMany({
+    where: setor ? { setor } : undefined,
     select: {
       id: true,
       nome: true,
