@@ -4,6 +4,8 @@
 
 **Milestone v2.0 — Expansão Multi-Setor (DP e Contábil).** O sistema, já validado em produção para o setor Fiscal (v1.0, Phases 1-4 — ver `.planning/STATE.md` Quick Tasks e histórico de commits para o registro de conclusão), passa a atender também os setores de Departamento Pessoal e Contábil, para a mesma carteira de ~197 empresas-cliente. A expansão começa pela fundação estrutural — empresa ganha 1 responsável por setor (não mais 1 único responsável geral), autorização passa a ser setor-aware, e o cadastro de empresas expõe os 3 responsáveis — porque toda automação e todo dashboard subsequente dependem dela. Em seguida, o motor de geração mensal já validado no Fiscal é replicado para DP (100% mensal, menor risco). Depois, o motor é estendido para Contábil, que introduz a primeira periodicidade anual do sistema (ECD/ECF/DEFIS), o maior risco arquitetural da milestone. Por fim, com dados reais de DP e Contábil já sendo gerados, os dashboards comparativos (desempenho, evolução mensal, ranking) são replicados para os dois novos setores, reaproveitando o mesmo módulo de queries parametrizado por setor usado no Fiscal — não três módulos duplicados.
 
+Na v2.0, o sistema validado no setor Fiscal é replicado para os setores Departamento Pessoal (DP) e Contábil, atendendo a mesma carteira de ~197 empresas. Primeiro, a fundação multi-setor estabelece o conceito de setor em usuários e empresas (1 responsável por setor, não mais 1 responsável único), com migração segura dos dados fiscais já em produção e os 7 colaboradores placeholder. Em seguida, o motor de geração mensal é estendido para o DP (folha, FGTS, INSS, eSocial), reaproveitando o padrão de geração e ajuste de dia útil já validado. Depois, o motor ganha sua primeira extensão arquitetural real — periodicidade anual — para suportar o Contábil (escrituração mensal e ECD/ECF/DEFIS anuais). Por fim, os dashboards comparativos são replicados para os dois novos setores e o código órfão remanescente do v1.0 é removido, fechando a milestone com a base de código limpa.
+
 ## Phases
 
 **Phase Numbering:**
@@ -14,6 +16,10 @@
 
 Decimal phases appear between their surrounding integers in numeric order.
 
+- [x] **Phase 1: Fundação — Acesso, Empresas e Importação** - Login individual com permissões por papel, cadastro de empresas-cliente populado via importação revisada da planilha existente, sistema acessível pela internet
+- [x] **Phase 2: Gestão de Tarefas — Avulsas, Detalhe e Alertas** - Criação/atribuição de tarefas avulsas, conclusão com histórico, detalhe com passo a passo e referência às automações Python, alertas visuais de prazo (completed 2026-06-17)
+- [x] **Phase 3: Motor de Geração Automática Mensal** - Geração automática mensal de tarefas recorrentes por regime tributário, com prazos ajustados por dia útil/feriado e sem duplicação (completed 2026-06-18)
+- [x] **Phase 4: Dashboards Comparativos** - Dashboards de desempenho por colaborador, evolução mensal e comparativo entre empresas (completed 2026-06-22)
 - [ ] **Phase 5: Fundação Multi-Setor — Schema, Autorização e Empresas** - Empresa passa a ter 1 responsável por setor (Fiscal/DP/Contábil) com backfill verificado dos 197 registros existentes, autorização passa a ser setor-aware sem regressão no Fiscal, e o cadastro de empresas expõe os 3 responsáveis e o campo "tem funcionários CLT?"
 - [ ] **Phase 6: Motor de Geração — Departamento Pessoal** - Geração automática mensal de Folha de Pagamento, FGTS, INSS e eventos de eSocial para empresas com funcionários CLT, mais tarefas avulsas para a equipe de DP
 - [ ] **Phase 7: Motor de Geração — Contábil (mensal e anual)** - Geração automática mensal de Escrituração/Balancete para todas as empresas, mais a primeira periodicidade anual do sistema (ECD, ECF, DEFIS), com tarefas avulsas para a equipe Contábil
