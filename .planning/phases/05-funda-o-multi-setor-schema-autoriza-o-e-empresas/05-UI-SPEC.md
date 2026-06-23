@@ -1,10 +1,11 @@
 ---
 phase: 5
 slug: funda-o-multi-setor-schema-autoriza-o-e-empresas
-status: draft
+status: approved
 shadcn_initialized: true
 preset: radix-nova
 created: 2026-06-23
+reviewed_at: 2026-06-23
 ---
 
 # Phase 5 — UI Design Contract
