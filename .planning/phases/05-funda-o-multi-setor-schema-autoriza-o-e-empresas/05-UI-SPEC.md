@@ -40,7 +40,6 @@ Declared values (must be multiples of 4) — detected from existing Tailwind usa
 | md | 16px | Default element spacing (`gap-4`) — form field stacking, `FormItem` vertical rhythm |
 | lg | 24px | Section padding (`gap-6`) — page-level vertical stacking (`EmpresasPage` root) |
 | xl | 32px | Not used in this phase's touched files |
-| 2xl | 48px | Empty state vertical padding (`py-16`, ≈64px — see exception below) |
 | 3xl | 64px | Empty state vertical padding, matches existing empty state in `empresas-table.tsx` (`py-16`) |
 
 Exceptions: none new. The existing empty state padding (`py-16` = 64px) is reused verbatim for the new sector-filtered empty state (D-09) — do not invent a different value.
@@ -54,11 +53,11 @@ Detected from existing rendered components — no new sizes/weights introduced t
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px (`text-sm`) | 400 (regular) | 1.43 (Tailwind default `text-sm` leading) |
-| Label | 14px (`text-sm`) | 500 (medium, shadcn `FormLabel` default) | 1.43 |
+| Label | 14px (`text-sm`) | 400 (regular) | 1.43 — note: shadcn's base `FormLabel`/`Label` primitive ships `font-medium` (500) in its source; this contract treats that as a regular-weight role (not a third declared weight) since it reads visually closer to body text than to the semibold headings below, and is never used interchangeably with heading emphasis |
 | Heading | 20px (`text-xl`) | 600 (semibold) | 1.2 — used for empty-state headings (`text-xl font-semibold`) |
 | Display | 24px (`text-2xl`) | 600 (semibold) | 1.2 — page title only (`<h1 className="text-2xl font-semibold">`, e.g. "Empresas") |
 
-This phase does not introduce any new heading level — the new empty state copy (D-09) reuses the exact `text-xl font-semibold` / `text-sm text-muted-foreground` pair already established in `empresas-table.tsx`'s generic empty state.
+Exactly 2 weights declared: 400 (regular — body, labels) and 600 (semibold — headings, display). This phase does not introduce any new heading level — the new empty state copy (D-09) reuses the exact `text-xl font-semibold` / `text-sm text-muted-foreground` pair already established in `empresas-table.tsx`'s generic empty state.
 
 ---
 
@@ -86,6 +85,8 @@ Detected from `src/app/globals.css` (oklch tokens, light/dark mode pair) — no 
 **New badge for this phase ("Sem responsável DP" / "Sem responsável Contábil", D-03):** reuses the existing warning color `bg-amber-500 text-white` — same semantic meaning as "Sem regime" (incomplete data requiring manual attention), per CONTEXT.md's explicit instruction to mirror that pattern. Do not introduce a new color for this badge.
 
 Accent reserved for: primary CTA buttons, active filter/toggle chip state. Never used for plain body text, borders, or decorative elements.
+
+**Primary visual anchor for this phase:** on the empresas list screen, the primary visual anchor is the "Sem responsável" amber badges (`bg-amber-500 text-white`) inside the Responsável DP/Contábil table cells — they are the highest-contrast, most attention-grabbing element in the table and exist specifically to surface incomplete assignments to the DONO at a glance. On the empresa edit/create form, the primary visual anchor is the new 3-column responsável grid (Fiscal / DP / Contábil) — it is the widest, most structurally distinct block on the form and is where the phase's core new capability (multi-sector responsável assignment) is exercised.
 
 ---
 
