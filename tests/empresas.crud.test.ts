@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mockColaboradorUser } from "./setup";
+import { mockColaboradorUser, mockDonoUser } from "./setup";
 
 /**
  * tests/empresas.crud.test.ts
@@ -12,6 +12,9 @@ import { mockColaboradorUser } from "./setup";
  *   pela validação (empresaSchema) antes de chegar ao banco.
  * - editarEmpresa atualiza dados de empresa existente (nome, contatos,
  *   particularidades).
+ * - EMPR-03 (v2.0, Plano 05-03): editar empresa só alterando
+ *   temFuncionariosClt (responsáveis inalterados) -> empresa.update recebe
+ *   temFuncionariosClt; nenhuma linha junction é duplicada/apagada.
  *
  * `db` e `auth` são mockados via vi.mock — nenhuma conexão real ao Postgres.
  */
@@ -19,18 +22,28 @@ import { mockColaboradorUser } from "./setup";
 const createMock = vi.fn();
 const findFirstMock = vi.fn();
 const updateMock = vi.fn();
+const upsertMock = vi.fn();
 const authMock = vi.fn();
 
-vi.mock("@/lib/db", () => ({
-  db: {
+vi.mock("@/lib/db", () => {
+  const tx = {
     empresa: {
       create: (...args: unknown[]) => createMock(...args),
       findFirst: (...args: unknown[]) => findFirstMock(...args),
       update: (...args: unknown[]) => updateMock(...args),
       delete: vi.fn(),
     },
-  },
-}));
+    empresaResponsavelSetor: {
+      upsert: (...args: unknown[]) => upsertMock(...args),
+    },
+  };
+  return {
+    db: {
+      ...tx,
+      $transaction: (fn: (tx: unknown) => unknown) => fn(tx),
+    },
+  };
+});
 
 vi.mock("@/auth", () => ({
   auth: () => authMock(),
@@ -46,7 +59,7 @@ function buildFormData(overrides: Record<string, string> = {}): FormData {
     nome: "Empresa Teste LTDA",
     cnpj: "11.222.333/0001-81",
     regimeTributario: "LUCRO_REAL",
-    responsavelId: "user_colaborador_1",
+    responsavelFiscalId: "user_colaborador_1",
     contatos: "",
     particularidades: "",
     ...overrides,
@@ -62,6 +75,7 @@ describe("CRUD de Empresa", () => {
     createMock.mockReset();
     findFirstMock.mockReset();
     updateMock.mockReset();
+    upsertMock.mockReset();
     authMock.mockReset();
     authMock.mockResolvedValue({ user: mockColaboradorUser() });
   });
@@ -126,14 +140,18 @@ describe("CRUD de Empresa", () => {
     const colaborador = mockColaboradorUser();
     authMock.mockResolvedValue({ user: colaborador });
 
-    findFirstMock.mockResolvedValue({ id: "empresa_1" });
+    findFirstMock.mockResolvedValue({
+      id: "empresa_1",
+      responsavelId: colaborador.id,
+      responsaveisPorSetor: [{ setor: "FISCAL", usuarioId: colaborador.id }],
+    });
     updateMock.mockResolvedValue({ id: "empresa_1" });
 
     const fd = buildFormData({
       nome: "Empresa Atualizada LTDA",
       contatos: "contato@empresa.com",
       particularidades: "Entrega de DAS até dia 20",
-      responsavelId: colaborador.id,
+      responsavelFiscalId: colaborador.id,
     });
 
     const resultado = await editarEmpresa("empresa_1", fd);
@@ -145,5 +163,49 @@ describe("CRUD de Empresa", () => {
     expect(arg.data.nome).toBe("Empresa Atualizada LTDA");
     expect(arg.data.contatos).toBe("contato@empresa.com");
     expect(arg.data.particularidades).toBe("Entrega de DAS até dia 20");
+  });
+
+  it("EMPR-03: temFuncionariosClt default é false na criação quando ausente do formulário", async () => {
+    const { criarEmpresa } = await import("@/app/(app)/actions");
+    createMock.mockResolvedValue({ id: "empresa_clt_1" });
+
+    // buildFormData não inclui temFuncionariosClt -> dadosFormulario lê
+    // formData.get("temFuncionariosClt") === "true", que é false quando ausente
+    const resultado = await criarEmpresa(buildFormData());
+
+    expect(resultado).toEqual({ ok: true, id: "empresa_clt_1" });
+    const arg = createMock.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(arg.data.temFuncionariosClt).toBe(false);
+  });
+
+  it("EMPR-03: editar empresa só alterando temFuncionariosClt (responsáveis inalterados) -> empresa.update recebe temFuncionariosClt; nenhuma linha junction duplicada/apagada", async () => {
+    const { editarEmpresa } = await import("@/app/(app)/actions");
+    const colaborador = mockColaboradorUser();
+    authMock.mockResolvedValue({ user: colaborador });
+
+    findFirstMock.mockResolvedValue({
+      id: "empresa_1",
+      responsavelId: colaborador.id,
+      responsaveisPorSetor: [{ setor: "FISCAL", usuarioId: colaborador.id }],
+    });
+    updateMock.mockResolvedValue({ id: "empresa_1" });
+
+    const fd = buildFormData({
+      responsavelFiscalId: colaborador.id,
+      temFuncionariosClt: "true",
+    });
+
+    const resultado = await editarEmpresa("empresa_1", fd);
+
+    expect(resultado).toEqual({ ok: true, id: "empresa_1" });
+    const updateArg = updateMock.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(updateArg.data.temFuncionariosClt).toBe(true);
+
+    // o responsável Fiscal inalterado gera exatamente 1 upsert (FISCAL),
+    // nenhum upsert duplicado e nenhum DP/Contábil criado do nada
+    expect(upsertMock).toHaveBeenCalledTimes(1);
+    const upsertArg = upsertMock.mock.calls[0][0] as { create: { setor: string; usuarioId: string } };
+    expect(upsertArg.create.setor).toBe("FISCAL");
+    expect(upsertArg.create.usuarioId).toBe(colaborador.id);
   });
 });

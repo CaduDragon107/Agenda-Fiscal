@@ -13,24 +13,40 @@ import { mockColaboradorUser, mockOtherColaboradorUser, mockDonoUser } from "./s
  * retornar "não encontrado" (nunca 403/erro de permissão) quando fora do
  * escopo — e NÃO alterar o registro.
  *
+ * v2.0 (Plano 05-03, D-02/T-05-10): também cobre o guard DONO-only —
+ * COLABORADOR não pode alterar responsavelFiscalId/DpId/ContabilId via
+ * chamada direta da Server Action, mesmo dentro do seu próprio escopo de
+ * edição (controle de UI `disabled` não é fronteira de segurança).
+ *
  * `db` e `auth` são mockados via vi.mock — nenhuma conexão real ao Postgres.
  */
 
 const findFirstMock = vi.fn();
 const updateMock = vi.fn();
 const deleteMock = vi.fn();
+const createMock = vi.fn();
+const upsertMock = vi.fn();
 const authMock = vi.fn();
 
-vi.mock("@/lib/db", () => ({
-  db: {
+vi.mock("@/lib/db", () => {
+  const tx = {
     empresa: {
       findFirst: (...args: unknown[]) => findFirstMock(...args),
       update: (...args: unknown[]) => updateMock(...args),
       delete: (...args: unknown[]) => deleteMock(...args),
-      create: vi.fn(),
+      create: (...args: unknown[]) => createMock(...args),
     },
-  },
-}));
+    empresaResponsavelSetor: {
+      upsert: (...args: unknown[]) => upsertMock(...args),
+    },
+  };
+  return {
+    db: {
+      ...tx,
+      $transaction: (fn: (tx: unknown) => unknown) => fn(tx),
+    },
+  };
+});
 
 vi.mock("@/auth", () => ({
   auth: () => authMock(),
@@ -45,7 +61,7 @@ function buildFormData(): FormData {
   fd.set("nome", "Empresa de B Editada");
   fd.set("cnpj", "11.222.333/0001-81");
   fd.set("regimeTributario", "LUCRO_PRESUMIDO");
-  fd.set("responsavelId", "user_colaborador_2");
+  fd.set("responsavelFiscalId", "user_colaborador_2");
   fd.set("contatos", "");
   fd.set("particularidades", "");
   return fd;
@@ -56,6 +72,8 @@ describe("IDOR - isolamento de empresas entre colaboradores", () => {
     findFirstMock.mockReset();
     updateMock.mockReset();
     deleteMock.mockReset();
+    createMock.mockReset();
+    upsertMock.mockReset();
     authMock.mockReset();
   });
 
@@ -125,11 +143,15 @@ describe("IDOR - isolamento de empresas entre colaboradores", () => {
     authMock.mockResolvedValue({ user: dono });
     // findFirst escopado para dono (where = { id } sem responsavelId) encontra
     // a empresa de B normalmente
-    findFirstMock.mockResolvedValue({ id: "empresa_de_b" });
+    findFirstMock.mockResolvedValue({
+      id: "empresa_de_b",
+      responsavelId: "user_colaborador_1",
+      responsaveisPorSetor: [],
+    });
     updateMock.mockResolvedValue({ id: "empresa_de_b" });
 
     const fd = buildFormData();
-    fd.set("responsavelId", colaboradorB.id);
+    fd.set("responsavelFiscalId", colaboradorB.id);
 
     const resultado = await editarEmpresa("empresa_de_b", fd);
 
@@ -139,5 +161,71 @@ describe("IDOR - isolamento de empresas entre colaboradores", () => {
     const arg = findFirstMock.mock.calls[0][0] as { where: Record<string, unknown> };
     expect(arg.where).toMatchObject({ id: "empresa_de_b" });
     expect(arg.where.responsavelId).toBeUndefined();
+  });
+
+  it("D-02: colaborador (não-DONO) submete responsavelDpId de atacante via editarEmpresa direta -> valor NÃO é aplicado", async () => {
+    const { editarEmpresa } = await import("@/app/(app)/actions");
+    const colaboradorA = mockColaboradorUser();
+
+    authMock.mockResolvedValue({ user: colaboradorA });
+    // empresa dentro do escopo do colaborador (encontrada normalmente),
+    // já com um responsável DP atual ("user_dp_legitimo") na junction table
+    findFirstMock.mockResolvedValue({
+      id: "empresa_1",
+      responsavelId: colaboradorA.id,
+      responsaveisPorSetor: [
+        { setor: "FISCAL", usuarioId: colaboradorA.id },
+        { setor: "DP", usuarioId: "user_dp_legitimo" },
+      ],
+    });
+    updateMock.mockResolvedValue({ id: "empresa_1" });
+
+    const fd = buildFormData();
+    fd.set("responsavelFiscalId", colaboradorA.id);
+    // atacante tenta atribuir o responsável DP a si mesmo via chamada direta
+    fd.set("responsavelDpId", "user_atacante");
+
+    const resultado = await editarEmpresa("empresa_1", fd);
+
+    expect(resultado).toEqual({ ok: true, id: "empresa_1" });
+    // o valor do atacante NUNCA chega a nenhuma escrita: nem no
+    // empresa.update (responsavelId legado), nem em nenhum upsert do
+    // junction table para o setor DP
+    const updateArg = updateMock.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(updateArg.data.responsavelId).not.toBe("user_atacante");
+    const upsertCalls = upsertMock.mock.calls.map(
+      (call) => call[0] as { create: { setor: string; usuarioId: string } }
+    );
+    const dpUpsert = upsertCalls.find((c) => c.create.setor === "DP");
+    expect(dpUpsert).toBeDefined();
+    expect(dpUpsert?.create.usuarioId).toBe("user_dp_legitimo");
+    expect(dpUpsert?.create.usuarioId).not.toBe("user_atacante");
+  });
+
+  it("D-02: dono editando os 3 responsáveis -> os 3 upserts de junction são chamados", async () => {
+    const { editarEmpresa } = await import("@/app/(app)/actions");
+    const dono = mockDonoUser();
+
+    authMock.mockResolvedValue({ user: dono });
+    findFirstMock.mockResolvedValue({
+      id: "empresa_1",
+      responsavelId: "user_colaborador_1",
+      responsaveisPorSetor: [],
+    });
+    updateMock.mockResolvedValue({ id: "empresa_1" });
+
+    const fd = buildFormData();
+    fd.set("responsavelFiscalId", "user_fiscal_novo");
+    fd.set("responsavelDpId", "user_dp_novo");
+    fd.set("responsavelContabilId", "user_contabil_novo");
+
+    const resultado = await editarEmpresa("empresa_1", fd);
+
+    expect(resultado).toEqual({ ok: true, id: "empresa_1" });
+    expect(upsertMock).toHaveBeenCalledTimes(3);
+    const setoresUpsertados = upsertMock.mock.calls.map(
+      (call) => (call[0] as { create: { setor: string } }).create.setor
+    );
+    expect(setoresUpsertados.sort()).toEqual(["CONTABIL", "DP", "FISCAL"]);
   });
 });
