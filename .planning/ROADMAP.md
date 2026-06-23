@@ -2,7 +2,7 @@
 
 ## Overview
 
-O sistema nasce com a fundação de acesso (login individual, permissões por papel, cadastro de empresas-cliente já populado via importação da planilha existente, e disponível pela internet). Em seguida, a equipe ganha uma ferramenta de gestão de tarefas completa — criação de tarefas avulsas, conclusão, detalhe com passo a passo e histórico, e alertas visuais — totalmente utilizável mesmo antes de qualquer automação. Depois, o motor de geração mensal automática passa a alimentar essa mesma interface com as tarefas recorrentes de cada empresa (ICMS, PIS/COFINS, SPED, DAS), com prazos corretamente ajustados por dia útil/feriado e sem duplicação. Por fim, com dados reais de uso acumulados, os dashboards comparativos entregam o diferencial central pedido pelo dono: visão de desempenho da equipe, evolução mensal e ranking de empresas problemáticas.
+**Milestone v2.0 — Expansão Multi-Setor (DP e Contábil).** O sistema, já validado em produção para o setor Fiscal (v1.0, Phases 1-4 — ver `.planning/STATE.md` Quick Tasks e histórico de commits para o registro de conclusão), passa a atender também os setores de Departamento Pessoal e Contábil, para a mesma carteira de ~197 empresas-cliente. A expansão começa pela fundação estrutural — empresa ganha 1 responsável por setor (não mais 1 único responsável geral), autorização passa a ser setor-aware, e o cadastro de empresas expõe os 3 responsáveis — porque toda automação e todo dashboard subsequente dependem dela. Em seguida, o motor de geração mensal já validado no Fiscal é replicado para DP (100% mensal, menor risco). Depois, o motor é estendido para Contábil, que introduz a primeira periodicidade anual do sistema (ECD/ECF/DEFIS), o maior risco arquitetural da milestone. Por fim, com dados reais de DP e Contábil já sendo gerados, os dashboards comparativos (desempenho, evolução mensal, ranking) são replicados para os dois novos setores, reaproveitando o mesmo módulo de queries parametrizado por setor usado no Fiscal — não três módulos duplicados.
 
 ## Phases
 
@@ -10,149 +10,87 @@ O sistema nasce com a fundação de acesso (login individual, permissões por pa
 
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+- Numbering continua a partir da milestone v1.0 (Phases 1-4, completas) — v2.0 começa na Phase 5
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [x] **Phase 1: Fundação — Acesso, Empresas e Importação** - Login individual com permissões por papel, cadastro de empresas-cliente populado via importação revisada da planilha existente, sistema acessível pela internet
-- [x] **Phase 2: Gestão de Tarefas — Avulsas, Detalhe e Alertas** - Criação/atribuição de tarefas avulsas, conclusão com histórico, detalhe com passo a passo e referência às automações Python, alertas visuais de prazo (completed 2026-06-17)
-- [x] **Phase 3: Motor de Geração Automática Mensal** - Geração automática mensal de tarefas recorrentes por regime tributário, com prazos ajustados por dia útil/feriado e sem duplicação (completed 2026-06-18)
-- [x] **Phase 4: Dashboards Comparativos** - Dashboards de desempenho por colaborador, evolução mensal e comparativo entre empresas (completed 2026-06-22)
+- [ ] **Phase 5: Fundação Multi-Setor — Schema, Autorização e Empresas** - Empresa passa a ter 1 responsável por setor (Fiscal/DP/Contábil) com backfill verificado dos 197 registros existentes, autorização passa a ser setor-aware sem regressão no Fiscal, e o cadastro de empresas expõe os 3 responsáveis e o campo "tem funcionários CLT?"
+- [ ] **Phase 6: Motor de Geração — Departamento Pessoal** - Geração automática mensal de Folha de Pagamento, FGTS, INSS e eventos de eSocial para empresas com funcionários CLT, mais tarefas avulsas para a equipe de DP
+- [ ] **Phase 7: Motor de Geração — Contábil (mensal e anual)** - Geração automática mensal de Escrituração/Balancete para todas as empresas, mais a primeira periodicidade anual do sistema (ECD, ECF, DEFIS), com tarefas avulsas para a equipe Contábil
+- [ ] **Phase 8: Dashboards Multi-Setor — DP e Contábil** - Dono visualiza, em páginas próprias por setor, o desempenho comparativo dos colaboradores de DP e Contábil, a evolução mensal e o ranking de empresas problemáticas, com dados reais de geração já em produção
 
 ## Phase Details
 
-### Phase 1: Fundação — Acesso, Empresas e Importação
+### Phase 5: Fundação Multi-Setor — Schema, Autorização e Empresas
 
-**Goal**: A equipe acessa o sistema pela internet com login individual e visibilidade por papel, e o cadastro de empresas-cliente está populado e gerenciável a partir da planilha existente.
-**Depends on**: Nothing (first phase)
-**Requirements**: AUTH-01, AUTH-02, EMPR-01, EMPR-02, INFRA-01
+**Goal**: Toda a base estrutural da multi-setorialidade existe e está verificada — empresas têm 1 responsável por setor, a autorização respeita esse novo modelo sem quebrar o que já funciona no Fiscal, e a equipe (incluindo os 7 novos colaboradores placeholder) já pode ser atribuída como responsável por empresa em DP e Contábil.
+**Depends on**: Phase 4 (sistema Fiscal já em produção)
+**Requirements**: SETOR-01, SETOR-02, SETOR-03, EMPR-03
 **Success Criteria** (what must be TRUE):
 
-  1. Cada um dos 5 usuários (4 colaboradores + dono) faz login individual com email/senha e permanece autenticado entre sessões do navegador.
-  2. Colaborador vê apenas as empresas e tarefas da sua própria carteira; o dono vê de todas as empresas, sem restrição — enforced no backend, não só escondido na UI.
-  3. A lista de empresas-cliente (nome, CNPJ, regime tributário, responsável, contatos, particularidades) está populada a partir da importação da planilha "Controle pis e cofins.xlsx", com etapa de revisão humana antes de persistir.
-  4. Usuário consegue cadastrar e editar uma empresa-cliente manualmente pela interface, incluindo definir seu regime tributário.
-  5. O sistema está acessível por uma URL pública pela internet, não restrito à rede local do escritório.
+  1. As 197 empresas existentes têm exatamente 1 responsável Fiscal migrado corretamente (verificado por contagem: 197 empresas → 197 registros de responsabilidade Fiscal, nenhum a mais, nenhum a menos) — a geração de tarefas Fiscal continua funcionando sem nenhuma regressão após a migração.
+  2. Cada uma das 197 empresas pode ter um responsável de DP e um responsável de Contábil atribuídos separadamente do responsável Fiscal, através da tela de cadastro/edição de empresa (3 seletores distintos, não 1).
+  3. Os 7 colaboradores placeholder (4 DP + 3 Contábil) existem no sistema com seu setor definido, e aparecem nos seletores de responsável e de atribuição de tarefa avulsa filtrados pelo setor correspondente — um seletor de responsável de DP não lista colaboradores do Contábil ou Fiscal.
+  4. Um colaborador de DP só vê/edita as empresas onde ele é o responsável de DP, mesmo que outra pessoa seja a responsável Fiscal da mesma empresa — testado tanto pela UI quanto por chamada direta (sem regressão nos testes de IDOR/visibilidade já existentes do Fiscal).
+  5. Toda empresa tem o campo "tem funcionários CLT?" definido (sim/não), visível e editável no cadastro.
 
-**Plans**: 6 plansPlans:
-**Wave 1**
+**Plans**: TBD
 
-- [x] 01-01-PLAN.md — Fundação: bootstrap Next.js + shadcn, deps auditadas, schema Prisma (3 regimes) + db push, seed, infra Vitest
+### Phase 6: Motor de Geração — Departamento Pessoal
 
-**Wave 2** *(blocked on Wave 1 completion)*
+**Goal**: Toda empresa com funcionários CLT recebe, automaticamente todo mês, as obrigações de Folha de Pagamento, FGTS, INSS e eSocial, atribuídas ao responsável de DP correto, com prazos ajustados por dia útil/feriado e sem duplicação — e a equipe de DP já consegue usar tarefas avulsas como o Fiscal usa hoje.
+**Depends on**: Phase 5
+**Requirements**: DP-01, DP-02, DP-03, DP-04, DP-05
+**Success Criteria** (what must be TRUE):
 
-- [x] 01-02-PLAN.md — Auth (AUTH-01): Auth.js v5 Credentials + JWT com role, middleware, tela de login
-- [x] 01-03-PLAN.md — Camada de dados (AUTH-02/EMPR-01): withVisibilityScope, validarCNPJ, empresaSchema, queries escopadas
+  1. No início de cada competência mensal, toda empresa com "tem funcionários CLT? = sim" recebe automaticamente as tarefas de Folha de Pagamento, FGTS, INSS e eventos periódicos de eSocial.
+  2. Empresas sem funcionários CLT (só pró-labore) não recebem nenhuma dessas tarefas — nenhuma tarefa falsa.
+  3. Cada tarefa gerada de DP é atribuída ao responsável de DP correto daquela empresa (nunca ao responsável Fiscal por engano), com prazo ajustado por dia útil/feriado.
+  4. Executar a geração mensal mais de uma vez para a mesma competência não duplica nenhuma tarefa de DP.
+  5. Qualquer colaborador de DP consegue criar uma tarefa avulsa e atribuí-la a si mesmo ou a outro colega de DP, reaproveitando o mecanismo de tarefas avulsas já existente.
 
-**Wave 3** *(blocked on Wave 2 completion)*
+**Plans**: TBD
 
-- [x] 01-04-PLAN.md — Empresas (EMPR-01/AUTH-02): shell, lista escopada, CRUD com anti-IDOR
-- [x] 01-05-PLAN.md — Importação (EMPR-02): parser SheetJS 198 empresas, wizard de 3 etapas com revisão humana
+### Phase 7: Motor de Geração — Contábil (mensal e anual)
 
-**Wave 4** *(blocked on Wave 3 completion)*
+**Goal**: Toda empresa recebe automaticamente, todo mês, a obrigação de Escrituração/Balancete Contábil, e — pela primeira vez no sistema — obrigações anuais (ECD, ECF, DEFIS) são geradas corretamente uma única vez por ano por empresa, conforme seu regime tributário, sem confundir ou colidir com a geração mensal.
+**Depends on**: Phase 5
+**Requirements**: CONT-01, CONT-02, CONT-03, CONT-04, CONT-05, CONT-06
+**Success Criteria** (what must be TRUE):
 
-- [x] 01-06-PLAN.md — Deploy (INFRA-01): build standalone + Railway + URL pública
+  1. No início de cada competência mensal, toda empresa recebe automaticamente a tarefa de Escrituração/Balancete Contábil, atribuída ao responsável Contábil correto.
+  2. Uma vez por ano, cada empresa Lucro Real recebe automaticamente exatamente uma tarefa de ECD e uma de ECF; cada empresa Simples Nacional recebe automaticamente exatamente uma tarefa de DEFIS — nunca zero, nunca duplicada, mesmo que a geração mensal rode 12 vezes ao longo do ano.
+  3. As tarefas anuais e mensais do Contábil convivem na mesma competência/ano sem colidir entre si e sem corromper os cálculos de prazo/dia útil de nenhuma das duas periodicidades.
+  4. Qualquer colaborador do Contábil consegue criar uma tarefa avulsa e atribuí-la a si mesmo ou a outro colega do Contábil, reaproveitando o mecanismo de tarefas avulsas já existente.
 
+**Plans**: TBD
+
+### Phase 8: Dashboards Multi-Setor — DP e Contábil
+
+**Goal**: O dono enxerga, em páginas próprias por setor, o desempenho comparativo dos colaboradores de DP e de Contábil, a evolução mensal de cumprimento de prazos de cada setor, e quais empresas geram mais atrasos recorrentes em cada um — exatamente como já existe para o Fiscal, sem visão unificada entre setores (decisão explícita desta milestone).
+**Depends on**: Phase 6, Phase 7 (precisa de dados reais de geração para validar contra dados de produção, não apenas dados fictícios)
+**Requirements**: DP-06, DP-07, DP-08, CONT-07, CONT-08, CONT-09
+**Success Criteria** (what must be TRUE):
+
+  1. O dono visualiza um dashboard de desempenho por colaborador de DP (percentual no prazo vs atrasado), em página própria, separada do dashboard Fiscal.
+  2. O dono visualiza um dashboard de evolução mensal de DP, com números de meses fechados estáveis (não recalculados retroativamente).
+  3. O dono visualiza um dashboard de ranking de empresas problemáticas no DP.
+  4. O dono visualiza os mesmos três tipos de dashboard (desempenho, evolução mensal, ranking) para o setor Contábil, em página própria.
+  5. As consultas dos 3 dashboards de DP e dos 3 dashboards de Contábil reaproveitam o mesmo módulo de queries parametrizado por setor já usado no Fiscal — sem três módulos de dashboard duplicados e sem o código órfão do módulo de dashboard singular antigo.
+
+**Plans**: TBD
 **UI hint**: yes
-
-### Phase 2: Gestão de Tarefas — Avulsas, Detalhe e Alertas
-
-**Goal**: A equipe consegue criar, atribuir, acompanhar e concluir tarefas, com tela de detalhe completa (passo a passo, dados da empresa, histórico) e alertas visuais de prazo — totalmente usável mesmo sem geração automática.
-**Depends on**: Phase 1
-**Requirements**: TASK-03, TASK-04, TASK-05, TASK-06, ALRT-01
-**Success Criteria** (what must be TRUE):
-
-  1. Qualquer membro da equipe consegue criar uma tarefa avulsa (não-recorrente) e atribuí-la a si mesmo ou a qualquer outro colega.
-  2. Usuário vê uma lista de tarefas (as suas, ou — se for o dono — de todos), com checkbox para marcar como concluída, e cada conclusão fica registrada em um histórico.
-  3. Ao abrir o detalhe de uma tarefa, o usuário vê os dados relevantes da empresa associada, o passo a passo da obrigação (quando aplicável) e o histórico de conclusões anteriores dessa empresa/obrigação.
-  4. Para tarefas de ICMS/PIS-COFINS, o passo a passo referencia/conecta com as ferramentas de automação Python já existentes do usuário (link/instrução, sem execução).
-  5. Tarefas com prazo próximo ou já atrasado aparecem destacadas visualmente (cores/badges) na lista de tarefas.
-
-**Plans**: 4 plans
-
-**Wave 1**
-
-- [x] 02-01-PLAN.md — Schema Prisma (Tarefa + TarefaHistorico + TarefaStatus) + withTarefaScope + calcularAlertaPrazo + stubs de teste Wave 0
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 02-02-PLAN.md — Backend: modules/tarefas/queries.ts + schema.ts + tarefas/actions.ts (TASK-03, TASK-04, TASK-05)
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 02-03-PLAN.md — UI Lista: /tarefas page + TarefasTable + NovaTarefaDialog + sidebar badge (TASK-03, TASK-04, ALRT-01)
-
-**Wave 4** *(blocked on Wave 3 completion)*
-
-- [x] 02-04-PLAN.md — UI Detalhe: /tarefas/[id] + loading.tsx (TASK-05, TASK-06)
-
-**UI hint**: yes
-
-### Phase 3: Motor de Geração Automática Mensal
-
-**Goal**: O sistema gera automaticamente, todo mês, as tarefas recorrentes de cada empresa conforme seu regime tributário, com prazos corretos e sem duplicação, alimentando a interface de tarefas já existente.
-**Depends on**: Phase 1, Phase 2
-**Requirements**: TASK-01, TASK-02
-**Success Criteria** (what must be TRUE):
-
-  1. No início de cada competência mensal, o sistema gera automaticamente as tarefas recorrentes de cada empresa conforme seu regime tributário (Lucro Real: ICMS + PIS/COFINS + SPED; Simples Nacional: DAS).
-  2. O prazo de cada tarefa gerada respeita o prazo fixo definido para o tipo de obrigação, ajustado automaticamente (antecipando ou adiando, conforme a regra de cada obrigação) quando cai em fim de semana ou feriado nacional, calculado dinamicamente (sem listas de feriados fixas por ano).
-  3. Executar a geração mensal mais de uma vez para a mesma competência não cria tarefas duplicadas (idempotência verificada na tabela `tarefas`).
-  4. As tarefas geradas automaticamente aparecem nas listas e na tela de detalhe construídas na Fase 2, já com os alertas visuais de prazo funcionando normalmente.
-
-**Plans**: 3 plans
-
-**Wave 1**
-
-- [x] 03-01-PLAN.md — Schema (enum TipoObrigacao + Tarefa.tipoObrigacao/competencia + @@unique) + db push + libs puras dia-util/geracao-tarefas/competencia + testes Wave 0 (TASK-01, TASK-02)
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 03-02-PLAN.md — Orquestração executarGeracaoMensal (createMany skipDuplicates, idempotência) + node-cron via instrumentation (TASK-01)
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 03-03-PLAN.md — Server Action DONO-only gerarTarefasDoMesAction + botão manual em /tarefas + teste RBAC (TASK-01)
-
-**UI hint**: yes
-
-### Phase 4: Dashboards Comparativos
-
-**Goal**: O dono enxerga, em dashboards, o desempenho comparativo da equipe, a evolução mensal de cumprimento de prazos e quais empresas geram mais atrasos recorrentes.
-**Depends on**: Phase 2, Phase 3
-**Requirements**: DASH-01, DASH-02, DASH-03
-**Success Criteria** (what must be TRUE):
-
-  1. O dono visualiza um dashboard comparando o desempenho de cada colaborador (percentual de tarefas concluídas no prazo vs atrasadas), com contexto do tamanho/composição da carteira de cada um.
-  2. O dono visualiza um dashboard de evolução mensal mostrando a tendência de cumprimento de prazos ao longo do tempo, com números de meses fechados estáveis (não recalculados retroativamente a cada acesso).
-  3. O dono visualiza um dashboard comparando empresas, destacando quais geram mais atrasos/problemas recorrentes.
-
-**Plans**: 5 plans
-
-**Wave 1**
-
-- [x] 04-01-PLAN.md — Fundação: model DesempenhoMensal + db push, shadcn chart install, mesesSchema, scaffolds de teste Wave 0 (DASH-01/02/03)
-
-**Wave 2** *(blocked on Wave 1)*
-
-- [x] 04-02-PLAN.md — Snapshot: calcularSnapshotMensal + executarGeracaoMensal congela mês anterior, idempotente (DASH-02)
-- [x] 04-03-PLAN.md — Queries: desempenho colaborador live + evolução snapshot/live + ranking empresas D-06 (DASH-01/02/03)
-
-**Wave 3** *(blocked on Wave 2)*
-
-- [x] 04-04-PLAN.md — UI: page /dashboards DONO-only (notFound) + 3 charts/tabela + sidebar + teste RBAC (DASH-01/02/03)
-
-**Wave 4** *(blocked on Wave 3)*
-
-- [x] 04-05-PLAN.md — Checkpoint visual: verificação humana de rendering dos 3 gráficos + gate de acesso
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 5 → 6 → 7 → 8
+
+**Previous milestone (v1.0):** Phases 1-4 completas — ver histórico em `.planning/STATE.md` (Quick Tasks Completed) e commits do repositório. Resumo: Fundação de acesso/empresas/importação (Phase 1), gestão de tarefas avulsas/detalhe/alertas (Phase 2), motor de geração automática mensal Fiscal (Phase 3), dashboards comparativos Fiscal (Phase 4) — todas concluídas entre 2026-06-15 e 2026-06-22.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundação — Acesso, Empresas e Importação | 6/6 | Complete | 2026-06-15 |
-| 2. Gestão de Tarefas — Avulsas, Detalhe e Alertas | 4/4 | Complete   | 2026-06-17 |
-| 3. Motor de Geração Automática Mensal | 3/3 | Complete | 2026-06-18 |
-| 4. Dashboards Comparativos | 5/5 | Complete   | 2026-06-22 |
+| 5. Fundação Multi-Setor — Schema, Autorização e Empresas | 0/TBD | Not started | - |
+| 6. Motor de Geração — Departamento Pessoal | 0/TBD | Not started | - |
+| 7. Motor de Geração — Contábil (mensal e anual) | 0/TBD | Not started | - |
+| 8. Dashboards Multi-Setor — DP e Contábil | 0/TBD | Not started | - |

@@ -136,27 +136,27 @@ Explicitly excluded. Documented to prevent scope creep.
 | DASH-02 | Phase 4 | Complete |
 | DASH-03 | Phase 4 | Complete |
 | INFRA-01 | Phase 1 | Complete |
-| SETOR-01 | TBD | Pending roadmap |
-| SETOR-02 | TBD | Pending roadmap |
-| SETOR-03 | TBD | Pending roadmap |
-| EMPR-03 | TBD | Pending roadmap |
-| DP-01 | TBD | Pending roadmap |
-| DP-02 | TBD | Pending roadmap |
-| DP-03 | TBD | Pending roadmap |
-| DP-04 | TBD | Pending roadmap |
-| DP-05 | TBD | Pending roadmap |
-| DP-06 | TBD | Pending roadmap |
-| DP-07 | TBD | Pending roadmap |
-| DP-08 | TBD | Pending roadmap |
-| CONT-01 | TBD | Pending roadmap |
-| CONT-02 | TBD | Pending roadmap |
-| CONT-03 | TBD | Pending roadmap |
-| CONT-04 | TBD | Pending roadmap |
-| CONT-05 | TBD | Pending roadmap |
-| CONT-06 | TBD | Pending roadmap |
-| CONT-07 | TBD | Pending roadmap |
-| CONT-08 | TBD | Pending roadmap |
-| CONT-09 | TBD | Pending roadmap |
+| SETOR-01 | Phase 5 | Pending |
+| SETOR-02 | Phase 5 | Pending |
+| SETOR-03 | Phase 5 | Pending |
+| EMPR-03 | Phase 5 | Pending |
+| DP-01 | Phase 6 | Pending |
+| DP-02 | Phase 6 | Pending |
+| DP-03 | Phase 6 | Pending |
+| DP-04 | Phase 6 | Pending |
+| DP-05 | Phase 6 | Pending |
+| DP-06 | Phase 8 | Pending |
+| DP-07 | Phase 8 | Pending |
+| DP-08 | Phase 8 | Pending |
+| CONT-01 | Phase 7 | Pending |
+| CONT-02 | Phase 7 | Pending |
+| CONT-03 | Phase 7 | Pending |
+| CONT-04 | Phase 7 | Pending |
+| CONT-05 | Phase 7 | Pending |
+| CONT-06 | Phase 7 | Pending |
+| CONT-07 | Phase 8 | Pending |
+| CONT-08 | Phase 8 | Pending |
+| CONT-09 | Phase 8 | Pending |
 
 **Coverage:**
 
@@ -164,9 +164,9 @@ Explicitly excluded. Documented to prevent scope creep.
 - Mapped to phases: 15
 - Unmapped: 0 ✓
 - v2.0 requirements: 21 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 21 — to be resolved by gsd-roadmapper
+- Mapped to phases: 21
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-11 (v1) / 2026-06-23 (v2.0)*
-*Last updated: 2026-06-23 — v2.0 requirements defined, roadmap not yet created*
+*Last updated: 2026-06-23 — v2.0 roadmap created (Phases 5-8), all 21 v2.0 requirements mapped*
