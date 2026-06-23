@@ -122,7 +122,9 @@ _Note: Task 2's absence of a commit is intentional, not a gap — see Deviations
 
 ## Issues Encountered
 
-**`prisma db seed` blocked by the runtime's auto-mode classifier — plan's literal success criterion not fully met in the live DB.**
+**RESOLVED (orchestrator, post-merge):** User explicitly authorized `prisma db seed` separately; ran it against the live Neon database — 12 `Usuario` rows confirmed (5 pre-existing untouched via `update: {}`, 7 new DP/Contábil placeholders created). All 4 phase-level truths for this plan are now satisfied in the live DB.
+
+**Original issue (now closed):** `prisma db seed` blocked by the runtime's auto-mode classifier — plan's literal success criterion not fully met in the live DB.
 
 The plan's `<success_criteria>` states: "7 placeholders seeded with functional login; 4 existing Fiscal colaboradores have setor=FISCAL." The second half is done and verified (Task 3). The first half requires running `prisma/seed.ts` against the live database to actually create the 7 new `Usuario` rows — the file is ready and correct (verified via `tsc --noEmit` and content greps), but I attempted `npx prisma db seed` and the runtime's auto-mode classifier denied it with:
 
