@@ -16,6 +16,12 @@ enum Role {
   DONO
 }
 
+enum Setor {
+  FISCAL
+  DP
+  CONTABIL
+}
+
 enum RegimeTributario {
   LUCRO_REAL
   LUCRO_PRESUMIDO
@@ -41,6 +47,7 @@ model Usuario {
   email     String   @unique
   senhaHash String
   role      Role     @default(COLABORADOR)
+  setor     Setor?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -49,25 +56,28 @@ model Usuario {
   tarefasResponsavel  Tarefa[]          @relation("ResponsavelTarefa")
   tarefasConcluidas   TarefaHistorico[] @relation("ConcluiuTarefa")
   desempenhoMensal    DesempenhoMensal[]
+  responsaveisPorSetor EmpresaResponsavelSetor[]
 
   @@map("usuarios")
 }
 
 model Empresa {
-  id               String            @id @default(cuid())
-  nome             String
-  cnpj             String            @unique
-  regimeTributario RegimeTributario
-  responsavelId    String
-  responsavel      Usuario           @relation("ResponsavelEmpresa", fields: [responsavelId], references: [id])
-  contatos         String?
-  particularidades String?
-  ativo            Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id                 String            @id @default(cuid())
+  nome               String
+  cnpj               String            @unique
+  regimeTributario   RegimeTributario
+  responsavelId      String
+  responsavel        Usuario           @relation("ResponsavelEmpresa", fields: [responsavelId], references: [id])
+  temFuncionariosClt Boolean           @default(false)
+  contatos           String?
+  particularidades   String?
+  ativo              Boolean           @default(true)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
-  regimeHistorico  EmpresaRegimeHistorico[]
-  tarefas          Tarefa[]
+  regimeHistorico    EmpresaRegimeHistorico[]
+  tarefas            Tarefa[]
+  responsaveisPorSetor EmpresaResponsavelSetor[]
 
   @@index([responsavelId])
   @@index([regimeTributario])
@@ -84,6 +94,21 @@ model EmpresaRegimeHistorico {
 
   @@index([empresaId, dataInicio])
   @@map("empresa_regime_historico")
+}
+
+model EmpresaResponsavelSetor {
+  id        String   @id @default(cuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  setor     Setor
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([empresaId, setor])
+  @@index([usuarioId, setor])
+  @@map("empresa_responsavel_setor")
 }
 
 model Tarefa {
