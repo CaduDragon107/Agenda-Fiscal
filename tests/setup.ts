@@ -12,15 +12,24 @@
  * efetivamente coloca no token/sessão JWT. Antes (Plano 01) os mocks usavam
  * "colaborador"/"dono" minúsculos, inconsistente com o contrato real de
  * sessão definido no Plano 02.
+ *
+ * NOTA (Plano 05-02, v2.0): `setor` adicionado ao shape `SessionUser`,
+ * alinhado ao tipo `AppSetor` (src/types/next-auth.d.ts) e ao que
+ * `withVisibilityScope`/`withTarefaScope` (src/lib/visibility-scope.ts)
+ * agora exigem. Os mocks de colaborador existentes (mockColaboradorUser/
+ * mockOtherColaboradorUser) default para "FISCAL" para preservar o
+ * comportamento dos testes de regressão pré-v2.0 sem editá-los.
  */
 
 export type SessionRole = "COLABORADOR" | "DONO";
+export type SessionSetor = "FISCAL" | "DP" | "CONTABIL" | null;
 
 export type SessionUser = {
   id: string;
   nome: string;
   email: string;
   role: SessionRole;
+  setor: SessionSetor;
 };
 
 /**
@@ -32,6 +41,7 @@ export function mockDonoUser(overrides: Partial<SessionUser> = {}): SessionUser 
     nome: "Dono do Escritório",
     email: "dono@escritorio.com.br",
     role: "DONO",
+    setor: null,
     ...overrides,
   };
 }
@@ -45,6 +55,7 @@ export function mockColaboradorUser(overrides: Partial<SessionUser> = {}): Sessi
     nome: "Colaborador 1",
     email: "colaborador1@escritorio.com.br",
     role: "COLABORADOR",
+    setor: "FISCAL",
     ...overrides,
   };
 }
@@ -59,6 +70,35 @@ export function mockOtherColaboradorUser(overrides: Partial<SessionUser> = {}): 
     nome: "Colaborador 2",
     email: "colaborador2@escritorio.com.br",
     role: "COLABORADOR",
+    setor: "FISCAL",
+    ...overrides,
+  };
+}
+
+/**
+ * Cria um usuário "colaborador" mockado do setor DP (v2.0).
+ */
+export function mockDpColaboradorUser(overrides: Partial<SessionUser> = {}): SessionUser {
+  return {
+    id: "user_dp_1",
+    nome: "DP1",
+    email: "dp1@escritorio.com.br",
+    role: "COLABORADOR",
+    setor: "DP",
+    ...overrides,
+  };
+}
+
+/**
+ * Cria um usuário "colaborador" mockado do setor Contábil (v2.0).
+ */
+export function mockContabilColaboradorUser(overrides: Partial<SessionUser> = {}): SessionUser {
+  return {
+    id: "user_contabil_1",
+    nome: "Contabil1",
+    email: "contabil1@escritorio.com.br",
+    role: "COLABORADOR",
+    setor: "CONTABIL",
     ...overrides,
   };
 }
