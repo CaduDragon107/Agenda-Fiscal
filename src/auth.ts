@@ -25,6 +25,7 @@ export async function authorize(
       nome: true,
       email: true,
       role: true,
+      setor: true,
       senhaHash: true,
     },
   });
@@ -41,6 +42,7 @@ export async function authorize(
     name: usuario.nome,
     email: usuario.email,
     role: usuario.role,
+    setor: usuario.setor,
   };
 }
 
