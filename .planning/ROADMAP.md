@@ -41,9 +41,20 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Toda empresa tem o campo "tem funcionários CLT?" definido (sim/não), visível e editável no cadastro.
 
 **Plans**: 4 plans
+**Wave 1**
+
 - [ ] 05-01-PLAN.md — Schema multi-setor (enum Setor, junction, Usuario.setor, CLT), db push e backfills verificados (197 FISCAL + 4 colaboradores) + seed dos 7 placeholders
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 05-02-PLAN.md — setor no JWT/sessão (Auth.js v5) e withVisibilityScope/withTarefaScope setor-aware sem regressão IDOR
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 05-03-PLAN.md — Backend de empresas: schema Zod 3 responsáveis + CLT, listarResponsaveis(setor), actions transacionais com guard DONO-only (D-02)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 05-04-PLAN.md — UI de empresas: 3 seletores + checkbox CLT, tabela setor-aware, filtro/badge "sem responsável", estado vazio por setor + checkpoint humano
 
 ### Phase 6: Motor de Geração — Departamento Pessoal

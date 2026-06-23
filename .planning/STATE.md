@@ -5,8 +5,8 @@ milestone_name: Expansao Multi-Setor (DP e Contabil)
 current_phase: 5
 current_phase_name: Fundação Multi-Setor — Schema, Autorização e Empresas
 status: roadmapped
-stopped_at: Phase 5 context gathered
-last_updated: "2026-06-23T16:58:33.300Z"
+stopped_at: Phase 5 UI-SPEC approved
+last_updated: "2026-06-23T17:23:17.537Z"
 last_activity: 2026-06-23
 last_activity_desc: Milestone v2.0 roadmap created (Phases 5-8)
 progress:
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 
 ## Current Position
 
-Phase: 5 (Fundação Multi-Setor — Schema, Autorização e Empresas) — not started
-Plan: —
-Status: Roadmap created, ready for /gsd-plan-phase 5
-Last activity: 2026-06-23 — Milestone v2.0 roadmap created (Phases 5-8)
+Phase: 5 (Fundação Multi-Setor — Schema, Autorização e Empresas) — planned, not started
+Plan: 4 plans across 4 waves (05-01 schema/backfill, 05-02 setor-aware scope, 05-03 backend empresas, 05-04 UI + checkpoint)
+Status: Planned — ready for /gsd-execute-phase 5
+Last activity: 2026-06-23 — Phase 5 planned (research, UI-SPEC, pattern map, 4 plans, plan-checker passed)
 
 ## Performance Metrics
 
@@ -148,6 +148,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-23T16:58:33.282Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-funda-o-multi-setor-schema-autoriza-o-e-empresas/05-CONTEXT.md
+Last session: 2026-06-23T17:23:17.515Z
+Stopped at: Phase 5 UI-SPEC approved
+Resume file: .planning/phases/05-funda-o-multi-setor-schema-autoriza-o-e-empresas/05-UI-SPEC.md

@@ -718,17 +718,21 @@ describe("withVisibilityScope — setor-aware (v2.0)", () => {
 | A2 | This project still uses `npx prisma db push` (not `prisma migrate dev`) for schema changes against Neon, per STATE.md's Phase 02-01/03-01 decisions | Standard Stack, Pattern 1 | If the team has since switched to `migrate dev` (e.g., a shadow DB was provisioned), this phase's migration step needs the corresponding `migrate dev --name add_setor_multi_setor` command instead — low risk, easily corrected at execution time by checking for a `prisma/migrations/` directory |
 | A3 | The exact field names `responsavelFiscalId`/`responsavelDpId`/`responsavelContabilId` for the Zod schema (vs. e.g. reading 3 responsável ids directly off the junction relation in the form) are a reasonable naming choice, not yet validated against any other naming convention in this codebase | Pattern 1, Code Examples | Low risk — CONTEXT.md explicitly leaves "forma exata de implementação... nomes de campos" to Claude's Discretion; any consistent naming works as long as it's used uniformly across schema/Zod/form/actions |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+Both questions' recommendations were adopted during phase planning — resolutions noted inline below.
 
 1. **Should `Empresa.responsavelId` be made nullable now, to anticipate Phase 6/7 fully retiring it, or must it stay `String` (required) through this phase?**
    - What we know: PITFALLS.md B1 says "keep `Empresa.responsavelId` column in place (deprecated, unread) for at least one full release cycle" but doesn't specify whether it stays required or becomes optional during the deprecation window.
    - What's unclear: Whether any NEW empresa created during this phase still needs `responsavelId` populated (mirroring the FISCAL junction value) for backward compatibility with the still-unmodified `gerarTarefasDoMes`, or whether it's acceptable for `responsavelId` to silently drift out of sync with the FISCAL junction row for empresas created/edited after this phase ships.
    - Recommendation: Keep `responsavelId` required and ALWAYS write it in lockstep with the FISCAL junction row inside the same transaction (Pattern 1's "Migration note" + the transaction pattern in Common Pitfalls) for any empresa created/edited during this phase — this guarantees Phase 6's eventual repoint has zero drift to reconcile, at the cost of one extra write per empresa mutation. Confirm with the user if this extra write is acceptable or if `responsavelId` should simply be derived/ignored going forward.
+   - **RESOLVED (adopted):** The lockstep recommendation was adopted — Plan 03 Task 2 keeps `Empresa.responsavelId` required and writes it equal to `responsavelFiscalId` inside the same `db.$transaction` as the junction upserts (see 05-03-PLAN.md Task 2 action "Lockstep responsavelId" + threat T-05-12).
 
 2. **Does the "sem responsável" filter (D-03) need a DONO-only visibility, or should colaboradores also see it (e.g., for their own sector)?**
    - What we know: D-03 says the filter is "para o dono localizar rapidamente quais empresas ainda precisam de atribuição manual."
    - What's unclear: Whether a DP colaborador with zero assigned empresas (D-09's empty state) would ever interact with this filter at all, since by definition they'd see no rows to filter.
    - Recommendation: Scope the "sem responsável" filter control to DONO-only in the UI (mirrors the existing `isDono`-gated responsável filter dropdown already in `empresas-table.tsx`), since colaboradores never see unassigned-to-them empresas anyway — low-risk default, easy to adjust later.
+   - **RESOLVED (adopted):** The DONO-only filter recommendation was adopted — Plan 04 Task 2 places the "Sem responsável DP/Contábil" toggles inside the `isDono ? (...) : null` filter bar (D-03 in 05-04-PLAN.md), so colaboradores never see the control.
 
 ## Environment Availability
 
