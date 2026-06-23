@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Expansao Multi-Setor (DP e Contabil)
-status: planning
-last_updated: "2026-06-22T23:39:37.146Z"
-last_activity: 2026-06-22
+status: roadmapped
+last_updated: "2026-06-23T11:12:45.236Z"
+last_activity: 2026-06-23
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-11)
+See: .planning/PROJECT.md (updated 2026-06-23)
 
-**Core value:** A equipe nunca perde um prazo fiscal de nenhum cliente, e o dono sempre sabe em tempo real o status de tudo.
-**Current focus:** Phase 04 — dashboards-comparativos
+**Core value:** A equipe nunca perde um prazo — fiscal, de pessoal ou contábil — de nenhum cliente, e o dono sempre sabe em tempo real o status de tudo, em qualquer setor.
+**Current focus:** Phase 5 — fundacao-multi-setor
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 5 (Fundação Multi-Setor — Schema, Autorização e Empresas) — not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-22 — Milestone v2.0 started
+Status: Roadmap created, ready for /gsd-plan-phase 5
+Last activity: 2026-06-23 — Milestone v2.0 roadmap created (Phases 5-8)
 
 ## Performance Metrics
 
@@ -115,6 +115,10 @@ None yet.
 - [Phase 3] ~~NOVO — TASK-01 define regras de geração mensal só para Lucro Real e Simples Nacional; ~25% das empresas reais (50/198, Lucro Presumido) ainda não têm regra de obrigação definida.~~ — Tratado em 03-01 (ver 03-RESEARCH.md/03-CONTEXT.md); Lucro Presumido permanece fora do escopo de geração automática do v1 por decisão registrada na fase.
 - [Phase 3] ~~Validar a regra de antecipação/postergação de prazo (antecipa vs adia) por tipo de obrigação (DAS, ICMS, PIS/COFINS, SPED) contra calendário oficial vigente antes de codificar `regras_obrigacao`~~ — RESOLVIDO em 03-01 via `date-holidays` + `proximoDiaUtil`, testado contra feriados móveis reais (Independência 07/09/2026, Sexta-feira Santa 03/04/2026).
 - [Phase 3] ~~Decidir explicitamente se Corpus Christi conta como dia não útil para este escritório.~~ — RESOLVIDO em 03-01 (date-holidays calcula feriados móveis nacionais dinamicamente, sem lista fixa por ano).
+- [Phase 5] NOVO — Migração de `Empresa.responsavelId` para junction table `EmpresaResponsavelSetor` precisa de backfill verificado (197 empresas → 197 linhas FISCAL) ANTES de qualquer código passar a ler da junction table; coluna antiga deve ser mantida por 1 ciclo de release como rede de segurança (ver research/PITFALLS.md Pitfall B1).
+- [Phase 5] NOVO — Autorização setor-aware (`withVisibilityScope`/`withTarefaScope`) precisa de novos fixtures multi-setor E da suite de IDOR existente passando inalterada como regression gate, não substituída (ver research/PITFALLS.md Pitfall B3).
+- [Phase 7] NOVO — Periodicidade anual (ECD/ECF/DEFIS) precisa de formato de competência explícito (ex. "YYYY") e testes simulando 12 ticks mensais do cron ao longo de um ano, verificando exatamente 1 tarefa anual por empresa por ano (ver research/PITFALLS.md Pitfall B2).
+- [Phase 8] NOVO — Dashboards de DP/Contábil devem reaproveitar o módulo de queries parametrizado por setor já usado no Fiscal, nunca duplicar em módulos separados; deletar o módulo órfão `src/modules/dashboard/` (singular) durante esta fase (ver research/PITFALLS.md Pitfall B4).
 
 ### Quick Tasks Completed
 
@@ -140,6 +144,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-22T11:55:29.743Z
-Stopped at: Phase 04 planned and verified (5 plans, 4 waves)
-Resume file: .planning/phases/04-dashboards-comparativos/04-01-PLAN.md
+Last session: 2026-06-23T11:12:45.236Z
+Stopped at: Roadmap v2.0 created (Phases 5-8), awaiting /gsd-plan-phase 5
+Resume file: .planning/ROADMAP.md
