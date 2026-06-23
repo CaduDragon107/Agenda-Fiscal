@@ -2,9 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Expansao Multi-Setor (DP e Contabil)
+current_phase: 5
+current_phase_name: Fundação Multi-Setor — Schema, Autorização e Empresas
 status: roadmapped
-last_updated: "2026-06-23T11:12:45.236Z"
+stopped_at: Phase 5 context gathered
+last_updated: "2026-06-23T16:58:33.300Z"
 last_activity: 2026-06-23
+last_activity_desc: Milestone v2.0 roadmap created (Phases 5-8)
 progress:
   total_phases: 4
   completed_phases: 0
@@ -144,6 +148,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-23T11:12:45.236Z
-Stopped at: Roadmap v2.0 created (Phases 5-8), awaiting /gsd-plan-phase 5
-Resume file: .planning/ROADMAP.md
+Last session: 2026-06-23T16:58:33.282Z
+Stopped at: Phase 5 context gathered
+Resume file: .planning/phases/05-funda-o-multi-setor-schema-autoriza-o-e-empresas/05-CONTEXT.md
