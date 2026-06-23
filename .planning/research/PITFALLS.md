@@ -1,8 +1,14 @@
 # Pitfalls Research
 
-**Domain:** Sistema web de gestão de tarefas e prazos fiscais recorrentes (escritório de contabilidade brasileiro)
-**Researched:** 2026-06-11
-**Confidence:** MEDIUM-HIGH (padrões de engenharia: HIGH, regras fiscais brasileiras: MEDIUM — datas mudam ano a ano e variam por convênio/estado, sempre validar contra calendário oficial vigente)
+**Domain:** Sistema web de gestão de tarefas e prazos fiscais recorrentes (escritório de contabilidade brasileiro) — v1.0 (fiscal) + v2.0 (expansão multi-setor: DP e Contábil)
+**Researched:** 2026-06-11 (v1.0) / 2026-06-22 (v2.0 addendum)
+**Confidence:** MEDIUM-HIGH overall — v1.0 engineering patterns: HIGH, Brazilian fiscal rules: MEDIUM (dates change yearly); v2.0 architectural/migration pitfalls: HIGH (grounded directly in this project's actual codebase, not generic advice)
+
+> **Reading guide:** This file has two parts. **Part A** (below) is the original v1.0 research — general domain pitfalls for fiscal task-recurrence systems, still fully relevant since v2.0 builds directly on the same engine/schema. **Part B** is the v2.0-specific addendum — pitfalls unique to ADDING the DP/Contábil sectors to this already-built system, grounded in direct inspection of the current Prisma schema, RBAC helpers, generation engine, and dashboard modules. **For v2.0 roadmap planning, prioritize Part B** — it reflects what actually exists today, including one drift pitfall (Part B, Pitfall 4) that has ALREADY happened once in this codebase.
+
+---
+
+# Part A — v1.0 Domain Pitfalls (Original Research, 2026-06-11)
 
 ## Critical Pitfalls
 
@@ -257,7 +263,7 @@ Fase de autenticação/autorização (provavelmente Fase 1, junto com login mult
 | "Marcar como concluído" sem confirmação ou desfazer | Clique acidental marca dezenas de tarefas como concluídas (ex.: ação em lote) sem volta fácil | Permitir desmarcar facilmente; ações em lote pedem confirmação |
 | Tela do dono mostra TUDO sem filtro padrão | Sobrecarga de informação — 110 empresas x várias obrigações é muita coisa para uma visão "geral" sem hierarquia | Visão do dono com drill-down: resumo agregado primeiro (por colaborador/status), detalhe ao clicar |
 
-## "Looks Done But Isn't" Checklist
+## "Looks Done But Isn't" Checklist (v1.0)
 
 - [ ] **Geração de tarefas recorrentes:** Parece funcionar ao rodar uma vez — verificar se rodar o job **duas vezes seguidas** para o mesmo mês não duplica nada (constraint UNIQUE testada).
 - [ ] **Cálculo de dia útil/feriado:** Parece funcionar para o mês atual — verificar se funciona corretamente para **Carnaval/Páscoa de pelo menos 2 anos diferentes** (datas móveis mudam todo ano) e para o **próximo ano** (ex.: dezembro/janeiro de virada de ano).
@@ -267,7 +273,7 @@ Fase de autenticação/autorização (provavelmente Fase 1, junto com login mult
 - [ ] **Dashboard de evolução mensal:** Parece mostrar gráficos corretos hoje — verificar se os números de **meses fechados** permanecem estáveis quando se olha novamente dias depois (não devem "flutuar" por causa de tarefas concluídas com atraso recalculando o passado).
 - [ ] **Ajuste de prazo por feriado:** Parece ajustar corretamente para "fim de semana" — verificar se a regra de **antecipar vs adiar** está correta para cada tipo de obrigação (DAS adia, DARF/federais geralmente antecipam) e validada contra o calendário oficial do ano corrente.
 
-## Recovery Strategies
+## Recovery Strategies (v1.0)
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|----------------|------------------|
@@ -277,7 +283,7 @@ Fase de autenticação/autorização (provavelmente Fase 1, junto com login mult
 | Falha de autorização descoberta após uso real (colaborador acessou dado de outro) | MEDIUM-HIGH | Corrigir a checagem de propriedade no backend; auditar logs de acesso (se existirem) para entender o que foi exposto; comunicar ao dono do escritório por questão de confidencialidade dos dados de clientes |
 | Schema de regime tributário sem suporte a histórico, descoberto quando uma empresa muda de regime | MEDIUM-HIGH | Adicionar tabela de histórico de regime; migrar dado atual como "registro único desde sempre"; tarefas já geradas não são reescritas — só passam a usar o histórico a partir da mudança registrada |
 
-## Pitfall-to-Phase Mapping
+## Pitfall-to-Phase Mapping (v1.0)
 
 | Pitfall | Prevention Phase | Verification |
 |---------|-------------------|----------------|
@@ -290,7 +296,7 @@ Fase de autenticação/autorização (provavelmente Fase 1, junto com login mult
 | Importação suja da planilha Excel (Pitfall 7) | Fase de importação inicial de dados, após Pitfall 5 estar resolvido | Relatório de importação revisado pelo dono: 0 empresas sem regime, 0 CNPJs inválidos sem sinalização, contagem bate com esperado |
 | Autorização não enforced no backend (Pitfall 8) | Fase de autenticação/autorização (early) | Teste de API direta: colaborador A não consegue acessar/modificar recursos de empresas fora da sua carteira |
 
-## Sources
+## Sources (v1.0)
 
 - [Idempotent Cron Jobs are Operable Cron Jobs – Robust Perception](https://www.robustperception.io/idempotent-cron-jobs-are-operable-cron-jobs/)
 - [How to prevent duplicate cron jobs from running – Cronitor](https://cronitor.io/guides/how-to-prevent-duplicate-cron-executions)
@@ -321,5 +327,198 @@ Fase de autenticação/autorização (provavelmente Fase 1, junto com login mult
 - [Rules Engine Pattern – DevIQ](https://deviq.com/design-patterns/rules-engine-pattern/)
 
 ---
-*Pitfalls research for: Sistema de gestão de tarefas e prazos fiscais (escritório de contabilidade brasileiro)*
-*Researched: 2026-06-11*
+
+# Part B — v2.0 Addendum: Multi-Sector Expansion Pitfalls (2026-06-22)
+
+**Scope:** Pitfalls specific to ADDING DP (Departamento Pessoal) and Contábil sectors to this already-built, already-in-production system — grounded in direct inspection of the actual codebase (`prisma/schema.prisma`, `src/lib/visibility-scope.ts`, `src/modules/tarefas/geracao.ts`, `src/lib/geracao-tarefas.ts`, `src/lib/scheduler.ts`, `src/modules/dashboards/queries.ts`, `src/modules/empresas/queries.ts`), not generic multi-tenant advice.
+
+## Context Anchors (what "this system" actually looks like today)
+
+- `prisma/schema.prisma`: `Empresa.responsavelId` is a single required `String` FK to `Usuario`, with `@@index([responsavelId])`. No junction table exists yet.
+- `Tarefa` has its own `responsavelId` (copied from `empresa.responsavelId` at generation time, per D-09) — **two places** carry "who is responsible," not one.
+- `@@unique([empresaId, tipoObrigacao, competencia])` on `Tarefa` is the idempotency backbone — `executarGeracaoMensal` relies on `skipDuplicates: true` against this constraint, with **no application-level pre-check** (deliberate, documented anti-TOCTOU design in `src/modules/tarefas/geracao.ts`).
+- `src/lib/visibility-scope.ts` exposes `withVisibilityScope` (Empresa) and `withTarefaScope` (Tarefa), both keyed on a single `responsavelId === user.id` comparison. `DONO` → `{}`, `COLABORADOR` → `{ responsavelId: user.id }`.
+- `gerarTarefasDoMes` (`src/lib/geracao-tarefas.ts`) is a **pure function**, keyed only on `RegimeTributario` → catalog of `TipoObrigacao` with a `diaBase`. It has no concept of sector, periodicity beyond monthly, or which `responsavelId` to use beyond `empresa.responsavelId`.
+- `executarGeracaoMensal` reads ALL active `Empresa` rows in one `findMany`, generates ALL obligations for ALL regimes in one pass, and writes them in one `createMany` inside one transaction — with NO sector filter, because sector doesn't exist yet.
+- Dashboards: `src/app/(app)/dashboards/guard.ts` is DONO-only (`notFound()` for non-DONO, before any query). Queries live in `src/modules/dashboards/queries.ts` (plural — the live, wired-up module).
+- **Live evidence of the exact drift pitfall this addendum warns about**: `src/modules/dashboard/queries.ts` (singular) already exists in this repo as an orphaned/abandoned duplicate of the dashboards module, referencing a different schema shape (`desempenhoMensalSnapshot`, `usuarioId`) that doesn't even match current Prisma models. This is not hypothetical — it is sitting in the tree today as proof that parallel duplicate query modules drift fast and silently in this codebase.
+
+## Critical Pitfalls (v2.0)
+
+### Pitfall B1: Migrating `responsavelId` to per-sector without a backfill plan that accounts for live data semantics, not just schema shape
+
+**What goes wrong:**
+The naive migration path is: add a `EmpresaResponsavelSetor` junction table (empresaId, setor, responsavelId), then either (a) drop `Empresa.responsavelId` immediately, or (b) leave it dangling. Both break things. Dropping it immediately breaks every existing query/component that still reads `empresa.responsavelId` (there are several: `empresas/queries.ts` EMPRESA_SELECT, `empresa-form.tsx`, `empresas-table.tsx`, the import wizard, and crucially `gerarTarefasDoMes`/`executarGeracaoMensal` which read it directly with no scope check). Leaving it dangling without a clear migration meaning creates ambiguity: does old `responsavelId` mean "fiscal responsável" now? If the backfill script doesn't explicitly map the 197 existing `responsavelId` values to `setor: FISCAL` rows in the new junction table, fiscal task generation silently loses its responsible-party assignment the moment the engine is refactored to read from the junction table instead of the old column.
+
+**Why it happens:**
+The schema migration looks "done" once `prisma migrate dev` succeeds and the junction table exists. But a successful migration only proves the *shape* is right — it says nothing about whether the 197 rows of *existing* data were translated into the new shape correctly. Junction-table migrations are notoriously easy to ship with an empty table (correct schema, zero rows), because Prisma migrations don't auto-populate join tables from a column being dropped.
+
+**How to avoid:**
+- Treat this as two separate, sequenced steps, not one migration: (1) ADD the junction table and a data backfill script that inserts one row per existing `Empresa` with `setor: 'FISCAL'`, `responsavelId: empresa.responsavelId` for all 197 companies — verified by a count assertion (197 empresas → 197 fiscal junction rows, no fewer, no more) before any code reads from the new table; (2) only AFTER the backfill is verified, repoint the read paths (`gerarTarefasDoMes`, `withVisibilityScope`, `empresas/queries.ts`, dashboards) to the junction table.
+- Keep `Empresa.responsavelId` column in place (deprecated, unread) for at least one full release cycle as a rollback safety net — do not drop it in the same migration that introduces the junction table. Dropping a column and adding a replacement table in the same deploy removes your ability to diff "old value vs new value" if the backfill script has a bug.
+- Write a verification query that compares `Empresa.responsavelId` to the FISCAL row in the junction table for all 197 companies and asserts equality before considering the migration phase done.
+
+**Warning signs:**
+- Backfill script "succeeds" but row count in junction table doesn't match `197 * 1` (one row each, sector=FISCAL) before DP/Contábil assignment.
+- Any remaining code path doing `db.empresa.findMany({ select: { responsavelId: true } })` after the junction table is supposed to be the source of truth — this is a sign the migration is half-done and two sources of truth now disagree.
+- DP/Contábil responsável fields silently `null` for all 197 companies post-migration because nobody ran a second backfill pass to assign placeholder DP/Contábil colaboradores per company (this is a separate step from the FISCAL backfill above — the junction table needs 3 rows per company eventually, not 1).
+
+**Phase to address:** Schema migration phase (first phase of v2.0) — must complete and be verified BEFORE the generation-engine phase begins, because the engine phase needs the junction table populated and correct to read sector-specific responsáveis.
+
+---
+
+### Pitfall B2: Extending the generation engine to "annual" periodicity by bolting an `if` onto the monthly cron path instead of generalizing competência semantics
+
+**What goes wrong:**
+The existing engine's mental model is baked into multiple places around "month": `competenciaAtual()` returns `"YYYY-MM"`, `calcularPrazoBase` does `addMonths(..., 1)`, the unique constraint is `(empresaId, tipoObrigacao, competencia)` where `competencia` is always a month string, and the cron fires monthly (`0 6 1 * *`) and unconditionally calls `executarGeracaoMensal(competenciaAtual())`. The naive extension is to special-case ECF/DEFIS inside the monthly cron tick — e.g., "if month === 12, also generate annual obligations for competência = current year." This conflates two timelines (calendar month tick vs. annual obligation) and risks: (a) ECF/DEFIS gets generated on whatever arbitrary month the developer picked, with no documented business reason tied to actual deadlines (ECF deadline is typically July of the following year, DEFIS March); (b) the `competencia` string format ambiguity — is annual competência `"2025"` or `"2025-12"`? If it's forced into `"YYYY-MM"` shape to satisfy the existing `String` column and unique constraint without an explicit decision, two different annual tasks for the same year could either collide (false idempotency conflict) or duplicate (e.g., one row with `competencia="2025-12"` and another script run later generating `competencia="2025-01"` for the same fiscal year by mistake).
+
+**Why it happens:**
+The existing engine was deliberately built single-purpose (good v1.0 decision — pure function, no premature abstraction). Now that a second periodicity is needed, the temptation is to patch the smallest possible surface area (add an `if` in the cron callback) rather than introduce a `periodicidade` concept into the data model and catalog, because that touches the unique constraint, the catalog type, and `calcularPrazoBase`'s competência-parsing logic (`competencia.split("-")` would throw or misparse on a bare year string like `"2025"`).
+
+**How to avoid:**
+- Add an explicit `periodicidade: 'MENSAL' | 'ANUAL'` field to the obligation catalog entries (not inferred from tipoObrigacao name matching) and to `Tarefa` itself (or keep it derivable from `tipoObrigacao` via the catalog, but never inferred from string-parsing the competência value).
+- Decide and document the competência format for annual obligations explicitly (e.g., `"2025"` for annual vs `"2025-03"` for monthly) and update `calcularPrazoBase`/`competenciaParaDataLocal` to branch on length/format rather than assuming `split("-")` always yields `[ano, mes]`. Any code that currently does `competencia.split("-").map(Number)` and destructures `[ano, mes]` will silently produce `mes = NaN` or `mes = undefined` on an annual-only string — audit every call site of this pattern (`geracao-tarefas.ts`, `geracao.ts`, `dashboards/queries.ts` `calcularCategoriasCriadas`) before extending.
+- Keep the annual generation triggered by the SAME monthly cron tick (don't add a second cron job) but make the engine itself decide, based on `periodicidade` and the current calendar month, which obligations are due for generation — e.g., "generate ECF only when cron runs in March" — as an explicit, testable rule in the catalog, not an inline conditional in `scheduler.ts`.
+- Add dedicated unit tests asserting that running the monthly cron 12 times in a simulated year produces exactly one ECF/DEFIS task (not zero, not twelve) and that the unique constraint correctly prevents a second annual task for the same year even if the cron is manually re-triggered mid-year.
+
+**Warning signs:**
+- Annual obligation logic lives as an `if (mes === X)` literal inside `scheduler.ts` or `executarGeracaoMensal` rather than as catalog metadata.
+- `competencia.split("-")` appears anywhere in new/modified code without a guard for annual-format strings.
+- The unique constraint `@@unique([empresaId, tipoObrigacao, competencia])` is reused as-is for annual tasks without verifying that `competencia` values for annual obligations are unique per year (e.g., if someone reuses `"2025-12"` as the annual competência AND a December monthly obligation also exists with `tipoObrigacao` overlapping, you'd want them to be genuinely different rows — verify `tipoObrigacao` enum values for ECF/DEFIS are distinct enough that no monthly obligation could accidentally collide).
+
+**Phase to address:** Generation-engine phase — must be designed before the DP/Contábil catalog is added, since the catalog structure depends on whether periodicidade is a first-class field. Should be validated with idempotency tests mirroring the existing `tests/geracao.idempotencia.test.ts` pattern, extended to cover annual + monthly running in the same transaction without constraint collisions.
+
+---
+
+### Pitfall B3: Adding `setor` to RBAC scoping by modifying `withVisibilityScope`/`withTarefaScope` in place, silently changing v1.0 fiscal behavior
+
+**What goes wrong:**
+The instinct is to add a `setor` parameter to the existing scope functions and have COLABORADOR's check become `{ setor: user.setor, responsavelId: user.id }` via the new junction table. Done carelessly, this can go wrong in either direction:
+- **Narrowing bug**: if the new junction-table-based scope is implemented as an `every`/`some` Prisma relation filter incorrectly, a fiscal colaborador who used to see "all empresas where `responsavelId === me`" might now see fewer or zero empresas if the join condition requires BOTH `setor` match AND the join to succeed, but the junction table backfill (Pitfall B1) hasn't run correctly for some companies — a regression that looks like "my client list is empty" for real users on day one of v2.0.
+- **Widening bug**: if `Usuario.setor` is used to filter, but the query forgets to also filter by `responsavelId` for that sector specifically (e.g., uses `some: { setor: user.setor }` without `responsavelId: user.id` in the same nested filter), a COLABORADOR could see ALL companies in their sector regardless of who's actually responsible — breaking the core "colaborador sees only their own" guarantee that v1.0 explicitly tested (`tests/visibility-scope.test.ts`, `tests/tarefas.idor.test.ts`, `tests/empresas.idor.test.ts`).
+- **Tarefa scope drift**: `Tarefa.responsavelId` is currently a flat copy of `empresa.responsavelId` at generation time (D-09). If the generation engine starts writing sector-specific `responsavelId` correctly but `withTarefaScope` isn't updated in lockstep, COLABORADOR users could see tarefas whose `responsavelId` belongs to a different sector's colaborador with the same numeric ID coincidence — unlikely with cuid()s, but the real risk is the inverse: a DP colaborador's tarefas use `Tarefa.responsavelId` set correctly to them, but `withTarefaScope` is never sector-aware at all (since it only checks `responsavelId === user.id`), which is actually FINE for Tarefa scope (a tarefa's responsável is unambiguous per row) — the real risk is at the Empresa level, where one company now has 3 responsáveis and `withVisibilityScope`'s old single-`responsavelId` check becomes meaningless/wrong if not migrated to check the junction table.
+
+**Why it happens:**
+`withVisibilityScope` and `withTarefaScope` are small, simple, heavily trusted functions (explicitly documented as "NEVER call db.empresa without this"). Their simplicity is exactly why they're risky to touch: any contributor (human or AI) extending them without re-running the existing IDOR/visibility test suite against ALL sectors, not just fiscal, can introduce a subtle regression that the existing test suite (written for single-responsável fiscal-only) won't catch because it doesn't even have sector-aware test fixtures yet.
+
+**How to avoid:**
+- Before changing `withVisibilityScope`, write NEW test fixtures with 3 sectors x multiple colaboradores x shared companies, explicitly asserting: a DP colaborador sees a company if AND ONLY IF they are the DP responsável for it, regardless of who the fiscal/contábil responsável is. Mirror the existing `tests/visibility-scope.test.ts`/`tests/empresas.idor.test.ts` structure but parametrize over setor.
+- `withVisibilityScope` should likely change signature to require a `setor` argument explicitly (not infer it from `user.setor` alone, because DONO has no setor and must still see everything, and a colaborador's session should make explicit which sector's view is being requested if sector pages are truly separate per the v2.0 "no unified dashboard" decision) — e.g., `withVisibilityScope(user, setor)` returning `{ responsaveis: { some: { setor, responsavelId: user.id } } }` against the junction relation.
+- Run the FULL existing IDOR/visibility test suite (`tests/visibility-scope.test.ts`, `tests/tarefas.idor.test.ts`, `tests/empresas.idor.test.ts`, `tests/empresas.queries.test.ts`) unmodified against the new implementation as a regression gate — if any of these break, the v1.0 fiscal guarantee has regressed, full stop, before sector-specific tests are even considered.
+- Do not let `Usuario.setor` alone gate visibility for COLABORADOR — `setor` answers "which sector's pages can this person navigate to," while `responsavelId` (per sector, via junction) answers "which companies can they see within that sector." Conflating the two (e.g., "DP colaboradores see all DP companies") would be the widening bug described above and directly violates the v1.0-validated requirement that colaboradores see only their own assigned companies.
+
+**Warning signs:**
+- Any new scope function takes only `user` and infers sector implicitly from `user.setor`, with no explicit `setor` parameter — a sign the function conflates "which sector pages I can access" with "which companies I'm responsible for in that sector."
+- Existing IDOR tests fail after the scope change and get "updated" to match new (wider) behavior rather than investigated as a regression — this is the single most dangerous failure mode for this pitfall, because it would make the test suite complicit in masking the security regression.
+- A colaborador in DP reports seeing companies they don't actually handle, or a fiscal colaborador reports their client list shrank after the v2.0 deploy.
+
+**Phase to address:** RBAC/scoping phase — should be sequenced AFTER the junction table backfill is verified (Pitfall B1) but BEFORE or concurrently with the dashboard phase, since dashboards also need correct per-sector scoping (the DONO-only dashboards are simpler — gate stays "DONO only," but if any future per-colaborador dashboard view is added, it would inherit this same risk).
+
+---
+
+### Pitfall B4: Duplicating dashboard query modules per sector the same way `src/modules/dashboard/` (singular) already diverged from `src/modules/dashboards/` (plural) in this exact codebase
+
+**What goes wrong:**
+This is not a hypothetical risk — it has already happened once in this codebase. `src/modules/dashboard/queries.ts` (singular, untracked in git per the status snapshot) is an abandoned parallel implementation of the same 3 dashboards, written against a DIFFERENT schema shape (`db.desempenhoMensalSnapshot`, `usuarioId`) that doesn't match the current Prisma schema (`DesempenhoMensal`, `colaboradorId`). It is dead code sitting in the tree, presumably from an earlier exploratory pass, never cleaned up. If the same pattern is repeated for DP/Contábil dashboards — i.e., copy `src/modules/dashboards/queries.ts`, rename internals for "DP," paste as a new file — the project will end up with 3 near-identical files (`dashboards-fiscal/`, `dashboards-dp/`, `dashboards-contabil/`) that each independently encode the same subtle business rules (D-01 "no prazo" definition, D-05 frozen-snapshot-vs-live continuity logic, D-06's deliberately-different "atrasada" rule for ranking vs colaborador dashboards). A bug fix or rule change made in one (e.g., correcting the timezone-sensitive `competenciaParaDataLocal` off-by-one already flagged in comments) will not propagate to the other two unless someone remembers to apply it three times by hand.
+
+**Why it happens:**
+Copy-paste-and-rename is the fastest way to get a working DP dashboard page when the fiscal one already works and "looks done." It avoids the harder design question (how do you parametrize a query module over `setor` cleanly when `Tarefa`/`Empresa` need a `setor`-aware filter threaded through every query) and produces visible progress quickly. The existing duplicate (singular vs plural module) is itself evidence this has already happened once under time pressure in this exact project.
+
+**How to avoid:**
+- Parametrize, don't duplicate: add `setor` as an explicit parameter to every dashboard query function (`listarDesempenhoColaboradoresMesAtual(mes, setor)`, `listarEvolucaoMensal(quantidadeMeses, setor)`, `listarRankingEmpresas(periodoInicio, periodoFim, setor)`), threading a `setor` filter into the underlying `Tarefa`/`Empresa` where clauses (once `Tarefa` or its junction carries sector — note `Tarefa` itself may need a `setor` column or derive it from `tipoObrigacao`'s sector mapping, since `TipoObrigacao` enum values are currently fiscal-only and DP/Contábil will add new enum values like `FOLHA`, `FGTS`, `ECF`, etc.).
+- Keep ONE query module (`src/modules/dashboards/queries.ts`), not three. The 3 "separate pages, no unified view" requirement from PROJECT.md is a UI/routing decision (3 distinct page routes, each calling the same parametrized functions with a fixed `setor` value), not a data-layer duplication decision. Conflating "separate pages" with "separate query modules" is the actual root cause of this pitfall.
+- Delete the orphaned `src/modules/dashboard/queries.ts` (singular) as part of this milestone's cleanup — it is currently dead code referencing a non-existent schema shape and is exactly the kind of drift this pitfall warns about; leaving it in the tree increases the odds someone edits the wrong file by mistake (the singular/plural naming collision is a footgun on its own).
+- Add a `setor` field early to the `TipoObrigacao`-equivalent catalog entries (or a new enum mapping `TipoObrigacao -> Setor`) so every dashboard query can filter `Tarefa` by sector via a single derived join/computed field rather than three independently-maintained sector-specific catalogs.
+
+**Warning signs:**
+- A new file or directory named `dashboards-dp`, `dashboards-contabil`, `dp/queries.ts`, etc. appears, mirroring `dashboards/queries.ts` function-by-function instead of adding a `setor` parameter to the existing functions.
+- The existing `src/modules/dashboard/` (singular) directory is still present and untouched when v2.0 work begins — it should be deleted, not left to confuse future contributors about which module is canonical.
+- A bug fix (e.g., the documented timezone off-by-one in `competenciaParaDataLocal`/snapshot logic) is applied to the fiscal dashboard file but DP/Contábil dashboard files still have the old buggy version, discovered only when DP numbers look subtly wrong around month boundaries.
+
+**Phase to address:** Dashboard phase (last phase of v2.0 per the milestone's listed feature order) — but the DECISION to parametrize-not-duplicate must be made and validated in the generation-engine/schema phases (need `setor` on `Tarefa`/catalog early) so the dashboard phase isn't forced into duplication because the underlying data model has no sector dimension to filter on yet.
+
+---
+
+## Technical Debt Patterns (v2.0)
+
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|--------------------|-----------------|------------------|
+| Keep old `Empresa.responsavelId` column alongside new junction table indefinitely, never dropped | Safe rollback path, no rush to migrate every read site at once | Two sources of truth for "fiscal responsável" forever; future contributors may read the stale column by mistake | Acceptable for 1 release cycle as a safety net; must be removed once junction table is proven correct and all reads are migrated — track as explicit follow-up, not silent permanence |
+| Copy-paste dashboard query file per sector instead of parametrizing | Fastest path to a visibly working DP dashboard page | Triples maintenance burden for every future bug fix/rule change (see Pitfall B4); this project ALREADY has one orphaned duplicate from this exact shortcut | Never acceptable — the cost of parametrizing now is low (functions already take explicit params), the cost of un-duplicating later is high |
+| Hardcode annual obligation trigger month as a literal `if (mes === 7)` in the cron callback | Ships ECF generation quickly without touching the catalog/periodicidade model | Business rule (when ECF/DEFIS actually become due) is invisible outside the cron file, untested in isolation, and easy to break when refactoring `scheduler.ts` for unrelated reasons | Only acceptable as a throwaway spike to validate the deadline date, never merged — replace with catalog-driven periodicidade before merging |
+| Skip writing sector-aware IDOR test fixtures and just manually click through the DP login to "check it looks right" | Faster to demo | Misses the exact class of widening/narrowing bugs described in Pitfall B3, which are invisible in casual manual testing (you'd need to log in as multiple colaboradores across sectors and compare lists) | Never acceptable for the RBAC scoping phase — this is precisely the kind of bug that silently leaks/hides client data and erodes trust in "the dono always knows the status of everything" |
+
+## Integration Gotchas (v2.0)
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|-----------------|-------------------|
+| Cron job (`src/lib/scheduler.ts`) + new annual periodicity | Adding a second `cron.schedule(...)` call specifically for annual obligations, duplicating the `globalThis.__agendaFiscalCronStarted` guard pattern incorrectly (e.g., reusing the same flag for both jobs, so registering the annual job accidentally skips if the monthly one already set the flag) | Keep ONE cron registration; let `executarGeracaoMensal` (or its renamed successor) internally decide which periodicities are due this tick, based on catalog metadata — single entry point, single idempotency guard, mirroring the existing documented pattern that "cron and manual trigger call exactly the same function" |
+| Prisma unique constraint reuse for annual tasks | Reusing `@@unique([empresaId, tipoObrigacao, competencia])` as-is without validating that annual `competencia` values (e.g., `"2025"`) can't collide with or duplicate against monthly values for an unrelated `tipoObrigacao` in the same year | Explicitly test that annual + monthly task generation in the same calendar year for the same `empresaId` never violates or accidentally satisfies the unique constraint in an unintended way — add a dedicated test fixture mixing both periodicities in one transaction |
+| Existing IDOR/visibility test suite vs new sector dimension | Treating the existing `tests/visibility-scope.test.ts` etc. as "passing = done" without adding NEW sector-parametrized fixtures, since the old suite has no concept of `setor` and can pass trivially even with a broken sector implementation | Old suite passing is necessary but not sufficient — must add new multi-sector fixtures (3 sectors x shared companies x different responsáveis per sector) as described in Pitfall B3 |
+
+## Performance Traps (v2.0)
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|-----------------|
+| `executarGeracaoMensal` reading ALL active empresas in one `findMany` and generating ALL obligations (fiscal + DP + contábil) in one transaction, now 3x the row count and 3x the obligation types per company | Cron job transaction duration increases roughly proportionally to (sectors x obligation types); at 197 companies x 3 sectors x ~3-4 obligations each, still likely well under any practical Postgres transaction timeout, but worth measuring once DP/Contábil catalogs are added | Keep using `createMany({ skipDuplicates: true })` (already batch-efficient); measure actual transaction duration after adding DP+Contábil catalogs before assuming it's fine — don't split into 3 separate transactions per sector unless measurement shows a real problem (splitting loses the current "snapshot + generation atomic together" guarantee) | Unlikely to break at this scale (~197 companies); would only become a real concern at 1000s of companies or dozens of obligation types per sector |
+| Dashboard `groupBy`/in-memory aggregation patterns (`porColaborador` Map, `porEmpresa` Map) now needing a `setor` dimension added to every aggregation key | If `setor` is added as a filter rather than threaded into the grouping key, dashboards could silently aggregate across sectors when they shouldn't (a DP dashboard showing fiscal data mixed in) — this is a correctness trap as much as a performance one | Add `setor` to every `where` clause explicitly per dashboard call (parametrized per Pitfall B4), not just to the eventual display layer | Becomes a live bug the moment a second sector's data exists in the `Tarefa` table — i.e., immediately upon DP/Contábil generation going live, not a "scale" threshold |
+
+## Security Mistakes (v2.0)
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Treating `Usuario.setor` as sufficient for RBAC scoping (colaborador sees all companies in their sector) instead of combining it with per-company per-sector `responsavelId` | A DP colaborador could see/edit ALL ~197 companies' DP data instead of just the ones assigned to them — a direct regression of the v1.0-validated "colaborador sees only their own" guarantee, now scoped per-sector instead of globally, and easy to miss because it "looks like an upgrade" (sector isolation) while actually removing per-person isolation within the sector | See Pitfall B3 — require explicit `setor` + `responsavelId` combination in every scope function, with dedicated regression tests |
+| `gerarTarefasDoMes`/`executarGeracaoMensal` cron path has NO auth context by design (documented as deliberate in `geracao.ts`) — extending it to read per-sector responsável from the new junction table without re-verifying this "no scope needed, reads everything" assumption still holds | If a future refactor mistakenly tries to apply `withVisibilityScope`/`withTarefaScope` inside the cron path (e.g., copy-pasting a scoped query pattern from elsewhere), the cron would silently generate tasks for a subset of companies/sectors only, since there's no "DONO" user object in a cron context to satisfy a DONO-only `{}` scope — tasks would simply stop being generated for some companies with no error | Keep the documented invariant explicit in the new code: the generation engine reads ALL active empresas across ALL sectors, unscoped, by design — add a code comment/test asserting this invariant survives the sector-extension refactor |
+| Reusing `Tarefa.responsavelId` (flat copy at generation time, per D-09) as the sole authority for Tarefa-level visibility without re-verifying it's populated correctly for DP/Contábil tasks generated from the NEW junction table (not the old single column) | If the generation engine is updated to read sector-specific responsável from the junction table but a code path still falls back to `empresa.responsavelId` (the old single column) for DP/Contábil task creation, ALL DP/Contábil tasks across all 197 companies would get assigned to whoever the FISCAL responsável happens to be — a systemic misassignment, not a one-off bug, and the kind of error that's invisible until colaboradores start asking "why am I seeing tasks for companies I don't handle in DP" | Add an explicit assertion/test that DP and Contábil generated tasks have `responsavelId` values drawn from the DP/Contábil colaborador pool (the 7 new placeholder users), never matching a fiscal-only colaborador's id, as a generation-engine test |
+
+## UX Pitfalls (v2.0)
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-------------------|
+| 7 new placeholder colaboradores (4 DP + 3 Contábil) given generic names like "DP1", "Contábil2" indefinitely if the renaming quick-task is forgotten | Dono and colaboradores see confusing generic names in dashboards/task lists for an extended period, undermining trust in "dono always knows who's responsible" | Treat placeholder renaming as a tracked, time-boxed follow-up immediately after the migration phase — mirror exactly how the v1.0 fiscal colaborador1-4 -> real names was handled (per Key Decisions in PROJECT.md), don't let it linger |
+| Empresa edit form (`empresa-form.tsx`) still shows a single "Responsável" field after the schema migration, because the UI wasn't updated in the same phase as the data model | Users editing a company can't see or change DP/Contábil responsáveis at all, or worse, editing the visible single field silently only updates the FISCAL responsável while the UI implies it controls "the" responsável | Update `empresa-form.tsx`/`empresas-table.tsx` to show 3 distinct responsável fields (one per sector) in the SAME phase as the schema migration, not deferred to a later UI-polish pass — otherwise there's a window where the data model supports per-sector responsáveis but the UI can't express it |
+| Dashboards "duplicated per sector, no unified view" (explicit v2.0 decision) implemented as 3 visually identical pages with only a label change, giving the dono no way to quickly compare sectors without manually switching pages 3 times | Dono loses the "real-time visibility into everything" core value if comparing sectors requires tedious manual page-switching with no shared context (e.g., losing the selected month filter when switching from fiscal to DP dashboard) | Even without a unified dashboard, keep filter state (selected competência/period) consistent and shareable via URL params across the 3 sector pages, so switching sectors doesn't reset the dono's current view context |
+
+## "Looks Done But Isn't" Checklist (v2.0)
+
+- [ ] **Junction table migration:** Often missing a verified row-count assertion proving all 197 companies got a FISCAL row backfilled correctly — verify with `SELECT count(*) FROM empresa_responsavel_setor WHERE setor = 'FISCAL'` equals 197, not just "migration ran without error."
+- [ ] **Annual periodicity support:** Often missing a test that runs the monthly cron 12 simulated times across a year boundary and asserts exactly one ECF/DEFIS task is created per company, not zero (never wired up) or twelve (periodicity check missing).
+- [ ] **Sector-aware RBAC:** Often missing regression tests proving the OLD fiscal-only IDOR guarantees (`tests/visibility-scope.test.ts`, `tests/tarefas.idor.test.ts`, `tests/empresas.idor.test.ts`) still pass unmodified — and NEW tests proving a DP colaborador can't see another DP colaborador's companies, even within the same sector.
+- [ ] **Dashboard parametrization:** Often missing deletion of the orphaned `src/modules/dashboard/` (singular) duplicate module, and often missing a single shared query module parametrized by `setor` rather than 3 independently copy-pasted files.
+- [ ] **Tarefa.responsavelId correctness for new sectors:** Often missing verification that DP/Contábil-generated tasks actually carry DP/Contábil colaborador IDs (not a fallback to the fiscal `empresa.responsavelId`) — easy to ship a generation engine that "creates tasks successfully" while silently misassigning all of them to the wrong person.
+- [ ] **UI for per-sector responsável:** Often missing updates to `empresa-form.tsx`/`empresas-table.tsx` to expose 3 responsável fields — schema and engine can be "done" while the only UI to assign/view DP and Contábil responsáveis doesn't exist yet, blocking actual usability of the feature.
+
+## Recovery Strategies (v2.0)
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|----------------|------------------|
+| Junction table backfill missed/incorrect for some companies | MEDIUM | Write a one-off reconciliation script comparing `Empresa.responsavelId` (old column, kept as safety net per Pitfall B1) against junction table FISCAL rows; report and fix mismatches before deleting the old column. Cost is medium because it requires careful manual review of any company where the script disagrees, but the old column being preserved (not dropped early) is what makes this recoverable at all. |
+| Annual obligation duplicated or never generated due to competência format mismatch | LOW-MEDIUM | Since idempotency relies on the unique constraint, a "never generated" bug is recoverable by simply re-running generation for the correct competência once the format bug is fixed — no data corruption, just a missing row. A "duplicated" bug (different competência strings representing the same year) requires a manual cleanup query to merge/delete duplicate `Tarefa` rows before re-running with the corrected format. |
+| RBAC widening bug ships to production (colaborador sees too much) | HIGH | This is a data exposure incident, not just a bug — requires immediate hotfix deploy of the corrected scope function, an audit of what was actually viewed/exported during the exposure window (if logs allow), and likely a direct conversation with the dono about what happened, given the core value proposition is built on trust in correct visibility. Strongly motivates the regression-test-first approach in Pitfall B3 rather than relying on post-hoc detection. |
+| Dashboard query drift between sector-duplicated files (Pitfall B4 realized) | MEDIUM-HIGH | Requires diffing the 3 (or more) duplicated query files line-by-line to identify which business rules diverged, deciding which version is "correct," and consolidating into one parametrized module — effectively redoing the work that should have happened in the first design pass, while also auditing historical dashboard data for any periods where the wrong rule was live (e.g., wrong "atrasada" definition in one sector's ranking for months before the fix). |
+
+## Pitfall-to-Phase Mapping (v2.0)
+
+| Pitfall | Prevention Phase | Verification |
+|---------|--------------------|----------------|
+| Junction table backfill incomplete/incorrect (B1) | Schema migration phase (Phase 1 of v2.0) | Row-count assertion (197 FISCAL rows) + spot-check query comparing old `responsavelId` column to new junction table before any dependent code is written |
+| Annual periodicity breaks monthly idempotency or competência parsing (B2) | Generation-engine phase | Extended idempotency test suite (mirroring `tests/geracao.idempotencia.test.ts`) simulating a full year of monthly cron ticks + verifying exactly one annual task per company per year, no constraint violations |
+| RBAC scoping widens/narrows COLABORADOR visibility incorrectly (B3) | RBAC/scoping phase (sequenced after schema migration, before/with dashboard phase) | Full existing IDOR/visibility suite passes unmodified AS A REGRESSION GATE, plus new multi-sector fixtures proving per-sector, per-person isolation |
+| Dashboard logic duplicated per sector causing drift (B4) | Dashboard phase (last phase, but design decision made earlier) | Single shared query module exists, parametrized by `setor`; orphaned `src/modules/dashboard/` (singular) deleted; no new per-sector directory mirrors the existing `dashboards/queries.ts` function-by-function |
+
+## Sources (v2.0)
+
+- Direct inspection of this project's actual codebase (HIGH confidence — primary source, not inferred):
+  - `prisma/schema.prisma` — current `Empresa.responsavelId`, `Tarefa` unique constraint, enums
+  - `src/lib/visibility-scope.ts` — `withVisibilityScope`/`withTarefaScope` implementation
+  - `src/lib/geracao-tarefas.ts`, `src/modules/tarefas/geracao.ts` — pure catalog function + transactional orchestration, competência parsing, idempotency-via-constraint design
+  - `src/lib/scheduler.ts` — cron registration pattern, single-entry-point design (cron and manual trigger call the same function)
+  - `src/modules/dashboards/queries.ts` (plural, live) vs `src/modules/dashboard/queries.ts` (singular, orphaned) — live evidence of dashboard module drift already present in this repo
+  - `src/app/(app)/dashboards/guard.ts` — DONO-only gate pattern
+  - `src/modules/empresas/queries.ts` — EMPRESA_SELECT pattern, IDOR-safe `findFirst`-with-scope pattern
+  - `.planning/PROJECT.md` — v2.0 milestone scope, explicit "no unified dashboard" decision, 197-company scale, 7 placeholder colaboradores decision
+- Domain reasoning from documented v1.0 design decisions embedded as code comments (D-01 through D-14 references throughout the codebase) — these comments explicitly call out prior pitfalls already avoided once (e.g., `setDate(date, 31)` rolling into next month, timezone off-by-one in date parsing, TOCTOU in idempotency) — treated as HIGH confidence since they are first-party documented decisions, not external speculation.
+
+---
+*Pitfalls research for: Sistema de gestão de tarefas e prazos fiscais (escritório de contabilidade brasileiro) — v1.0 fiscal + v2.0 multi-setor*
+*Researched: 2026-06-11 (v1.0) / 2026-06-22 (v2.0 addendum)*

@@ -1,293 +1,346 @@
 # Architecture Research
 
-**Domain:** Internal task/deadline management web app for an accounting office (multiusuário, geração recorrente de tarefas, dashboards)
-**Researched:** 2026-06-11
-**Confidence:** HIGH (these are foundational, stack-agnostic patterns — modular monolith, RBAC, template-driven recurring task generation, business-day calculation — all well-established and stable across years of practice)
+**Domain:** Multi-sector extension of an existing Next.js/Prisma task-management system (Agenda Fiscal v2.0 — adding DP and Contábil sectors alongside the already-shipped Fiscal sector)
+**Researched:** 2026-06-22
+**Confidence:** HIGH — grounded in direct reading of the actual v1.0 codebase (prisma/schema.prisma, src/modules/tarefas/geracao.ts, src/lib/visibility-scope.ts, src/modules/dashboards/*, src/app/(app)/dashboards/*, src/modules/empresas/queries.ts, src/types/next-auth.d.ts), not generic domain research.
+
+**Note on supersession:** This file replaces the v1.0 generic ecosystem ARCHITECTURE.md (researched 2026-06-11, pre-implementation). The actual v1.0 build diverged from that early research in one notable way: obligation rules ended up hardcoded in `src/lib/geracao-tarefas.ts` (`CATALOGO_OBRIGACOES` constant) rather than living in a data-driven `regras_obrigacao` table as originally recommended. This v2.0 document reflects what was actually built, not what was originally proposed.
 
 ## Standard Architecture
 
 ### System Overview
 
-For a system at this scale (5 users, ~110 client companies, internet-accessible, single organization), the right shape is a **modular monolith**: one deployable web application with clearly separated internal modules, backed by one relational database. This is deliberately NOT a multi-tenant SaaS or microservices design — those add operational complexity (service discovery, distributed transactions, multi-database tenancy) that this project does not need and would slow down delivery without benefit. The "modules" below are code/schema boundaries inside one app, not separate services.
-
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                         CLIENT (Browser)                              │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │
-│  │ Login/Auth │  │ Task List  │  │ Task Detail│  │ Dashboards      │  │
-│  │   Pages    │  │ (My Tasks) │  │  + History │  │ (charts/tables) │  │
-│  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘  └────────┬────────┘  │
-│        │ Empresas CRUD │ Avulsas CRUD  │                  │           │
-└────────┼───────────────┼───────────────┼──────────────────┼───────────┘
-         │               │               │                  │
-         ▼               ▼               ▼                  ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                    APPLICATION SERVER (API + Web)                     │
-│  ┌─────────────┐ ┌──────────────┐ ┌───────────────┐ ┌──────────────┐ │
-│  │ Auth Module │ │ Empresas      │ │ Tarefas       │ │ Dashboards   │ │
-│  │ (sessions,  │ │ Module (CRUD, │ │ Module (CRUD, │ │ Module       │ │
-│  │ RBAC)       │ │ import Excel) │ │ status, hist.)│ │ (aggregation)│ │
-│  └─────────────┘ └──────────────┘ └───────┬───────┘ └──────────────┘ │
-│                                            │                          │
-│  ┌─────────────────────────────────────────────────────────────────┐ │
-│  │         Recurring Task Generation Engine (scheduled job)         │ │
-│  │  - Reads: regras de obrigação por regime tributário (config/DB)  │ │
-│  │  - Reads: cadastro de empresas + regime + particularidades       │ │
-│  │  - Calcula: prazo ajustado por dia útil/feriado nacional          │ │
-│  │  - Escreve: novas linhas em "tarefas" (1x por empresa/obrigação) │ │
-│  └─────────────────────────────────────────────────────────────────┘ │
-│  ┌─────────────────────────────────────────────────────────────────┐ │
-│  │   Holiday/Business-Day Service (feriados nacionais + cálculo)   │ │
-│  └─────────────────────────────────────────────────────────────────┘ │
-└────────────────────────────────┬───────────────────────────────────────┘
-                                  │
-                                  ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                      DATABASE (PostgreSQL)                            │
-│ ┌──────────┐ ┌──────────┐ ┌────────────┐ ┌────────────────────────┐  │
-│ │ usuarios │ │ empresas │ │  tarefas    │ │ regras_obrigacao        │  │
-│ │          │ │          │ │ (instances) │ │ (templates por regime)  │  │
-│ └──────────┘ └──────────┘ └────────────┘ └────────────────────────┘  │
-│ ┌──────────────────────┐ ┌─────────────────────────────────────────┐ │
-│ │ historico_conclusoes │ │ feriados (cache local opcional)          │ │
-│ └──────────────────────┘ └─────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────┘
+│  PRESENTATION (src/app/(app)/...)                                    │
+│  ┌──────────────┐  ┌──────────────────────┐  ┌────────────────────┐ │
+│  │ /empresas     │  │ /dashboards (DONO)    │  │ /tarefas            │ │
+│  │ (CRUD)        │  │ guard.ts → queries.ts │  │ (lista escopada)    │ │
+│  └──────┬───────┘  └──────────┬───────────┘  └─────────┬───────────┘ │
+├─────────┴─────────────────────┴───────────────────────┴──────────────┤
+│  AUTHORIZATION (src/lib/visibility-scope.ts)                          │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │ withVisibilityScope(user) → Prisma.EmpresaWhereInput          │    │
+│  │ withTarefaScope(user)     → Prisma.TarefaWhereInput           │    │
+│  │ DONO → {}  |  COLABORADOR → { responsavelId: user.id }        │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+├────────────────────────────────────────────────────────────────────────┤
+│  DOMAIN MODULES (src/modules/*)                                       │
+│  ┌────────────┐  ┌──────────────┐  ┌──────────────────────────────┐  │
+│  │ empresas/  │  │ tarefas/     │  │ dashboards/                  │  │
+│  │ queries.ts │  │ geracao.ts   │  │ queries.ts, snapshot.ts,      │  │
+│  │ schema.ts  │  │ queries.ts   │  │ schema.ts                     │  │
+│  └────────────┘  └──────┬───────┘  └──────────────────────────────┘  │
+├──────────────────────────┴─────────────────────────────────────────────┤
+│  PURE CALCULATION (src/lib/*, no I/O)                                 │
+│  ┌──────────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
+│  │ geracao-tarefas.ts│  │ dia-util.ts  │  │ competencia.ts        │   │
+│  │ CATALOGO_OBRIGACOES│ │ anticiparPara│  │ "YYYY-MM" canonical   │   │
+│  │ gerarTarefasDoMes │  │ DiaUtil       │  │ format                │   │
+│  └──────────────────┘  └──────────────┘  └──────────────────────┘   │
+├─────────────────────────────────────────────────────────────────────────┤
+│  SCHEDULING (instrumentation.ts boot hook, no session)                │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │ node-cron → executarGeracaoMensal(competencia)                │    │
+│  │   reads Empresa directly, NEVER calls withTarefaScope          │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+├─────────────────────────────────────────────────────────────────────────┤
+│  PERSISTENCE (Prisma + Postgres/Neon)                                 │
+│  ┌──────────┐ ┌─────────┐ ┌────────┐ ┌─────────────────┐ ┌─────────┐ │
+│  │ Usuario  │ │ Empresa │ │ Tarefa │ │ TarefaHistorico  │ │Desempenho│ │
+│  │          │ │         │ │        │ │                  │ │Mensal   │ │
+│  └──────────┘ └─────────┘ └────────┘ └─────────────────┘ └─────────┘ │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Responsibilities
+### Component Responsibilities (current v1.0 state, before v2.0 changes)
 
-| Component | Responsibility | Typical Implementation |
+| Component | Responsibility | Current State |
 |-----------|----------------|------------------------|
-| **Auth Module** | Login, sessão, hashing de senha, RBAC (colaborador vs dono) | Auth via biblioteca de sessão/JWT do framework escolhido (ex: NextAuth/Auth.js, Lucia, ou auth nativo do framework); tabela `usuarios` com campo `role` (`colaborador`/`dono`) |
-| **Empresas Module** | CRUD de empresas-cliente, importação inicial via planilha Excel | Tabela `empresas` (CNPJ, nome, regime_tributario, responsavel_id, particularidades JSON/texto); endpoint de upload + parser de Excel (ex: `xlsx`/`exceljs`) rodado uma vez na configuração inicial |
-| **Tarefas Module** | CRUD de tarefas (recorrentes geradas + avulsas), mudança de status, histórico | Tabela `tarefas` (empresa_id nullable para avulsas, tipo_obrigacao, responsavel_id, prazo, status, mes_referencia); tabela `historico_conclusoes` para auditoria |
-| **Regras de Obrigação (regime → tarefas)** | Define, por regime tributário, quais tipos de obrigação existem, periodicidade e regra de prazo (ex: "dia 25 do mês seguinte, ajustar p/ dia útil anterior") | Tabela `regras_obrigacao` (regime_tributario, tipo_obrigacao, regra_prazo, ativo) — dados, não código, para permitir adicionar regimes/obrigações sem deploy |
-| **Recurring Task Generation Engine** | Job mensal que lê `empresas` + `regras_obrigacao`, calcula prazos ajustados, e insere instâncias em `tarefas` (idempotente — não duplica se já rodou no mês) | Job agendado (cron interno do framework, ou cron do provedor de hosting, ou serviço externo tipo cron-job.org chamando um endpoint protegido) |
-| **Holiday/Business-Day Service** | Determina se uma data é feriado nacional/fim de semana e calcula o próximo/anterior dia útil | Biblioteca `date-holidays` (suporta Brasil, feriados móveis como Carnaval/Corpus Christi) combinada com lógica própria de "ajustar para dia útil anterior/seguinte" |
-| **Dashboards Module** | Agregações: desempenho por colaborador (no prazo vs atrasado), evolução mensal, ranking de empresas problemáticas | Queries agregadas (SQL `GROUP BY`/`COUNT`/`AVG`) sobre `tarefas` + `historico_conclusoes`; renderizadas com biblioteca de gráficos (ex: Recharts/Chart.js) |
-| **Alertas (in-app)** | Destaca visualmente tarefas próximas do prazo ou atrasadas | Cálculo derivado (não armazenado): comparar `prazo` com `hoje`, sem necessidade de módulo separado — é uma view/filtro sobre `tarefas` |
-| **Referência às automações Python** | Passo a passo de tarefas ICMS/PIS-COFINS linka/explica o uso das ferramentas Python existentes | v1 = campo de texto/markdown com instruções + link/caminho para os scripts; NÃO executa os scripts (fora de escopo v1) |
+| `prisma/schema.prisma` | Source of truth for data shape | `Empresa.responsavelId` is a single FK; no `setor` concept anywhere; `TipoObrigacao` enum is fiscal-only (`ICMS \| PIS_COFINS \| SPED_FISCAL \| SPED_CONTRIBUICOES \| DAS`) |
+| `src/lib/visibility-scope.ts` | Central authorization predicate, spread into every Prisma `where` | Two functions (`withVisibilityScope` for Empresa, `withTarefaScope` for Tarefa), both keyed only on `role` + `responsavelId` — no sector awareness |
+| `src/lib/geracao-tarefas.ts` | Pure catalog + calculation of which obligations exist per regime, with day-of-month base + business-day adjustment | `CATALOGO_OBRIGACOES` is a hardcoded `Record<RegimeTributario, ObrigacaoRegra[]>` (code, not a data table); `gerarTarefasDoMes` assumes exactly one obligation set, one responsible person, one month-ahead deadline pattern — no concept of annual periodicity or sector |
+| `src/modules/tarefas/geracao.ts` (`executarGeracaoMensal`) | Orchestrates: freeze prior month's snapshot, read active `Empresa`, generate + persist tasks via idempotent `createMany` | Single monthly entrypoint; cron triggers it with only a `competencia` string; explicitly bypasses auth scope (correct, since cron has no session) |
+| `src/modules/dashboards/{queries,schema,snapshot}.ts` + `src/app/(app)/dashboards/*` | DONO-only aggregation (desempenho colaboradores, evolução mensal, ranking empresas), frozen via `DesempenhoMensal` for closed months, live for current month | All three dashboard queries implicitly operate over ALL tasks/companies — no sector filter exists; `guard.ts` checks `role !== "DONO"` only |
+| `src/modules/empresas/queries.ts` | Scoped CRUD reads | `EMPRESA_SELECT` includes a single `responsavel` relation; `listarResponsaveis()` returns ALL usuarios with no sector filter |
+| `src/types/next-auth.d.ts` / session | Carries `id` + `role` only | No `setor` field on session user — needs extension if sector-based UI gating is desired beyond pure DB scoping |
 
-## Recommended Project Structure
+**Stale/orphaned code found:** `src/modules/dashboard/queries.ts` (singular "dashboard", currently untracked in git) references a `db.desempenhoMensalSnapshot` model that **does not exist** in the current `schema.prisma` (the real model is `DesempenhoMensal`). This is leftover/abandoned WIP from an earlier design iteration that does not compile against the current schema. It should be deleted, not extended, when building v2.0 — do not confuse it with the active `src/modules/dashboards/` (plural) module.
 
-Estrutura ilustrativa para um framework full-stack tipo Next.js (App Router) + PostgreSQL + ORM (Prisma/Drizzle) — adaptar conforme STACK.md, mas a separação de pastas reflete os limites de módulo acima independentemente do framework escolhido:
+## Recommended Project Structure (v2.0 target)
 
 ```
+prisma/
+└── schema.prisma                      # MODIFIED: add Setor enum, Usuario.setor,
+                                        #   EmpresaResponsavelSetor junction model,
+                                        #   TipoObrigacao additions, Tarefa.setor +
+                                        #   Tarefa.periodicidade, DesempenhoMensal
+                                        #   unique constraint extended with setor
 src/
-├── app/                        # Rotas/páginas (UI)
-│   ├── (auth)/login/           # Tela de login
-│   ├── (dashboard)/            # Área autenticada
-│   │   ├── minhas-tarefas/     # Lista de tarefas do usuário logado
-│   │   ├── empresas/           # CRUD empresas (cadastro, importação)
-│   │   ├── tarefas/[id]/       # Detalhe de tarefa (passo a passo, histórico)
-│   │   ├── analytics/          # Dashboards comparativos
-│   │   └── admin/              # Telas exclusivas do "dono" (visão geral, regras)
-│   └── api/                    # Endpoints (se separados das server actions)
-│       ├── tasks/generate/     # Endpoint chamado pelo job mensal (protegido)
-│       └── empresas/import/    # Upload/parse de planilha Excel
-├── modules/                     # Lógica de domínio (separada da UI)
-│   ├── auth/                   # Sessão, hashing, checagem de role
-│   ├── empresas/                # CRUD + parser de importação Excel
-│   ├── tarefas/                 # CRUD, mudança de status, histórico
-│   ├── regras-obrigacao/        # CRUD das regras por regime tributário
-│   ├── geracao-tarefas/         # Motor de geração mensal (engine + job runner)
-│   ├── feriados/                # Serviço de feriados/dia útil
-│   └── dashboards/               # Queries de agregação
-├── db/
-│   ├── schema/                  # Definições de tabelas (Prisma schema / Drizzle schema)
-│   ├── migrations/               # Migrações versionadas
-│   └── seed/                     # Dados iniciais: regras_obrigacao padrão (Lucro Real, Simples)
-└── lib/
-    ├── excel/                    # Helpers de leitura/escrita de planilhas
-    └── dates/                     # Wrapper sobre date-holidays + cálculo de dia útil
+├── lib/
+│   ├── visibility-scope.ts            # MODIFIED: scope functions take an optional
+│   │                                   #   `setor` param; Tarefa/Empresa where clauses
+│   │                                   #   gain a sector-aware join through the new
+│   │                                   #   junction table
+│   ├── geracao-tarefas.ts             # UNCHANGED — stays the Fiscal-only catalog;
+│   │                                   #   do NOT generalize into one mega-catalog
+│   ├── geracao-tarefas-dp.ts          # NEW: DP catalog (folha, FGTS, INSS, eSocial) — monthly
+│   ├── geracao-tarefas-contabil.ts    # NEW: Contábil catalog — monthly (balancete/
+│   │                                   #   escrituração) + annual (ECF/DEFIS)
+│   └── dia-util.ts                    # UNCHANGED — periodicity-agnostic, reused as-is
+├── modules/
+│   ├── empresas/
+│   │   ├── queries.ts                 # MODIFIED: EMPRESA_SELECT includes
+│   │   │                               #   responsaveisPorSetor (new relation);
+│   │   │                               #   listarResponsaveis(setor?) gains filter
+│   │   └── schema.ts                  # MODIFIED: empresa form schema accepts 3
+│   │                                   #   responsavel fields instead of 1
+│   ├── tarefas/
+│   │   ├── geracao.ts                 # MODIFIED: executarGeracaoMensal extended to
+│   │   │                               #   also generate DP + Contábil-mensal tasks;
+│   │   │                               #   new sibling executarGeracaoAnual(ano)
+│   │   ├── queries.ts                 # MODIFIED: list queries gain setor filter
+│   │   └── schema.ts                  # MODIFIED: extend enum validation,
+│   │                                   #   add competenciaAnualSchema ("YYYY")
+│   ├── dashboards/                     # (delete orphaned sibling "dashboard/" dir —
+│   │   │                               #   do not extend it, see note above)
+│   │   ├── queries.ts                 # MODIFIED: every query gains a `setor` param,
+│   │   │                               #   filters Empresa/Tarefa/Usuario by it
+│   │   ├── schema.ts                  # MODIFIED: add `setorSchema` (enum validation)
+│   │   └── snapshot.ts                # MODIFIED: snapshot keyed by
+│   │                                   #   (competencia, colaboradorId, setor)
+├── app/(app)/
+│   ├── dashboards/fiscal/              # RENAMED from dashboards/ — existing
+│   │   │                               #   page.tsx, guard.ts, *chart.tsx move here
+│   │   │                               #   unchanged except setor="FISCAL" added
+│   ├── dashboards/dp/                  # NEW: same guard.ts pattern, setor="DP" fixed
+│   │   └── page.tsx, guard.ts, *chart.tsx
+│   └── dashboards/contabil/            # NEW: same guard.ts pattern, setor="CONTABIL" fixed
+│       └── page.tsx, guard.ts, *chart.tsx
+└── types/
+    └── next-auth.d.ts                  # MODIFIED (optional): add `setor` to
+                                         #   Session.user / JWT only if sector-gating
+                                         #   decisions need to happen client-side;
+                                         #   server-side scoping works from a DB
+                                         #   lookup of Usuario.setor without this
 ```
 
 ### Structure Rationale
 
-- **`app/` separado de `modules/`:** mantém a UI fina e a lógica de negócio (regras de geração de tarefas, cálculo de prazos) testável sem subir o servidor web inteiro — importante porque o motor de geração é o componente mais arriscado/crítico do sistema.
-- **`modules/regras-obrigacao/` como módulo próprio:** isola a "configuração tributária" do "motor de execução" (`geracao-tarefas/`). Isso é o que permite adicionar um terceiro regime tributário (ex: Lucro Presumido) só com dados novos, sem tocar no motor.
-- **`modules/feriados/`:** isolado porque é uma dependência transversal (usada tanto na geração mensal quanto possivelmente em validações de UI), e porque pode evoluir (hoje só feriados nacionais; v2 pode adicionar estaduais por empresa).
-- **`db/seed/`:** crítico para este projeto — as regras de obrigação por regime (Lucro Real: ICMS dia X, PIS/COFINS dia Y, SPED dia Z; Simples Nacional: DAS dia W) são dados de configuração inicial, não hardcoded, então precisam de um seed versionado e editável.
+- **`src/lib/geracao-tarefas-dp.ts` / `-contabil.ts` as separate files, not one mega-catalog:** Fiscal's catalog (`CATALOGO_OBRIGACOES`) is keyed purely by `RegimeTributario`. DP obligations don't vary by regime tributário at all (folha/FGTS/INSS apply regardless of Lucro Real vs Simples) — forcing DP into the same `Record<RegimeTributario, ObrigacaoRegra[]>` shape would mean duplicating identical rows across regimes for no reason. Splitting per-sector keeps each catalog's natural key (Fiscal: by regime; DP: flat list; Contábil: by periodicidade) instead of contorting all three into one generic shape.
+- **`dashboards/fiscal/`, `dashboards/dp/`, `dashboards/contabil/` as sibling route folders, not one parametrized `dashboards/[setor]/`:** PROJECT.md explicitly states "v2.0 mantém dashboards separados por setor" as a deliberate scoping decision (no unified cross-sector view, see "Out of Scope"). A dynamic `[setor]` route would tempt future merging of logic and risks a setor value leaking into a URL param that bypasses the guard; three static folders with their own `guard.ts` (literally copy-pasted with a hardcoded `setor` value, same pattern as today's single `guard.ts`) keeps each sector's access control trivially auditable in isolation — consistent with this codebase's existing preference for explicit, repeated guards over generic indirection (see the `T-4-01` comment in the current `guard.ts`).
+- **`visibility-scope.ts` stays one file, gains a `setor` parameter on existing functions (not 3 new functions):** the file's whole purpose is "this is the ONE place every scoped query must call into." Adding `withVisibilityScope(user, setor?)` preserves the existing call-site contract (`...withVisibilityScope(user)` spreads still work since `setor` is optional) while giving COLABORADOR-scoped queries a way to also filter by sector responsibility once `EmpresaResponsavelSetor` exists.
 
 ## Architectural Patterns
 
-### Pattern 1: Regras de Geração como Dados (Rule Table), não Código
+### Pattern 1: Junction table for per-sector responsibility (`EmpresaResponsavelSetor`)
 
-**What:** Em vez de hardcodar "se regime == Lucro Real, gerar tarefa de ICMS no dia 10, PIS/COFINS no dia 25...", as regras vivem em uma tabela `regras_obrigacao` com colunas como `regime_tributario`, `tipo_obrigacao`, `dia_base`, `direcao_ajuste` (antecipar/postergar ao bater em fim de semana/feriado), `ativo`.
+**What:** Replace the single `Empresa.responsavelId` FK with a junction model `EmpresaResponsavelSetor { empresaId, setor, usuarioId }`, unique on `(empresaId, setor)`.
 
-**When to use:** Sempre que a lista de regimes/obrigações pode crescer (este projeto já prevê isso explicitamente: "hoje 2 regimes, pode crescer"). Também permite ao "dono" eventualmente editar prazos sem pedir alteração de código.
-
-**Trade-offs:**
-- (+) Adicionar um regime novo (ex: Lucro Presumido com obrigações próprias) = inserir linhas na tabela, sem deploy.
-- (+) Motor de geração fica genérico: "para cada empresa, buscar regras do seu regime, para cada regra calcular prazo ajustado, criar tarefa se ainda não existir".
-- (-) Um pouco mais de indireção do que `if/else` direto — mas para 2-4 regimes e ~5 tipos de obrigação, o custo é mínimo e o ganho de extensibilidade é alto.
-- (-) Regras complexas (ex: prazo que depende do dígito final do CNPJ — explicitamente fora de escopo v1) não cabem bem num modelo de "dia fixo + ajuste". Se isso entrar em v2, a tabela precisa de um campo extra de "tipo de regra" (fixo vs. baseado em CNPJ).
-
-**Example schema (conceitual):**
-```sql
-CREATE TABLE regras_obrigacao (
-  id SERIAL PRIMARY KEY,
-  regime_tributario TEXT NOT NULL,     -- 'lucro_real' | 'simples_nacional' | (futuro: outros)
-  tipo_obrigacao TEXT NOT NULL,        -- 'icms' | 'pis_cofins' | 'sped' | 'das'
-  dia_base INTEGER NOT NULL,           -- dia do mês (do mês seguinte ao de referência)
-  ajuste_dia_nao_util TEXT NOT NULL,   -- 'antecipar' | 'postergar'
-  ativo BOOLEAN DEFAULT true,
-  UNIQUE (regime_tributario, tipo_obrigacao)
-);
-```
-
-### Pattern 2: Motor de Geração Mensal Idempotente
-
-**What:** Um job que roda 1x por mês (ou sob demanda/manualmente, com proteção) e, para cada empresa ativa, para cada regra de obrigação do seu regime: calcula o `mes_referencia`, calcula o `prazo` ajustado por dia útil, e faz um `INSERT ... ON CONFLICT DO NOTHING` (ou checagem prévia de existência) na tabela `tarefas` usando uma chave única `(empresa_id, tipo_obrigacao, mes_referencia)`.
-
-**When to use:** Sempre — esse é o coração do sistema. Idempotência é essencial porque: (a) o job pode ser re-executado manualmente se falhar, (b) novas empresas podem ser cadastradas no meio do mês e precisam "pegar" tarefas do mês corrente, (c) evita duplicação se o agendador disparar duas vezes.
+**When to use:** Whenever an entity needs exactly-one-owner-per-category and the category set might grow (today 3 sectors, but the shape should not require a schema migration if a 4th sector appears later).
 
 **Trade-offs:**
-- (+) Seguro re-rodar a qualquer momento.
-- (+) Fácil adicionar "gerar tarefas retroativas" para uma empresa nova cadastrada no meio do mês — basta rodar o motor filtrando por essa empresa.
-- (-) Requer uma constraint única no banco e cuidado para que o cálculo de prazo seja determinístico (mesma entrada → mesma saída), senão re-execuções podem gerar prazos diferentes para a "mesma" tarefa.
+- **Junction table (recommended)** — pros: adding a 4th sector later is a data change, not a schema change; querying "all empresas where I'm the DP responsible" is one `WHERE setor = 'DP' AND usuarioId = ?` instead of `WHERE responsavelDpId = ?`; `@@unique([empresaId, setor])` naturally enforces "one responsible per sector per company," matching how `@@unique([empresaId, tipoObrigacao, competencia])` already enforces idempotency elsewhere in this codebase — consistent with established project conventions. Cons: requires a join wherever the old direct FK read was a simple field access; existing code that reads `empresa.responsavelId` directly (cron's `executarGeracaoMensal`, `gerarTarefasDoMes`, dashboards' `groupBy(["responsavelId"])`) must be rewritten to read through the junction, scoped by sector.
+- **3 nullable FK columns** (`responsavelFiscalId`, `responsavelDpId`, `responsavelContabilId`) — pros: zero joins, trivial Prisma `include`, minimal rewrite of existing direct-field-access code. Cons: adding a 4th sector requires an `ALTER TABLE` plus code changes everywhere sectors are enumerated; cannot enforce "exactly one responsible per sector" via a single constraint as cleanly; the existing `responsavel: Usuario @relation("ResponsavelEmpresa")` naming pattern would need 3 distinct relation names, increasing schema verbosity without a corresponding flexibility gain.
 
-**Example (pseudo-code):**
-```typescript
-async function gerarTarefasDoMes(mesReferencia: string) {
-  const empresas = await db.empresas.findMany({ where: { ativo: true } });
-  const regras = await db.regrasObrigacao.findMany({ where: { ativo: true } });
+**Recommendation: junction table.** This codebase already uses this exact shape successfully (`EmpresaRegimeHistorico` is a junction-like time-series table off `Empresa`, and `@@unique` compound constraints are the established idempotency mechanism, e.g. `Tarefa`'s `@@unique([empresaId, tipoObrigacao, competencia])`). A `Setor` enum (`FISCAL | DP | CONTABIL`) mirrors the existing `RegimeTributario` enum pattern exactly.
 
-  for (const empresa of empresas) {
-    const regrasDoRegime = regras.filter(r => r.regimeTributario === empresa.regimeTributario);
-    for (const regra of regrasDoRegime) {
-      const prazoBruto = calcularDataBase(mesReferencia, regra.diaBase);
-      const prazoAjustado = ajustarParaDiaUtil(prazoBruto, regra.ajusteDiaNaoUtil);
+**Example:**
+```prisma
+enum Setor {
+  FISCAL
+  DP
+  CONTABIL
+}
 
-      await db.tarefas.upsert({
-        where: { empresaId_tipoObrigacao_mesReferencia: { empresaId: empresa.id, tipoObrigacao: regra.tipoObrigacao, mesReferencia } },
-        create: { empresaId: empresa.id, tipoObrigacao: regra.tipoObrigacao, mesReferencia, prazo: prazoAjustado, responsavelId: empresa.responsavelId, status: 'pendente' },
-        update: {}, // não sobrescreve se já existe
-      });
-    }
-  }
+model EmpresaResponsavelSetor {
+  id         String   @id @default(cuid())
+  empresaId  String
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
+  setor      Setor
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([empresaId, setor])
+  @@index([usuarioId, setor])
+  @@map("empresa_responsavel_setor")
+}
+
+model Usuario {
+  // ...existing fields...
+  setor                Setor?            // null for DONO (cross-sector); required for COLABORADOR
+  responsavelEmpresas   EmpresaResponsavelSetor[]
+}
+
+model Empresa {
+  // responsavelId / responsavel REMOVED — replaced by:
+  responsaveisPorSetor EmpresaResponsavelSetor[]
 }
 ```
 
-### Pattern 3: RBAC Simples por Role + Escopo de Dados
+**Migration note:** `Empresa.responsavelId` cannot simply be dropped — existing fiscal data must be migrated into `EmpresaResponsavelSetor` rows with `setor = 'FISCAL'` as part of the same migration that adds the new model, otherwise every fiscal task/dashboard query (which reads `responsavelId`) breaks at once.
 
-**What:** Dois papéis (`colaborador`, `dono`). Toda query de listagem de tarefas/empresas é filtrada no backend: `colaborador` só vê registros onde `responsavel_id == usuario_logado.id`; `dono` não tem filtro (vê tudo). A checagem acontece em uma camada central (middleware ou função de repositório), não espalhada pela UI.
+### Pattern 2: Sector as a first-class denormalized column on `Tarefa`, not inferred from `tipoObrigacao`
 
-**When to use:** Sempre, neste projeto — só 2 papéis, então não vale a pena um sistema RBAC genérico com tabelas `roles`/`permissions`/`role_permissions` (overkill para 5 usuários). Um enum `role` na tabela `usuarios` + uma função `withVisibilityScope(query, usuario)` é suficiente.
+**What:** `Tarefa.tipoObrigacao` is currently fiscal-only. Adding DP/Contábil obligation types to this same enum (e.g. `FOLHA`, `FGTS`, `INSS`, `ESOCIAL`, `BALANCETE`, `ESCRITURACAO`, `ECF`, `DEFIS`) works, but every consumer that currently assumes "a Tarefa belongs to the fiscal world" (all 3 dashboard queries, `withTarefaScope`, the empresa-responsavel lookup) needs an explicit `setor` field on `Tarefa` to filter without maintaining a hardcoded "which `tipoObrigacao` values belong to which setor" mapping scattered across the codebase.
 
-**Trade-offs:**
-- (+) Simples de entender e auditar — toda a regra de visibilidade está em um lugar.
-- (+) Fácil de testar (dado um usuário colaborador X, a query nunca deve retornar tarefas de empresas de outro responsável).
-- (-) Se no futuro surgir um 3º papel (ex: "supervisor de equipe" vendo um subconjunto de colaboradores), o enum simples não basta — mas isso é um problema de v2, não de v1.
-- (-) Enforcement deve ser SEMPRE no backend (nunca confiar em esconder botões na UI) — a real-side UI é só conveniência, não segurança.
+**When to use:** Any time a downstream filter (dashboard, scope function, generation engine) needs "give me only this sector's tasks" — denormalizing `setor` onto `Tarefa` directly avoids every query needing to join through `tipoObrigacao` → sector lookup tables.
+
+**Trade-offs:** Pros: trivial `WHERE setor = 'DP'` filtering everywhere, matches the existing flat-column style of this schema (`competencia`, `status`, `motivoPendencia` are all flat denormalized fields already). Cons: `setor` must be set correctly and consistently at task-creation time in 3 separate generation engines (Fiscal/DP/Contábil) — a missed assignment silently breaks sector dashboards. Mitigate by making `setor` a required (non-nullable) column so Prisma/TypeScript force every `tarefa.create`/`createMany` call site to supply it.
+
+**Example:**
+```prisma
+enum TipoObrigacao {
+  ICMS
+  PIS_COFINS
+  SPED_FISCAL
+  SPED_CONTRIBUICOES
+  DAS
+  FOLHA
+  FGTS
+  INSS
+  ESOCIAL
+  BALANCETE
+  ESCRITURACAO
+  ECF
+  DEFIS
+}
+
+enum Periodicidade {
+  MENSAL
+  ANUAL
+}
+
+model Tarefa {
+  // ...existing fields...
+  setor          Setor           // NEW, required — denormalized for cheap filtering
+  periodicidade  Periodicidade?   @default(MENSAL) // NEW — null for avulsas, MENSAL/ANUAL for recorrentes
+
+  @@unique([empresaId, tipoObrigacao, competencia])
+  @@index([setor])
+}
+```
+
+The existing `@@unique([empresaId, tipoObrigacao, competencia])` constraint remains correct as the idempotency key as long as `tipoObrigacao` values stay unique per sector (no overlap between Fiscal/DP/Contábil obligation names) — verify this holds before reusing it for annual tasks (see Pattern 3 on competência format for annual periodicity).
+
+### Pattern 3: Separate generation engine per periodicity, sharing the same persistence/idempotency shell
+
+**What:** `executarGeracaoMensal` currently does 3 things in one function: (1) freeze prior month's snapshot, (2) read active empresas, (3) generate+persist via `gerarTarefasDoMes`. For annual tasks (ECF/DEFIS), step (1) doesn't apply (snapshots are monthly-only, keyed by `DesempenhoMensal.competencia` in format `YYYY-MM`), and step (3) needs a different pure calculator (`gerarTarefasDoAno`) with a different competência format (`YYYY` instead of `YYYY-MM`) and a different responsible-person lookup (`EmpresaResponsavelSetor` filtered by `setor = 'CONTABIL'` instead of the old flat `responsavelId`).
+
+**When to use:** Whenever a new periodicity is introduced into a system whose idempotency design (`@@unique` + `skipDuplicates`) is coupled to a specific competência string shape.
+
+**Trade-offs:** Pros: keeps the proven idempotency pattern (`createMany({ skipDuplicates: true })` riding on a DB constraint, never application-level pre-checks — explicitly called out as D-10 in the existing code comments) intact for both engines without forcing monthly and annual logic to share a competência format that doesn't naturally fit annual data. Cons: two cron schedules to maintain (monthly trigger stays `0 6 1 * *`; annual trigger needs its own, e.g. `0 6 1 1 *` for Jan 1, or whatever lead time Contábil's actual ECF/DEFIS deadlines require) and two `Tarefa.competencia` formats coexisting in the same column (`"2026-03"` for monthly, `"2026"` for annual) — the existing `competenciaSchema` regex (`^\d{4}-(0[1-9]|1[0-2])$`) will reject annual competências and must gain a sibling `competenciaAnualSchema` (`^\d{4}$`), and every place reading `Tarefa.competencia` for monthly aggregation (dashboard queries' date-range math, `calcularSnapshotMensal`) must filter `periodicidade = 'MENSAL'` first or annual rows will corrupt month-range calculations.
+
+**Example:**
+```typescript
+// src/modules/tarefas/geracao.ts — new sibling function, same shell pattern
+export async function executarGeracaoAnual(
+  competenciaAno: string // "YYYY", validated by a new competenciaAnualSchema
+): Promise<{ criadas: number; puladas: number }> {
+  return db.$transaction(async (tx) => {
+    // NO snapshot step — DesempenhoMensal is monthly-only; annual tasks feed
+    // into the SAME monthly snapshot machinery only via their eventual
+    // conclusion date (TarefaHistorico.concluidoEm), not via a parallel
+    // annual snapshot table.
+    const responsaveis = await tx.empresaResponsavelSetor.findMany({
+      where: { setor: "CONTABIL" },
+      select: { empresaId: true, usuarioId: true },
+    });
+    const tarefas = gerarTarefasDoAno(responsaveis, competenciaAno); // new pure fn
+    if (tarefas.length === 0) return { criadas: 0, puladas: 0 };
+    const resultado = await tx.tarefa.createMany({
+      data: tarefas.map((t) => ({ ...t, status: "PENDENTE" as const })),
+      skipDuplicates: true, // same @@unique([empresaId, tipoObrigacao, competencia])
+    });
+    return { criadas: resultado.count, puladas: tarefas.length - resultado.count };
+  });
+}
+```
 
 ## Data Flow
 
-### Geração Mensal de Tarefas (fluxo principal)
+### Request Flow (sector-scoped dashboard read, post-migration)
 
 ```
-[Agendador (cron)] dispara 1x/mês (ex: dia 1, 00:05)
+[DONO navigates to /dashboards/dp]
     ↓
-[Endpoint protegido /api/tasks/generate] (ou job interno)
+[dashboards/dp/guard.ts] → auth() session check → role !== "DONO" ? notFound()
+    ↓ (setor="DP" hardcoded in this route's guard, mirrors current pattern)
+[dashboards/queries.ts: listarDesempenhoColaboradoresMesAtual(mes, setor)]
     ↓
-[Motor de Geração] lê empresas ativas + regras_obrigacao
+[db.tarefa.findMany({ where: { setor: "DP", status: "CONCLUIDA", ... } })]
     ↓
-[Holiday Service] ajusta cada prazo por dia útil/feriado nacional
+[db.empresaResponsavelSetor.groupBy(["usuarioId"], where: { setor: "DP" })]
+    ↓ (replaces today's db.empresa.groupBy(["responsavelId"]))
+[aggregate in memory, same Map-then-array pattern as today]
     ↓
-[INSERT idempotente em "tarefas"] (uma linha por empresa × obrigação × mês)
-    ↓
-[Tarefas aparecem em "Minhas Tarefas" do responsável + visão geral do dono]
+[plain serializable array] → [Server Component renders chart]
 ```
 
-### Atualização de Status (uso diário)
+### Generation Flow (monthly vs annual, side by side post-migration)
 
 ```
-[Usuário marca tarefa como concluída]
-    ↓
-[UI → Tarefas Module] valida que o usuário pode editar essa tarefa (RBAC: é o responsável OU é o dono)
-    ↓
-[UPDATE tarefas SET status='concluida', concluido_em=now(), concluido_por=usuario.id]
-    ↓
-[INSERT em historico_conclusoes] (registro imutável para auditoria/dashboards)
-    ↓
-[UI atualiza] (lista re-renderiza, alerta visual desaparece se estava "atrasado")
+[node-cron, instrumentation.ts boot hook]
+    ├─ monthly trigger (0 6 1 * *) → executarGeracaoMensal(competencia)
+    │     ↓
+    │   freeze DesempenhoMensal snapshot (mensal-only, setor-aware groupBy)
+    │     ↓
+    │   read Empresa + EmpresaResponsavelSetor (setor=FISCAL ∪ DP ∪ CONTABIL-mensal)
+    │     ↓
+    │   gerarTarefasDoMes (fiscal) + gerarTarefasMensaisDp + gerarTarefasMensaisContabil
+    │     ↓
+    │   tx.tarefa.createMany({ skipDuplicates: true })
+    │
+    └─ annual trigger (separate cron expression) → executarGeracaoAnual(competenciaAno)
+          ↓
+        read EmpresaResponsavelSetor (setor=CONTABIL)
+          ↓
+        gerarTarefasDoAno (ECF, DEFIS)
+          ↓
+        tx.tarefa.createMany({ skipDuplicates: true }) — SAME idempotency constraint,
+          different competência format ("YYYY")
 ```
 
-### Agregação para Dashboards
+### Key Data Flows
 
-```
-[Tabelas "tarefas" + "historico_conclusoes"] (fonte única de verdade)
-    ↓
-[Queries agregadas sob demanda]
-    - Por colaborador: % tarefas concluídas no prazo vs atrasadas (mês corrente / histórico)
-    - Por mês: evolução de atrasos ao longo do tempo (GROUP BY mes_referencia)
-    - Por empresa: contagem de atrasos recorrentes (GROUP BY empresa_id, ORDER BY atrasos DESC)
-    ↓
-[Dashboards Module formata resultado] → [UI renderiza com biblioteca de gráficos]
-```
-
-**Nota sobre performance de dashboards:** Na escala deste projeto (~110 empresas × ~5 obrigações/mês = ~550 tarefas/mês, crescendo lentamente), queries agregadas diretas no PostgreSQL são suficientes — não há necessidade de tabelas de agregação pré-computadas, data warehouse separado, ou cache. Revisar isso só se o histórico crescer para múltiplos anos E os dashboards ficarem perceptivelmente lentos (improvável antes de centenas de milhares de linhas).
-
-### Importação Inicial de Empresas (fluxo único, configuração)
-
-```
-[Usuário faz upload de "Controle pis e cofins.xlsx"]
-    ↓
-[Empresas Module → parser Excel] lê linhas, mapeia colunas → campos de "empresas"
-    ↓
-[Validação] (CNPJ válido, regime_tributario reconhecido, responsável existe)
-    ↓
-[INSERT em lote em "empresas"]
-    ↓
-[Tela de revisão] (usuário confirma/corrige antes de persistir definitivamente — recomendado para evitar reimportação)
-```
+1. **Empresa responsibility lookup** moves from a direct field read (`empresa.responsavelId`) to a junction query (`empresaResponsavelSetor.findMany({ where: { setor } })`) everywhere it's used: generation engines, dashboards' carteira-size aggregation, `empresas/queries.ts` listing/detail selects, and the empresa edit form (now needs 3 responsible-person selects instead of 1).
+2. **Authorization scoping** (`withVisibilityScope`/`withTarefaScope`) gains sector awareness: a COLABORADOR's visibility today is "empresas where I'm the responsavel"; post-migration it becomes "empresas where I'm the responsavel for MY setor" — requires joining through `EmpresaResponsavelSetor` filtered by both `usuarioId` and the user's own `setor` (read from `Usuario.setor`, NOT passed by the client, to avoid trusting an unvalidated sector parameter).
+3. **Snapshot continuity (D-05 in existing code comments)** must be re-derived per sector: `DesempenhoMensal` needs a `setor` column added to its `@@unique([competencia, colaboradorId])` constraint (becomes `@@unique([competencia, colaboradorId, setor])`), and `calcularSnapshotMensal` needs a `setor` parameter threading through every query inside it — otherwise DP/Contábil completions get silently merged into the Fiscal snapshot row for a colaborador, corrupting all 3 sector dashboards' "evolução mensal" charts.
 
 ## Scaling Considerations
 
 | Scale | Architecture Adjustments |
 |-------|--------------------------|
-| 5 usuários, ~110 empresas (estado atual e previsto) | Monolito modular + PostgreSQL gerenciado (ex: Supabase, Neon, Railway) é mais que suficiente. Sem necessidade de cache, fila de jobs externa, ou múltiplas instâncias. |
-| Crescimento moderado (até ~20 usuários, ~500 empresas) | Mesma arquitetura. Adicionar índices em `tarefas(responsavel_id, mes_referencia)` e `tarefas(empresa_id, tipo_obrigacao, mes_referencia)`. Considerar paginação nas listagens se "Minhas Tarefas" crescer muito. |
-| Hipotético crescimento grande (centenas de usuários/empresas, múltiplos escritórios) | Reavaliar para multi-tenancy real (separação por `escritorio_id` em todas as tabelas) e mover o motor de geração para um worker separado com fila (ex: BullMQ + Redis) para não competir com requisições web. **Não é necessário para este projeto** — incluído apenas para registro caso o produto vire SaaS no futuro. |
+| Current (197 empresas × 3 setores, 12 usuarios) | No architectural change needed beyond what's described above — monolith Next.js process + Postgres handles this volume trivially; junction table adds at most ~600 rows (197 × 3), negligible. |
+| Hypothetical 4th sector or 500+ empresas | `EmpresaResponsavelSetor` junction scales linearly and needs no schema change to add a sector — this is the entire point of choosing the junction over nullable FK columns. Add an index on `(setor, usuarioId)` if "my carteira for my sector" queries become a hot path (already included in Pattern 1's example). |
+| Cross-sector reporting need emerges later | If a future milestone reverses the "no unified dashboard" decision, the `setor` column on `Tarefa` and `DesempenhoMensal` makes a unified view a `GROUP BY setor` away — the data model proposed here does not foreclose that option even though v2.0 explicitly avoids building it now. |
 
 ### Scaling Priorities
 
-1. **Primeiro "gargalo" provável:** Não é performance — é **corretude do motor de geração** (datas erradas, duplicação de tarefas, regras de regime mal configuradas). Mitigar com idempotência (Pattern 2), testes automatizados do cálculo de prazos, e um modo "dry-run" que mostra o que seria gerado antes de persistir.
-2. **Segundo ponto de atenção:** Hospedagem com acesso pela internet implica necessidade de HTTPS, backups do banco, e variável de ambiente para segredos (senha de DB, chave de sessão) — tratar isso desde a Fase 1 (auth), não depois.
+1. **First bottleneck (not yet a concern at this scale):** the annual generation engine running once a year touches a tiny fraction of rows (only Contábil empresas × 2 obligation types) — no performance work needed.
+2. **Second bottleneck (worth a note, not urgent):** dashboard queries that do in-memory `Map`-based aggregation (existing pattern throughout `dashboards/queries.ts`) will run 3x as often (once per sector route) — at 197 empresas this is still trivially fast, but if sector dashboards are visited very frequently, consider that each sector's `listarDesempenhoColaboradoresMesAtual` could share a single `setor`-parametrized query function rather than tripling the dashboard module's file count.
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Hardcodar Regras de Obrigação no Código do Motor
+### Anti-Pattern 1: Inferring sector from `tipoObrigacao` value at query time instead of storing `setor` directly
 
-**What people do:** Escrever `if (empresa.regime === 'lucro_real') { criarTarefa('ICMS', dia10); criarTarefa('PIS_COFINS', dia25); ... }` diretamente na função de geração.
+**What people do:** Add new `TipoObrigacao` enum values for DP/Contábil and write a `SETOR_POR_TIPO_OBRIGACAO` lookup map used inside every dashboard/scope query (`WHERE tipoObrigacao IN (mapeamento[setor])`).
+**Why it's wrong:** Scatters the sector↔obligation-type mapping across every consumer (dashboards, scope, generation engines must all stay in sync with one lookup table); a new obligation type added to the wrong sector's catalog silently shows up in the wrong dashboard with no schema-level error. This codebase's existing convention (`competencia`, `status` as flat columns) favors denormalization for exactly this reason.
+**Do this instead:** Add `setor` as its own column on `Tarefa`, set explicitly by each sector's pure generation function (Pattern 2) — sector membership becomes a stored fact, not a derived one.
 
-**Why it's wrong:** Cada novo regime tributário ou mudança de prazo exige alteração de código + deploy. O projeto já sinaliza que "hoje 2 regimes, pode crescer" — hardcoding vira dívida técnica imediata.
+### Anti-Pattern 2: Forking `withVisibilityScope`/`withTarefaScope` into 3 sector-specific copies
 
-**Do this instead:** Tabela `regras_obrigacao` (Pattern 1) + motor genérico que itera sobre regras. Adicionar regime = inserir dados.
+**What people do:** Create `withVisibilityScopeDp`, `withVisibilityScopeContabil` etc. because "DP scoping is different."
+**Why it's wrong:** The actual authorization RULE doesn't change per sector (DONO sees all, COLABORADOR sees only their own) — only the DATA SOURCE for "their own" changes (junction table instead of flat FK). Forking the function triples the surface area that needs a security review and risks the 3 copies drifting apart over time (e.g., one of them forgetting the anti-IDOR `findFirst`-returns-null-not-403 pattern already established in `empresas/queries.ts`).
+**Do this instead:** Keep one `withVisibilityScope`/`withTarefaScope`, add an optional `setor` parameter threaded from `Usuario.setor` (never from client input), and have it internally branch on whether the `EmpresaResponsavelSetor` join is needed — the authorization shape stays singular and auditable, matching this codebase's existing "one place every query must call into" design.
 
-### Anti-Pattern 2: Calcular "Atrasado" em Tempo de Escrita (campo armazenado)
+### Anti-Pattern 3: Generalizing `geracao-tarefas.ts` into one cross-sector catalog function
 
-**What people do:** Ter uma coluna `status = 'atrasado'` que é setada por algum job/trigger quando o prazo passa.
-
-**Why it's wrong:** Cria a necessidade de um job adicional rodando diariamente só para "atualizar status", e esse status pode ficar dessincronizado (ex: usuário olha a tarefa às 23h59 do dia do prazo vs 00h01).
-
-**Do this instead:** "Atrasado" é um valor **derivado**, calculado na hora de exibir: `status === 'pendente' && prazo < hoje` → exibir como atrasado. Armazenar apenas `status` (`pendente`/`concluida`) e `prazo`; tudo o mais é cálculo na consulta/UI.
-
-### Anti-Pattern 3: Construir RBAC Genérico (roles/permissions/role_permissions) para 2 Papéis
-
-**What people do:** Seguir tutoriais de RBAC "enterprise" com tabelas `roles`, `permissions`, `role_permissions`, `user_roles` desde o início.
-
-**Why it's wrong:** Para 2 papéis fixos (colaborador/dono) e 5 usuários, isso é complexidade sem benefício — mais tabelas, mais joins, mais código para manter, sem nenhum caso de uso que precise dessa flexibilidade no v1.
-
-**Do this instead:** Enum `role` na tabela `usuarios` (Pattern 3) + função central de escopo de visibilidade. Migrar para RBAC genérico só se/quando surgir um 3º papel com necessidades distintas.
-
-### Anti-Pattern 4: Job de Geração Acoplado ao Processo Web Sem Proteção
-
-**What people do:** Expor um endpoint `/gerar-tarefas` chamável por qualquer requisição, ou rodar o job só "quando alguém acessa o dashboard nesse dia".
-
-**Why it's wrong:** Sem proteção, qualquer usuário (ou bot) pode disparar gerações repetidas; sem agendamento confiável, a geração pode simplesmente não acontecer se ninguém acessar o sistema no dia certo.
-
-**Do this instead:** Endpoint protegido por chave secreta (header) chamado por um agendador externo (cron do provedor de hosting, ou serviço gratuito tipo cron-job.org/GitHub Actions scheduled workflow), combinado com idempotência (Pattern 2) para tornar seguro re-disparos manuais.
+**What people do:** Extend `CATALOGO_OBRIGACOES: Record<RegimeTributario, ObrigacaoRegra[]>` to also be keyed by `setor`, producing something like `Record<Setor, Record<RegimeTributario, ObrigacaoRegra[]>>`.
+**Why it's wrong:** DP and Contábil obligations don't naturally vary by `RegimeTributario` the way Fiscal's do — forcing them through the same nested shape means duplicating identical DP rows under both `LUCRO_REAL` and `SIMPLES_NACIONAL` keys for no semantic reason, and couples 3 independent catalogs (Fiscal, DP, Contábil) into one file that now has 3x the blast radius for any future obligation rule change in any single sector.
+**Do this instead:** Keep `geracao-tarefas.ts` (Fiscal) untouched, add sibling pure-calculator files per sector (Pattern 1's structure section) — each sector's catalog uses whatever key structure fits its actual obligation rules, and `executarGeracaoMensal` simply calls all relevant calculators and merges the resulting task arrays before persisting.
 
 ## Integration Points
 
@@ -295,42 +348,35 @@ async function gerarTarefasDoMes(mesReferencia: string) {
 
 | Service | Integration Pattern | Notes |
 |---------|---------------------|-------|
-| Feriados nacionais (Brasil) | Biblioteca local `date-holidays` (dados embutidos, sem chamada de rede) — preferível a uma API externa para evitar dependência de disponibilidade externa em um cálculo crítico | Suporta feriados móveis (Carnaval, Sexta-feira Santa, Corpus Christi); v1 usa apenas o calendário nacional, conforme escopo definido |
-| Agendador externo (disparo do job mensal) | Endpoint HTTP protegido por token, chamado por cron-job.org, GitHub Actions (`schedule`), ou cron nativo do provedor de hospedagem | Escolha depende do STACK.md / provedor de hospedagem; manter simples (1 chamada HTTP por dia/mês) |
-| Ferramentas Python de automação (ICMS PDF, PIS/COFINS) | v1: referência textual/link no passo a passo da tarefa — **não há integração de runtime** | Fora de escopo v1 executar; arquitetura deve deixar um "gancho" claro (campo de instruções estruturado) para que v2 possa evoluir para chamada de API/serviço |
+| node-cron (instrumentation.ts) | Boot-time scheduled job, in-process | A second cron registration is needed for the annual trigger (`executarGeracaoAnual`) — register both inside the same `instrumentation.ts` boot hook, distinct cron expressions, both calling into `src/modules/tarefas/geracao.ts`. |
+| date-holidays / `anticiparParaDiaUtil` | Pure function, periodicity-agnostic | No changes needed — DP and Contábil obligations reuse the exact same business-day adjustment logic as Fiscal; this function has no coupling to `RegimeTributario` or `Setor`. |
 
 ### Internal Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| UI ↔ Auth Module | Sessão/cookie + checagem de role em cada rota protegida | Toda rota de dados deve verificar sessão antes de qualquer query |
-| Tarefas Module ↔ Empresas Module | Leitura direta via FK (`tarefas.empresa_id → empresas.id`) — mesmo banco, sem API intermediária | Acoplamento aceitável dentro de um monolito modular |
-| Motor de Geração ↔ Regras de Obrigação + Empresas + Holiday Service | Leitura no início do job; nenhuma escrita nessas tabelas pelo motor | Motor é "consumidor" de configuração, nunca "dono" dela — separa quem define regras (admin/dono) de quem as executa |
-| Dashboards Module ↔ Tarefas/Histórico | Apenas leitura (queries agregadas) | Nenhuma lógica de negócio nova aqui — só leitura e formatação |
-| Importação Excel ↔ Empresas Module | Parser roda no servidor, popula `empresas` via mesma camada de validação usada pelo CRUD manual | Evita "dois caminhos" de criação de empresa com regras diferentes |
+| `prisma/schema.prisma` ↔ everything | Prisma Client generated types | This is the boundary that MUST change first — every other change (scope functions, generation engines, dashboard queries, empresa forms) depends on `Setor` enum, `Usuario.setor`, and `EmpresaResponsavelSetor` existing in the generated client. Build order: schema migration is phase 0, nothing else can be planned/built in parallel with it. |
+| `src/lib/visibility-scope.ts` ↔ `src/modules/{empresas,tarefas,dashboards}/queries.ts` | Direct function import, spread into Prisma `where` | Every existing call site that spreads `withVisibilityScope(user)`/`withTarefaScope(user)` continues to compile unchanged if the new `setor` param is optional — but their RESULTS change in behavior once `EmpresaResponsavelSetor` becomes the source of truth, so these call sites need re-verification (not necessarily rewriting) after the scope functions change. |
+| `src/lib/geracao-tarefas.ts` ↔ `src/modules/tarefas/geracao.ts` | Pure function returns plain objects, orchestrator persists them | Cleanly separable — DP/Contábil get their OWN pure calculator files (Pattern 1/Anti-Pattern 3) without touching the existing fiscal one, then the orchestrator (`geracao.ts`) is extended to call all three and merge results before `createMany`. Low risk of regressing existing fiscal generation if these stay additive. |
+| `src/modules/dashboards/*` ↔ `src/app/(app)/dashboards/*` route folders | Server Component calls module query functions directly (no API layer) | Tripling the route folders (fiscal/dp/contabil) is mechanical once the query functions accept a `setor` parameter — the existing `guard.ts` pattern is copy-paste-and-hardcode-the-setor-value, consistent with how this codebase already favors explicit repetition over parametrized indirection for security-sensitive gates. |
+| Orphaned `src/modules/dashboard/queries.ts` (singular, untracked) | None — dead code | Do not wire this into the build. It references `db.desempenhoMensalSnapshot`, which doesn't exist in the current schema. Delete it during v2.0 cleanup, or confirm with the user it isn't meant to replace `dashboards/queries.ts` before touching it. |
 
-## Build Order Implications (for Roadmap)
+### Suggested Build Order (respecting dependencies)
 
-A ordem de construção segue as dependências de dados, não as de "valor percebido isoladamente":
-
-1. **Auth + Cadastro de Empresas (fundação):** Sem usuários e sem empresas cadastradas (mesmo que via importação), nada mais tem sentido — o motor de geração precisa de `empresas` + `usuarios.responsavel_id`; os dashboards precisam de `tarefas` que dependem de `empresas`.
-2. **Modelo de Tarefas + Regras de Obrigação + Tarefas Avulsas:** Antes do motor automático, vale construir o modelo de dados de `tarefas` e a criação manual (avulsas) — isso testa o CRUD de tarefas, status, e detalhe/histórico com dados reais, sem depender do motor ainda.
-3. **Motor de Geração Mensal + Holiday Service:** Depende de (1) e (2) existirem e estarem corretos. É o componente de maior risco — vale isolar como fase própria com testes de cálculo de datas.
-4. **Detalhe de Tarefa (passo a passo + referência às automações Python) + Alertas visuais:** Camada de UX sobre o modelo já existente; pode evoluir em paralelo com (3) já que não depende do motor, só do modelo de `tarefas`.
-5. **Dashboards/Analytics:** Por último — depende de haver `tarefas` + `historico_conclusoes` reais (gerados pelas fases anteriores) para ter dados significativos para agregar e para validar visualmente.
-
-**Resumo da dependência:** `Auth + Empresas` → `Tarefas (modelo + avulsas)` → `Motor de Geração + Feriados` → `Detalhe/Alertas` (paralelo a 3) → `Dashboards`.
+1. **Schema migration** — `Setor` enum, `Usuario.setor`, `EmpresaResponsavelSetor` junction (with data backfill from existing `Empresa.responsavelId` into `setor='FISCAL'` rows), `Tarefa.setor` + `Tarefa.periodicidade` columns, `TipoObrigacao` enum extended, `DesempenhoMensal` unique constraint extended with `setor`. Nothing below can be built or even type-checked until this lands, since Prisma Client types drive everything downstream.
+2. **Authorization layer** — `visibility-scope.ts` extended with `setor`-aware branching. Must land before any sector-scoped query is written, since every module is expected to spread its result.
+3. **Empresa CRUD updates** — `modules/empresas/queries.ts` + form schema for 3 responsible-person fields. Needed before sector-specific generation engines can read meaningful responsible-person data per sector.
+4. **DP monthly generation engine** — new pure calculator (`geracao-tarefas-dp.ts`) + orchestrator extension. Depends on 1-3; can be built in parallel with step 5 since DP and Contábil are independent obligation catalogs.
+5. **Contábil generation engine, monthly + annual** — new pure calculator (`geracao-tarefas-contabil.ts`), `executarGeracaoAnual` sibling function, new `competenciaAnualSchema`. Depends on 1-3; introduces the only periodicity fork, so plan extra verification time here specifically (annual cron scheduling, competência format validation, ensuring monthly dashboard date-range math filters out annual rows via `periodicidade`).
+6. **Dashboard module sector-parametrization** — `dashboards/queries.ts`, `snapshot.ts` gain `setor` params. Depends on 1, 4, 5 having real DP/Contábil task data to validate against; building this before generation engines exist means testing against empty/fake data only.
+7. **Three dashboard route folders** — `dashboards/fiscal/`, `dashboards/dp/`, `dashboards/contabil/`. Purely mechanical once step 6 lands; this is the last step since it's the thinnest layer (route + guard + chart components reusing existing chart component patterns).
+8. **Cleanup** — delete the orphaned `src/modules/dashboard/` (singular) directory once confirmed unused.
 
 ## Sources
 
-- [Multi-Tenancy with Node.js AsyncLocalStorage (Medium)](https://medium.com/@jfelipevalr/multi-tenancy-with-node-js-asynclocalstorage-4c771a3d06ed) — confirma que multi-tenancy real só compensa em escala maior; usado para justificar a recomendação de monolito modular single-tenant.
-- [Role-Based Access Control (RBAC) in Next.js Apps Backed by PostgreSQL](https://medium.com/@nikitinal.nal/next-js-with-postgresql-role-based-access-control-implementation-ca024fd6d471) — padrão de RBAC com PostgreSQL e enforcement no servidor.
-- [date-holidays (npm)](https://www.npmjs.com/package/date-holidays) — biblioteca para feriados nacionais (incluindo Brasil e feriados móveis), usada como base do Holiday Service.
-- [eh-dia-util (GitHub)](https://github.com/lfreneda/eh-dia-util) — referência de lógica de "dia útil" considerando feriados móveis brasileiros (Carnaval, Corpus Christi, Sexta-feira Santa).
-- [business-days-js (npm)](https://www.npmjs.com/package/business-days-js) — padrão de "adicionar/ajustar dias úteis" combinando calendário de feriados com cálculo de data.
-- [Design a Distributed Job Scheduler (Hello Interview)](https://www.hellointerview.com/learn/system-design/problem-breakdowns/job-scheduler) — usado por contraste: confirma que o padrão "schedules table + next_run_time + idempotência" é a base correta, mas a versão distribuída/escala-massiva é desnecessária aqui (informa o que NÃO construir).
-- [Template Systems For Recurring Tasks](https://www.automateed.com/template-systems-for-recurring-tasks) — confirma o padrão "template/regra de recorrência separado da instância gerada", base do Pattern 1 e Pattern 2.
+- Direct code reading (HIGH confidence — primary source, not inferred): `prisma/schema.prisma`, `src/lib/visibility-scope.ts`, `src/lib/geracao-tarefas.ts`, `src/modules/tarefas/geracao.ts`, `src/modules/dashboards/queries.ts`, `src/modules/dashboards/schema.ts`, `src/modules/dashboards/snapshot.ts`, `src/app/(app)/dashboards/guard.ts`, `src/modules/empresas/queries.ts`, `src/types/next-auth.d.ts`, `src/lib/competencia.ts`, `src/modules/dashboard/queries.ts` (orphaned), `.planning/PROJECT.md` (v2.0 milestone section)
+- Existing in-code design rationale comments (D-01 through D-14, T-04-* labels) embedded throughout the read files — treated as HIGH confidence project-specific conventions, not external research claims
 
 ---
-*Architecture research for: Sistema de gestão de tarefas fiscais recorrentes (Agenda Fiscal)*
-*Researched: 2026-06-11*
+*Architecture research for: Multi-sector task management system extension (Next.js/Prisma) — v2.0 milestone*
+*Researched: 2026-06-22*

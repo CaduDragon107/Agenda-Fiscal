@@ -1,143 +1,140 @@
-# Stack Research
+# Stack Research — v2.0 Expansão Multi-Setor (DP e Contábil)
 
-**Domain:** Sistema web interno de gestão de tarefas/prazos fiscais (CRUD + auth multiusuário + jobs recorrentes + dashboards) para escritório de contabilidade
-**Researched:** 2026-06-11
-**Confidence:** HIGH (frameworks centrais verificados via documentação oficial/changelogs recentes); MEDIUM (escolha de hospedagem, depende de custo real medido pós-deploy)
+**Domain:** Extensão de motor de geração de tarefas recorrentes (Next.js/Prisma/Postgres) de periodicidade mensal-only para mensal+anual, e modelagem de obrigações de Departamento Pessoal (folha/FGTS/INSS/eSocial) e Contábil (balancete/escrituração mensal, ECF/DEFIS anual)
+**Researched:** 2026-06-22
+**Confidence:** HIGH (extensão de código já lido e verificado neste repo; regras de prazo ECF/DEFIS confirmadas em fontes oficiais/contábeis atuais)
 
 ## Recommended Stack
 
-### Core Technologies
+### Verdict: No new dependency is needed
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| **Next.js** | 15.5.x (App Router) | Framework full-stack (frontend + backend numa coisa só) | Next.js 16 já é estável (lançado out/2025, 16.1 em dez/2025), mas trouxe mudanças disruptivas (Turbopack como default, `middleware.ts` → `proxy.ts`, cache explícito via `'use cache'`). Para um projeto único, mantido por uma pessoa via IA, **15.5 é a escolha mais segura**: Server Actions estáveis, App Router maduro, enorme volume de exemplos/treino disponíveis, e caminho de upgrade para 16 fica disponível depois que o app já estiver em produção e estável. Evita "yak-shaving" de bugs de ferramenta nova logo no v1. |
-| **React** | 19.x | Biblioteca de UI (vem com Next 15.5) | Já é a versão suportada nativamente pelo Next 15; Server Components reduzem JS no cliente, importante para usuários não-técnicos numa rede de escritório possivelmente instável. |
-| **TypeScript** | 5.x (strict) | Tipagem em todo o projeto | Com Prisma + Zod, o TypeScript dá tipos ponta a ponta (banco → API → formulário), reduzindo bugs de "campo errado" — crítico quando quem mantém é uma IA sem supervisão humana constante. |
-| **PostgreSQL** | 16/17 (gerenciado) | Banco de dados relacional | Modelo de dados é claramente relacional (empresas, regimes, obrigações, tarefas, usuários, históricos) com muitos relacionamentos e necessidade de queries agregadas para dashboards (GROUP BY, janelas de tempo). SQLite seria mais simples mas não tem bom suporte a hospedagem multi-usuário concorrente pela internet com backups gerenciados. |
-| **Prisma ORM** | 6.x | ORM / camada de acesso a dados | Schema declarativo (`schema.prisma`) é fácil de uma IA manter e versionar; gera migrations automaticamente; tipos TypeScript gerados a partir do schema eliminam drift entre banco e código. Prisma 7 já existe mas muda config de conexão (`prisma.config.ts`) — ficar em 6.x reduz instabilidade inicial. |
-| **Auth.js (NextAuth) v5** | 5.x (`next-auth@beta` → release `auth`) | Autenticação + sessões | Suporta `Credentials Provider` (login com email/senha próprio, sem depender de Google/Microsoft — bom para equipe pequena que talvez não use contas corporativas Google/Microsoft). RBAC é feito via callbacks JWT/session, expondo `role` (`admin` vs `colaborador`) na sessão — exatamente o padrão necessário para "dono vê tudo, colaborador vê só o seu". |
+A pergunta central desta pesquisa — "precisa de lib nova para periodicidade anual e prazos de DP/Contábil?" — tem resposta direta: **não**. O motor existente (`src/lib/geracao-tarefas.ts` + `src/lib/dia-util.ts` + `src/lib/scheduler.ts`) já resolve os três problemas que a expansão levanta:
 
-### Supporting Libraries
+1. **Cálculo de "próximo dia útil anterior"** — `date-holidays` + `date-fns` (`src/lib/dia-util.ts`) já implementam exatamente a regra que ECF, DEFIS, FGTS e DAS-DP usam ("antecipa para o último dia útil anterior se a data-base cair em fim de semana/feriado"). Confirmado nesta pesquisa: a Receita Federal aplica essa mesma regra para ECF (último dia útil de julho) e DEFIS (31/03, antecipado se não for dia útil) — não é uma regra fiscal-específica, é a regra geral de vencimento de obrigação federal brasileira.
+2. **Disparo mensal único (cron)** — `node-cron` (`src/lib/scheduler.ts`, `0 6 1 * *`) já roda todo dia 1. Obrigações anuais (ECF/DEFIS) não precisam de um *segundo* agendador: elas só devem gerar uma tarefa quando o mês de competência bater com o mês de vencimento daquele tipo de obrigação — isso é um filtro de **dados** (qual regra aplica em qual mês), não um problema de **agendamento**. O mesmo job mensal cobre mensal e anual.
+3. **Modelagem de periodicidade** — o `schema.prisma` atual já separa o catálogo de obrigações (`CATALOGO_OBRIGACOES`, hoje hardcoded em TS por regime) da execução (`gerarTarefasDoMes`). Estender para anual é adicionar um campo `periodicidade` e um campo `mesVencimento` (1-12, usado só quando `periodicidade = ANUAL`) à regra — sem schema novo, sem lib nova.
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| **bcryptjs** (ou `@node-rs/bcrypt`) | ^2.4 | Hash de senha para login com Credentials Provider | Sempre — nunca guardar senha em texto plano. `bcryptjs` é puro JS (sem binários nativos), mais simples de rodar em qualquer host. |
-| **date-holidays** | ^3.x | Cálculo de feriados nacionais brasileiros + dias úteis | Núcleo da regra "ajustar prazo para o próximo dia útil". Suporta `new Holidays('BR')`, método `isHoliday(date)`. Combinar com checagem de fim de semana (`getDay() === 0 \|\| 6`) para função `proximoDiaUtil(data)`. Biblioteca ativamente mantida, multi-país, boa cobertura de feriados móveis (Carnaval, Páscoa, Corpus Christi) que são os que mais geram bug em implementações caseiras. |
-| **node-cron** (se self-host/Railway) **ou** Vercel Cron (se Vercel) | node-cron ^3.x | Disparo do job mensal "gerar tarefas recorrentes do mês" | Se hospedar num processo Node sempre ativo (Railway/VPS): `node-cron` roda dentro do próprio processo, sem infra extra — `0 6 1 * *` (todo dia 1 às 6h). Se hospedar serverless (Vercel): usar Vercel Cron (`vercel.json` + rota `/api/cron/gerar-tarefas`), respeitando limite de execução (10s no plano Hobby/Pro — a geração de ~100 empresas × poucas tarefas é leve o suficiente para caber nisso). **Não usar ambos** — escolher conforme decisão de hospedagem (ver seção Hospedagem abaixo). |
-| **xlsx (SheetJS)** | 0.20.3 (via CDN do SheetJS, NÃO via npm puro) | Importação da planilha "Controle pis e cofins.xlsx" | A versão publicada no registro npm (`xlsx@0.18.5`) está desatualizada e tem vulnerabilidades conhecidas (DoS, prototype pollution) — o próprio SheetJS parou de publicar no npm. Instalar via tarball oficial: `npm install https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`. Usado **uma vez** (script de importação inicial) e depois ocasionalmente se precisar reimportar/atualizar dados em lote. |
-| **Recharts** (via shadcn `chart` component) | ^2.x / v3 (conforme shadcn) | Gráficos dos dashboards (comparativo entre funcionários, evolução mensal, comparativo entre empresas) | `npx shadcn@latest add chart` instala wrappers prontos (Area/Bar/Line/Pie) sobre Recharts, já estilizados com Tailwind/tema do shadcn. Evita escrever CSS de gráfico do zero; suficiente para os 3 tipos de dashboard pedidos (sem necessidade de algo mais pesado como D3). |
-| **shadcn/ui** | latest (CLI-based, sem versão de pacote fixa) | Biblioteca de componentes (tabelas, formulários, cards, dialogs, badges de status) | Não é uma dependência tradicional — o CLI copia o código-fonte dos componentes para o projeto (`components/ui/*`). Isso é uma vantagem para manutenção por IA: o código do componente fica visível e editável localmente, sem "caixa preta" de node_modules. Construído sobre Radix UI (acessibilidade) + Tailwind CSS. |
-| **Tailwind CSS** | 4.x | Estilização | Padrão de fato para projetos Next.js + shadcn em 2025/2026; classes utilitárias reduzem necessidade de arquivos CSS separados, o que ajuda a IA a editar estilos inline sem quebrar outros componentes. |
-| **Zod** | ^3.x | Validação de dados (formulários + payloads de API/Server Actions) | Define o schema de "Empresa", "Tarefa", "Usuário" uma vez e reusa para validar formulários no cliente E dados recebidos no servidor (Server Actions). Integra nativamente com React Hook Form e com Prisma (tipos compatíveis). |
-| **React Hook Form** | ^7.x | Gerenciamento de formulários | Padrão de mercado para forms em React; baixo overhead de re-render, integra com Zod via `@hookform/resolvers`. Necessário para formulários de cadastro de empresa, criação de tarefa avulsa, edição de usuário. |
-| **TanStack Table** | ^8.x | Tabelas de dados (lista de empresas, lista de tarefas, lista de usuários) | Necessário para listas com 100+ empresas: paginação, ordenação e filtro client-side sem reimplementar lógica de tabela manualmente. Integra bem com componentes de tabela do shadcn. |
-| **date-fns** | ^4.x | Manipulação de datas (formatação, soma de dias, comparação) | Complementa `date-holidays`; evita reinventar funções de data. Tree-shakeable (importa só o que usa), leve. Evitar `moment.js` (em modo manutenção/legado). |
+### Core Technologies (extensão, não substituição)
 
-### Development Tools
+| Technology | Version (já instalada) | Extensão necessária | Por quê é suficiente |
+|------------|--------------------------|----------------------|------------------------|
+| **date-holidays** | 3.30.2 (instalada) | Nenhuma — reusar `anticiparParaDiaUtil` sem alteração | A regra de antecipação para dia útil é idêntica para ICMS/DAS (mensal) e ECF/DEFIS (anual): "se cair em fim de semana ou feriado nacional, antecipa". Confirmado para ECF (último dia útil de julho) e DEFIS (31/03 "antecipando-se a entrega caso o dia 31 seja dia considerado não útil") nesta pesquisa. |
+| **date-fns** | 4.4.0 (instalada) | Trocar `addMonths`/`setDate` por equivalentes anuais quando necessário (`addYears`, ou simplesmente fixar o ano de vencimento = ano da competência + 1, já coberto por aritmética simples) | `date-fns` já cobre todas as operações de data necessárias (soma de meses/anos, último dia do mês, comparação) — biblioteca genérica de datas, não fiscal-específica; nenhuma operação nova introduzida por periodicidade anual exige função que não exista no pacote. |
+| **node-cron** | 4.4.1 (instalada) | Nenhuma — o job `0 6 1 * *` continua sendo o único agendador | Obrigações anuais não rodam "uma vez por ano" no cron — rodam **todo mês**, e o catálogo decide se aquele mês gera uma tarefa ANUAL ou não (ex.: regra ECF só "dispara" quando o mês de geração é julho). Isso elimina a necessidade de um segundo cron schedule (`0 6 1 7 *` para julho, etc.) — menos superfície de bugs de agendamento duplicado. |
+| **Prisma ORM** | 6.19.3 (instalada) | Migration aditiva: novo enum `Periodicidade { MENSAL ANUAL }`, novos valores de `TipoObrigacao` (DP e Contábil), e — dependendo da decisão de modelagem (ver Pitfall abaixo) — extração do catálogo hardcoded em TS para uma tabela `RegraObrigacao` no banco | Prisma já suporta tudo isso nativamente via `prisma migrate dev` — não há limitação técnica que exija troca de ORM ou ferramenta de migration. |
+| **PostgreSQL** | gerenciado (Neon/Railway) | Nenhuma mudança de versão ou de plano — volume de dados cresce de ~1 setor para 3 (mais linhas em `Tarefa`/`TarefaHistorico`), mas ainda é ordem de ~197 empresas × ~5-8 obrigações/mês × 3 setores ≈ <5.000 linhas/mês, irrelevante para qualquer tier gerenciado atual | Não há requisito de escala que justifique reavaliar o banco nesta milestone. |
 
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| **Prisma Studio** (`npx prisma studio`) | Inspeção/edição visual do banco durante desenvolvimento | Útil para o próprio usuário (não-técnico) ou para a IA conferir/corrigir dados rapidamente sem escrever SQL. |
-| **ESLint + Prettier** (config padrão do `create-next-app`) | Lint e formatação consistente | Mantém o código uniforme entre sessões diferentes de geração por IA, reduzindo "diffs de estilo" que poluem revisões. |
-| **Git** (GitHub/GitLab privado) | Controle de versão + deploy automático | Push para `main` → deploy automático na plataforma de hospedagem escolhida (Railway/Vercel ambos suportam isso nativamente). |
+### Supporting Libraries — nenhuma nova obrigatória
+
+| Library | Avaliada para | Decisão | Motivo |
+|---------|----------------|---------|--------|
+| Biblioteca de regras fiscais BR (ex.: pacotes npm de "calendário fiscal brasileiro") | Calcular automaticamente prazos de eSocial/FGTS/INSS/ECF/DEFIS | **Não usar** | Não existe um pacote npm maduro, mantido e confiável que modele as ~6-10 regras de prazo de DP/Contábil necessárias aqui (eSocial tem mais de uma "janela" de evento — periódico mensal e eventos não-periódicos —, mas o escopo desta milestone é só os eventos periódicos mensais, que têm prazo fixo por dia do mês, igual ao padrão já implementado). Modelar essas ~6-10 regras como dados (catálogo) é mais simples, mais auditável e mais barato de manter do que adicionar uma dependência externa de baixa confiança para resolver um problema que já é resolvido pelo código existente. |
+| BrasilAPI (feriados) | Alternativa/fallback a `date-holidays` | **Não necessário nesta milestone** | Já era uma alternativa considerada no v1.0 (ver STACK.md original) para complementar `date-holidays`; nenhuma obrigação nova introduzida em DP/Contábil exige feriados estaduais/municipais (Out of Scope confirmado em PROJECT.md) — a regra nacional já implementada é suficiente. |
+| Job scheduler dedicado (Inngest, trigger.dev, BullMQ) | Rodar geração anual separadamente da mensal | **Não usar** | Avaliado explicitamente nesta pesquisa por pedido do downstream consumer. Overengineering: introduzir um segundo sistema de jobs só para "rodar 1x por ano" cria mais superfície de falha (dois pontos de agendamento para auditar, dois lugares onde a idempotência pode quebrar) do que resolve. O padrão já validado em D-07 a D-13 (geração mensal idempotente via `@@unique` no banco) se estende sem atrito para anual: o job mensal já existente simplesmente também processa regras `periodicidade: ANUAL` cujo `mesVencimento` bate com o mês corrente. |
+
+## Schema Extension Recommendation
+
+Não é apenas "adicionar um campo periodicidade" isoladamente — a extensão mínima e coerente com o padrão já estabelecido no código (catálogo puro em `geracao-tarefas.ts`) é:
+
+```typescript
+// src/lib/geracao-tarefas.ts (ou módulo equivalente por setor)
+
+export type Periodicidade = "MENSAL" | "ANUAL";
+
+type ObrigacaoRegra = {
+  tipo: TipoObrigacao;
+  periodicidade: Periodicidade;
+  diaBase: number;
+  // Só relevante quando periodicidade = "ANUAL": mês (1-12) em que a
+  // obrigação deve ser gerada. Ex.: ECF = 7 (julho), DEFIS = 3 (março).
+  // Para MENSAL, undefined — gera todo mês, como hoje.
+  mesGeracao?: number;
+};
+```
+
+E no `gerarTarefasDoMes` (ou função equivalente para Contábil), filtrar:
+
+```typescript
+const regrasDoMes = catalogo.filter(
+  (r) => r.periodicidade === "MENSAL" || r.mesGeracao === mesCompetencia
+);
+```
+
+Isso reaproveita 100% de `calcularPrazoBase` e `anticiparParaDiaUtil` sem alteração — o "anual" só muda **quando** a regra entra no filtro, não **como** o prazo é calculado.
+
+**Decisão de modelagem pendente para a fase de planejamento (não desta pesquisa):** se o catálogo de obrigações para os 3 setores deve continuar hardcoded em TS (como hoje, fiscal) ou migrar para uma tabela `RegraObrigacao` no Postgres. Hardcoded é mais simples e consistente com o padrão atual; tabela no banco facilita edição futura sem deploy (relevante porque DP/Contábil têm campos extra como `mesGeracao` que aumentam a chance de precisar ajuste fino pós-lançamento). Ambas as opções usam só Prisma + Postgres já existentes — nenhuma lib nova nos dois casos.
+
+## DP e Contábil: regras de prazo confirmadas (para o catálogo, não para o stack)
+
+Estas são regras de **dados** a inserir no catálogo, confirmadas por fontes oficiais/contábeis atuais nesta pesquisa — não exigem nenhuma lib além do já existente:
+
+| Obrigação | Setor | Periodicidade | Regra de prazo | Ajuste dia útil |
+|-----------|-------|----------------|------------------|-------------------|
+| **ECF** (Escrituração Contábil Fiscal) | Contábil | ANUAL | Último dia útil de julho do ano seguinte ao ano-calendário | Já é "último dia útil" por definição — mesma lógica de `anticiparParaDiaUtil` |
+| **DEFIS** (Declaração de Informações Socioeconômicas e Fiscais) | Contábil | ANUAL | 31 de março do ano seguinte ao ano-calendário | Antecipa para o último dia útil anterior se 31/03 não for dia útil — usa `anticiparParaDiaUtil` sem modificação |
+| **Balancete / Escrituração contábil** (livro diário/razão) | Contábil | MENSAL | Prazo interno do escritório (não há prazo legal rígido tipo Receita; é prazo de rotina) — definir dia-base como decisão de produto, igual ao padrão D-02 já usado para ICMS/DAS | Sim, mesmo padrão |
+| **Folha de pagamento** | DP | MENSAL | Prazo de pagamento até o 5º dia útil do mês subsequente (CLT) — dia-base "calculado", não fixo | Antecipação já cobre o caso de cair em fim de semana/feriado; cálculo de "5º dia útil" é uma pequena extensão de `dia-util.ts` (contar dias úteis para frente, não só antecipar) — ver Pitfall abaixo |
+| **FGTS** | DP | MENSAL | Vencimento dia 20 do mês subsequente (ou 7º dia útil seguinte ao da liquidação para grandes contribuintes — escopo desta carteira são PMEs, usar regra padrão dia 20) | `anticiparParaDiaUtil` direto, mesmo padrão de ICMS/DAS |
+| **INSS (GPS/eSocial)** | DP | MENSAL | Vencimento dia 20 do mês subsequente, unificado ao DAE do eSocial desde a integração FGTS Digital/eSocial | `anticiparParaDiaUtil` direto |
+| **eSocial — eventos periódicos** (folha mensal, S-1200/S-1210/S-1299 etc.) | DP | MENSAL | Fechamento da folha até o dia 7 do mês subsequente; envio dos eventos periódicos segue o vencimento do DAE (dia 20, junto com FGTS/INSS) | `anticiparParaDiaUtil` direto |
+
+**Nota importante:** "5º dia útil" para folha de pagamento é a única regra acima que **não** é "dia-base fixo + antecipar se cair em dia não-útil" — é "contar N dias úteis a partir do dia 1". Isso é uma pequena função nova (`enesimoDiaUtil(mes, ano, n)`), mas é uma função **pura de data**, implementável com `date-fns` + `date-holidays` exatamente como `anticiparParaDiaUtil` já é — não introduz dependência nova, só mais uma função no mesmo módulo `dia-util.ts`. Avaliar esta regra com mais profundidade na fase de planejamento de DP (pode ser que o escritório use uma convenção interna mais simples, como dia fixo 5 ou 7 + antecipação, já que a CLT permite convenção/acordo coletivo).
 
 ## Installation
 
+Nenhuma instalação nova é necessária. Toda a extensão é feita sobre dependências já presentes no `package.json`:
+
 ```bash
-# Criar projeto base
-npx create-next-app@latest agenda-fiscal --typescript --tailwind --eslint --app
-
-cd agenda-fiscal
-
-# shadcn/ui
-npx shadcn@latest init
-npx shadcn@latest add button card table dialog form input badge calendar chart dropdown-menu
-
-# Banco de dados / ORM
-npm install prisma @prisma/client
-npx prisma init --datasource-provider postgresql
-
-# Autenticação
-npm install next-auth@beta
-npm install bcryptjs
-npm install -D @types/bcryptjs
-
-# Validação e formulários
-npm install zod react-hook-form @hookform/resolvers
-
-# Tabelas e datas
-npm install @tanstack/react-table date-fns date-holidays
-
-# Importação de Excel (instalar via CDN oficial, não via "xlsx" puro do npm)
-npm install https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
-
-# Cron (apenas se NÃO for usar Vercel Cron — ex: Railway/VPS com processo sempre ativo)
-npm install node-cron
-npm install -D @types/node-cron
+# Nenhum pacote novo a instalar para esta milestone.
+# Confirmar apenas que as versões atuais seguem compatíveis após
+# qualquer atualização incidental do lockfile:
+npm ls date-fns date-holidays node-cron @prisma/client prisma
 ```
 
 ## Alternatives Considered
 
 | Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|--------------------------|
-| Next.js 15.5 (App Router) | Next.js 16.x | Se o projeto já estiver estável em produção e houver tempo dedicado para testar Turbopack/`proxy.ts`/cache explícito antes de migrar — ganho real de performance de build, mas não crítico para 5 usuários internos. |
-| Next.js full-stack (monolito) | Backend separado (Express/Fastify + frontend separado React/Vite) | Só faria sentido se no futuro a equipe quiser expor uma API pública para terceiros ou integrar sistemas externos de forma mais robusta. Para 5 usuários e um único deploy, separar back/front só aumenta a superfície de manutenção. |
-| Prisma | Drizzle ORM | Drizzle é mais leve e "SQL-like", preferido por quem já sabe SQL bem e quer controle fino de queries. Prisma foi preferido aqui pela DX de migrations automáticas e schema declarativo, mais fácil de uma IA manter de forma consistente ao longo de meses. |
-| Auth.js (Credentials) | Clerk / Supabase Auth | Se no futuro quiser SSO (Google Workspace do escritório), recuperação de senha por email pronta, ou painel de gestão de usuários sem código. Para 5 usuários fixos cadastrados manualmente pelo admin, Auth.js com Credentials é suficiente e sem custo recorrente. |
-| date-holidays | API externa de feriados (ex: BrasilAPI `/api/v1/feriados`) | BrasilAPI é uma alternativa gratuita e simples (`GET https://brasilapi.com.br/api/feriados/v1/{ano}`) que pode ser chamada uma vez por ano e cacheada no banco — vantagem: feriados nacionais sempre atualizados pela fonte oficial, sem depender de a lib estar com a tabela de anos futuros. **Pode ser usada como fonte de dados, com `date-holidays` como fallback offline.** |
-| node-cron / Vercel Cron | Inngest / trigger.dev (job scheduling como serviço) | Se o sistema crescer e precisar de jobs mais complexos (retries, filas, jobs disparados por eventos), uma plataforma de jobs gerenciada vale a pena. Para "1 job simples 1x por mês", é overengineering. |
-| Recharts (via shadcn) | Tremor / Chart.js / Nivo | Tremor é ótimo para dashboards "estilo SaaS" prontos, mas adiciona outra biblioteca de componentes concorrendo com shadcn. Chart.js é mais leve mas exige mais customização manual para o tema. Recharts via shadcn já resolve os 3 dashboards pedidos com menos código novo. |
+|--------------|-------------|---------------------------|
+| Estender o catálogo hardcoded em TS (`CATALOGO_OBRIGACOES`) com `periodicidade` + `mesGeracao` | Mover o catálogo para uma tabela `RegraObrigacao` no Postgres, editável via UI admin | Se o dono do escritório pedir, no futuro, para editar prazos sem precisar de deploy (ex.: a Receita muda uma data, ou o escritório quer ajustar o "dia interno" de balancete). Não é necessário para o lançamento de v2.0 — pode ser uma melhoria de v2.1+. |
+| Reusar o cron mensal único (`0 6 1 * *`) também para regras anuais | Criar um segundo `cron.schedule` específico para meses de vencimento anual (ex.: só dispara em julho para ECF) | Nunca, nesta escala — um segundo agendador adicionaria complexidade (dois pontos de falha, dois logs a monitorar) sem benefício real, já que o filtro por `mesGeracao` dentro da mesma execução mensal resolve o problema de forma mais simples e com a mesma garantia de idempotência (`@@unique` constraint) já testada. |
+| `anticiparParaDiaUtil` (sempre antecipa) também para folha de pagamento de DP | Implementar `enesimoDiaUtil` (postergação contando dias úteis) | Usar `enesimoDiaUtil` especificamente para a regra de "Nº dia útil do mês" da folha de pagamento, que é estruturalmente diferente (conta dias úteis PARA FRENTE a partir do dia 1, não antecipa uma data-base fixa). As duas funções coexistem no mesmo módulo `dia-util.ts` — não são mutuamente exclusivas, atendem regras diferentes. |
 
 ## What NOT to Use
 
 | Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `npm install xlsx` (registro npm padrão) | Resolve para `xlsx@0.18.5`, não mantido há anos, com vulnerabilidades conhecidas de DoS e prototype pollution | Instalar via tarball oficial do SheetJS CDN (`xlsx-0.20.3.tgz`), conforme seção Installation |
-| Vercel **Hobby** (free) para hospedar este projeto | Termos de uso da Vercel proíbem uso comercial/de negócio no plano Hobby — mesmo sendo uso "interno", é uso de uma empresa de contabilidade para suas operações, o que se enquadra como comercial | Vercel **Pro** ($20/mês) se escolher Vercel, **ou** Railway (ver Hospedagem abaixo), que não tem essa restrição nos planos pagos baratos |
-| `moment.js` | Projeto em modo manutenção (não recebe novas features), bundle grande | `date-fns` (já recomendado) |
-| Autenticação "caseira" sem biblioteca (sessões manuais, JWT manual) | Risco de erros sutis de segurança (timing attack em comparação de senha, expiração de sessão mal feita, CSRF) — perigoso quando ninguém vai revisar manualmente o código de auth linha a linha | Auth.js v5 com Credentials Provider, que já resolve sessão, CSRF e cookies de forma testada |
-| Construir o motor de "próximo dia útil" do zero contando feriados manualmente em array fixo | Feriados móveis (Carnaval, Sexta-feira Santa, Corpus Christi) mudam de data todo ano; um array fixo desatualiza e quebra o sistema silenciosamente em janeiro do ano seguinte | `date-holidays` (cálculo automático de feriados móveis) ou BrasilAPI cacheada |
-| Hospedar em "computador do escritório" / rede local com port-forward | Não atende ao requisito explícito de "acesso pela internet"; depende de o computador estar sempre ligado, IP residencial instável, sem HTTPS fácil, sem backup automático do banco | Hospedagem gerenciada (Railway ou Vercel+Neon, ver abaixo) |
+|-------|-----|--------------|
+| Pacote npm de "calendário fiscal brasileiro" / "regras tributárias BR" de terceiros | Nenhum candidato encontrado tem manutenção ativa, cobertura abrangente das ~10 regras específicas (ECF/DEFIS/FGTS/INSS/eSocial) e confiabilidade equivalente ao padrão já estabelecido neste projeto (regras como dados + `date-holidays` para feriados) — introduzir essa dependência troca uma lógica simples, testável e já auditada por uma caixa-preta externa de confiança desconhecida | Catálogo de regras como dados em TS (ou tabela Prisma), reusando `date-holidays`/`date-fns`/`dia-util.ts` já validados em produção |
+| Segundo cron job (`node-cron` schedule adicional) só para obrigações anuais | Duplica a superfície de agendamento e de monitoramento sem necessidade — o mesmo job mensal já cobre o caso via filtro de dados | Um único `cron.schedule("0 6 1 * *")` que processa MENSAL e ANUAL na mesma execução, filtrando por `mesGeracao` |
+| Modelar `TipoObrigacao` dos 3 setores como um enum Prisma único e cada vez maior sem nenhuma estrutura de "setor" | Funciona em escala pequena, mas dificulta queries de dashboard por setor (ex.: "todas as tarefas do setor DP") sem um campo explícito de setor — gambiarra de manutenção a médio prazo | Adicionar um campo/enum `Setor { FISCAL DP CONTABIL }` explícito na regra de obrigação (e possivelmente em `Tarefa`), permitindo `WHERE setor = 'DP'` direto, sem inferir o setor a partir do `tipoObrigacao` |
 
 ## Stack Patterns by Variant
 
-**Se hospedar no Railway (recomendado para custo):**
-- App Next.js roda como processo Node 24/7 (`next start`, não serverless)
-- Banco Postgres como serviço adicional no mesmo projeto Railway (rede privada interna, sem custo de egress entre eles)
-- `node-cron` roda dentro do próprio processo Next.js (um arquivo `lib/scheduler.ts` iniciado no boot do servidor) para gerar as tarefas todo dia 1 do mês
-- Custo estimado: Hobby plan ($5/mês de assinatura, cobre $5 de uso) + banco pequeno → tipicamente $5-15/mês total para esse volume (5 usuários, ~100 empresas, baixíssimo tráfego)
-- Sem restrição de uso comercial
+**Se o catálogo de regras permanecer hardcoded em TS (recomendado para v2.0):**
+- Um arquivo por setor (`geracao-tarefas-dp.ts`, `geracao-tarefas-contabil.ts`) seguindo exatamente o padrão de `geracao-tarefas.ts` (função pura, sem I/O)
+- Orquestração em `geracao.ts` chama os três catálogos (fiscal/DP/contábil) dentro da mesma transação, mantendo a garantia de idempotência única (`@@unique([empresaId, tipoObrigacao, competencia])`, estendido para incluir `setor` se `tipoObrigacao` não for suficiente para diferenciar)
+- Porque: mantém o padrão já testado, minimiza risco de regressão no motor fiscal existente
 
-**Se hospedar na Vercel + Neon (recomendado para DX/zero-config):**
-- App Next.js em modo serverless (padrão Vercel)
-- Banco Postgres no Neon (free tier: 0.5 GB, scale-to-zero, integração nativa com Vercel — branch de banco por deploy)
-- Geração mensal de tarefas via Vercel Cron (`vercel.json` com `"schedule": "0 6 1 * *"`, rota `/api/cron/gerar-tarefas`, protegida por `CRON_SECRET`)
-- **Obrigatório plano Vercel Pro ($20/mês)** por causa da restrição de uso comercial do Hobby — Neon free tier pode continuar gratuito até passar de 0.5GB/100 CU-hours (não deve acontecer nessa escala)
-- Cold start do Neon (300-500ms após 5 min idle) é imperceptível para 5 usuários internos
-
-**Recomendação final:** começar pelo **Railway** — custo mensal menor ($5-15 vs $20+), permite uso comercial sem ressalvas, e simplifica a arquitetura (processo único sempre ativo, sem necessidade de Vercel Cron nem de lidar com cold starts de banco). Se no futuro o escritório já usa Vercel para outros projetos ou prefere a UI da Vercel, a variante Vercel+Neon é equivalente em capacidades, só mais cara.
+**Se o catálogo migrar para o banco (considerar só se houver pedido explícito de edição via UI):**
+- Nova tabela Prisma `RegraObrigacao` (setor, tipo, periodicidade, diaBase, mesGeracao, regimeAplicavel)
+- `gerarTarefasDoMes` passa a receber as regras como parâmetro (lidas do banco antes da chamada), preservando a função pura/testável
+- Porque: só vale o custo de complexidade extra se houver necessidade real de editar prazos sem deploy
 
 ## Version Compatibility
 
 | Package A | Compatible With | Notes |
 |-----------|------------------|-------|
-| `next@15.5.x` | `react@19.x`, `next-auth@5.x (beta)`, `prisma@6.x` | Combinação testada e amplamente documentada; Auth.js v5 ainda está em tag `beta` no npm mas é a versão recomendada para App Router (v4 não suporta App Router corretamente) |
-| `prisma@6.x` | Node.js 18.18+ (recomendado 20+) | Verificar que o host (Railway) usa Node 20 LTS ou superior |
-| `xlsx@0.20.3` (CDN) | Node.js qualquer versão recente | Build via tarball, sem dependências nativas — funciona igual em dev (Windows) e produção (Linux) |
-| `date-holidays@3.x` | Nenhuma dependência de Node específica | Funciona client-side e server-side; rodar sempre server-side (Server Action/Server Component) para consistência |
-| shadcn `chart` component | `recharts` (instalado automaticamente pelo CLI) | Não instalar `recharts` manualmente antes — deixar o CLI do shadcn resolver a versão compatível |
+| `date-fns@4.4.0` | `date-holidays@3.30.2` | Já validado em produção no setor Fiscal (`dia-util.ts`); nenhuma mudança de versão necessária para suportar periodicidade anual ou as novas regras de DP/Contábil — ambas as libs são genéricas de data/feriado, não fiscal-específicas |
+| `node-cron@4.4.1` | `prisma@6.19.3` (transação única) | A mesma transação Prisma (`db.$transaction`) que hoje gera tarefas mensais do setor Fiscal pode (e deve) ser estendida para também gerar DP/Contábil/anual na mesma chamada — evita múltiplas transações concorrentes tentando o mesmo snapshot mensal |
+| `@prisma/client@6.19.3` | Migration aditiva (`npx prisma migrate dev`) | Adicionar enum `Periodicidade`, novos valores de `TipoObrigacao`, e (se aplicável) campo `setorId`/`setor` em `Empresa`-responsável e `Tarefa` é uma migration estritamente aditiva — não quebra dados existentes do setor Fiscal já em produção |
 
 ## Sources
 
-- Next.js — blog oficial `nextjs.org/blog/next-15`, `nextjs.org/blog/next-16`, `nextjs.org/docs/app/guides/upgrading/version-16` — confirmação de que Next 15.5 é a última da série 15 e Next 16 trouxe breaking changes (Turbopack default, `proxy.ts`, cache explícito) — **HIGH**
-- Prisma — `prisma.io/docs/guides/nextjs`, `prisma.io/docs/getting-started/prisma-orm/quickstart/postgresql`, GitHub releases — confirma Prisma 6.x estável, Prisma 7 muda config de conexão — **HIGH**
-- Auth.js — `authjs.dev/guides/role-based-access-control`, `authjs.dev/reference/nextjs`, `next-auth.js.org/providers/credentials` — padrão RBAC via callbacks JWT/session com Credentials Provider — **HIGH**
-- SheetJS — `docs.sheetjs.com/docs/getting-started/installation/nodejs/`, `cdn.sheetjs.com/xlsx`, npmjs.com/package/xlsx — confirma que `xlsx` no registro npm está desatualizado/vulnerável (0.18.5) e que a versão atual (0.20.3) deve vir do CDN oficial — **HIGH**
-- date-holidays — `npmjs.com/package/date-holidays`, Socket.dev — confirma suporte a Brasil (BR + estados) e necessidade de combinar `isHoliday()` com checagem de fim de semana — **MEDIUM** (não verificado em código real, apenas documentação/descrição do pacote)
-- shadcn/ui charts — `ui.shadcn.com/docs/components/radix/chart`, `shadcn.io/charts` — confirma `npx shadcn add chart` sobre Recharts v3 — **MEDIUM**
-- Hospedagem — Vercel (`vercel.com/docs/plans/hobby`, termos de serviço), Railway (`railway.com/pricing`, `docs.railway.com/reference/pricing/plans`), Render (`render.com/pricing`), Neon (`neon.com/docs/introduction/plans`) — confirma restrição de uso comercial no plano Hobby da Vercel e estimativa de custo $5-15/mês no Railway Hobby para apps de baixíssimo tráfego — **MEDIUM** (custo real depende de uso medido pós-deploy, estimativas de blogs de terceiros variam bastante)
-- TanStack Form/Table, React Hook Form, Zod — `tanstack.com/form`, `ui.shadcn.com/docs/forms/tanstack-form` — confirma padrão de integração Zod + React Hook Form + shadcn em 2025/2026 — **MEDIUM**
+- Código-fonte deste repositório — `src/lib/geracao-tarefas.ts`, `src/lib/dia-util.ts`, `src/lib/scheduler.ts`, `src/modules/tarefas/geracao.ts`, `prisma/schema.prisma` — lidos e verificados diretamente nesta pesquisa — **HIGH**
+- `.planning/PROJECT.md` (contexto da milestone v2.0) — **HIGH**
+- Receita Federal / fontes contábeis sobre prazo ECF 2026 (último dia útil de julho do ano seguinte) — confirmado via busca atual, múltiplas fontes contábeis (IOB, Lopes Machado Auditores, gov.br) — **MEDIUM** (regra de negócio confirmada por múltiplas fontes secundárias consistentes entre si, mas não citação direta de Instrução Normativa)
+- Receita Federal / Simples Nacional sobre prazo DEFIS (31/03, antecipado se não-útil) — confirmado via busca atual, incluindo página oficial gov.br/receitafederal e CRCSC — **HIGH** (fonte oficial gov.br confirmada)
+- `package.json` deste repositório — versões instaladas confirmadas via `npm ls` — **HIGH**
 
 ---
-*Stack research for: Sistema web de gestão de tarefas e prazos fiscais recorrentes (Agenda Fiscal)*
-*Researched: 2026-06-11*
+*Stack research for: extensão do motor de geração de tarefas recorrentes (periodicidade anual) e modelagem de obrigações DP/Contábil — Agenda Fiscal v2.0*
+*Researched: 2026-06-22*

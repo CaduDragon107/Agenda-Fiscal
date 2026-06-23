@@ -210,3 +210,201 @@ Features to defer until the core tool is embedded in daily routine.
 ---
 *Feature research for: Tax/compliance workflow management for Brazilian accounting firm (Agenda Fiscal)*
 *Researched: 2026-06-11*
+
+---
+
+# Addendum: v2.0 Expansão Multi-Setor (DP e Contábil)
+
+**Domain:** Gestão de tarefas para escritório de contabilidade — extensão para Departamento Pessoal (DP) e Contábil
+**Researched:** 2026-06-22
+**Confidence:** MEDIUM
+
+## Context
+
+Esta seção cobre a expansão do "Agenda Fiscal" (v1.0 acima, setor Fiscal já validado em produção) para os setores **Departamento Pessoal (DP)** e **Contábil**, atendendo à mesma carteira de ~197 empresas. O schema Prisma existente (`prisma/schema.prisma`) já define o padrão a replicar: `Empresa.responsavelId` (hoje único), enum `TipoObrigacao`, `Tarefa.competencia` (string mensal), `@@unique([empresaId, tipoObrigacao, competencia])`, e `DesempenhoMensal` agregado por colaborador/competência. A análise de complexidade abaixo é relativa a esse modelo existente — não a um produto novo do zero.
+
+## Feature Landscape — v2.0
+
+### Table Stakes — Departamento Pessoal (DP)
+
+Obrigações recorrentes que toda empresa com funcionários CLT gera mensalmente. Faltar qualquer uma = produto incompleto para o setor DP.
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Geração mensal: Folha de Pagamento | Toda empresa com funcionários precisa calcular e pagar salários até o 5º-7º dia útil do mês seguinte à competência (MEDIUM confidence, múltiplas fontes convergem) | LOW | Mesmo padrão de `competencia` mensal já usado no Fiscal; novo `TipoObrigacao` no enum |
+| Geração mensal: FGTS (FGTS Digital) | Recolhimento obrigatório, prazo dia 7 do mês seguinte via FGTS Digital (substituiu guia antiga) | LOW | Prazo fixo por tipo, igual ao padrão DAS/ICMS já implementado |
+| Geração mensal: INSS (contribuição previdenciária) | Recolhimento obrigatório, prazo dia 20 do mês seguinte | LOW | Prazo fixo por tipo |
+| Geração mensal: eSocial — eventos periódicos (S-1200/S-1210, folha) | Substituiu GFIP/CAGED/DIRF; prazo dia 15 do mês seguinte; envio incorreto/atrasado bloqueia FGTS Digital e gera multa | LOW | Mesma mecânica de "obrigação com prazo fixo ajustado por dia útil" do Fiscal |
+| Filtro "empresa tem funcionários?" antes de gerar obrigações DP | Nem toda empresa-cliente tem CLT contratado (ex: empresas só com sócios pró-labore); gerar DP para quem não tem funcionário gera ruído/tarefa falsa | MEDIUM | Requer campo booleano ou contagem de funcionários na `Empresa` (ou tabela `Funcionario` mínima) — não existe hoje no schema |
+| Responsável DP por empresa (não fiscal) | Pessoa diferente cuida do DP da mesma empresa — já é decisão validada da milestone | MEDIUM | Requer migrar `Empresa.responsavelId` único → relação por setor (ver Cross-Sector abaixo) |
+| Dashboard DP (desempenho, evolução mensal, ranking) | Mesma exigência de visibilidade do dono já validada no Fiscal — não pode ficar "menos visível" que o setor mais antigo | LOW (réplica) | Reaproveita componentes/queries do Fiscal, filtrando por setor |
+| Tarefas avulsas atribuíveis a colaboradores DP | Nem toda demanda de DP é recorrente automática (ex: cálculo de rescisão pontual, dúvida de cliente) | LOW (já existe genérico) | Mecanismo de tarefa avulsa já é setor-agnóstico no v1.0; só precisa expor os novos colaboradores no seletor |
+
+### Table Stakes — Contábil
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Geração mensal: Escrituração Contábil (lançamentos/balancete interno) | Toda empresa precisa ter a contabilidade escriturada mês a mês internamente, mesmo que a entrega oficial (ECD) seja anual | LOW | Nova obrigação mensal, mesmo padrão `competencia` |
+| Geração ANUAL: ECD (Escrituração Contábil Digital) | Obrigatória para Lucro Real, entrega até último dia útil de maio referente ao ano anterior (MEDIUM confidence) | HIGH | **Primeira obrigação com periodicidade não-mensal do sistema** — motor de geração precisa suportar "competência = ano" e disparo único anual, não no job mensal padrão |
+| Geração ANUAL: ECF (Escrituração Contábil Fiscal) | Obrigatória para a maioria das pessoas jurídicas (substituiu DIPJ), entrega até último dia útil de julho do ano seguinte | HIGH | Mesma extensão arquitetural do ECD; pode reusar a mesma mecânica de "obrigação anual" |
+| Geração ANUAL: DEFIS (Simples Nacional) | Obrigatória para empresas do Simples Nacional, prazo até 31 de março do ano seguinte (MEDIUM confidence) | MEDIUM | Empresas Simples Nacional não têm ECD/ECF (que são do Lucro Real) — precisa de regra "DEFIS só se regime = SIMPLES_NACIONAL", análoga à regra já existente "DAS só se regime = SIMPLES_NACIONAL" |
+| Responsável Contábil por empresa | Mesmo racional do DP — pessoa contábil dedicada por empresa | MEDIUM | Mesma migração de modelo do DP |
+| Dashboard Contábil (desempenho, evolução mensal, ranking) | Mesma paridade de visibilidade exigida pelo dono | LOW (réplica) | Reaproveita componentes do Fiscal |
+| Tarefas avulsas atribuíveis a colaboradores Contábil | Demandas pontuais (ex: parcelamento, retificação, pedido de cliente) | LOW (já existe genérico) | Idem DP |
+
+### Cross-Sector Features (Fiscal + DP + Contábil)
+
+Funcionalidades que tocam a arquitetura compartilhada entre os 3 setores.
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| **Empresa com 1 responsável POR SETOR** (não 1 responsável geral) | Decisão explícita do usuário: pessoas diferentes cuidam do fiscal/DP/contábil da mesma empresa | **HIGH** — mudança estrutural central da v2.0 | Hoje `Empresa.responsavelId` é uma FK única para `Usuario`. Precisa virar 3 FKs (`responsavelFiscalId`, `responsavelDpId`, `responsavelContabilId`) OU uma tabela de junção `EmpresaResponsavel(empresaId, setor, usuarioId)`. A tabela de junção é mais extensível (facilita 4º setor futuro) mas exige reescrever toda query que hoje faz `empresa.responsavel` — **toda a base de código do Fiscal que lê responsável precisa de migração**, não é puramente aditivo |
+| **Campo `Setor` no modelo de Usuário** | Os 11 novos colaboradores (4 DP + 3 Contábil) precisam ser distinguíveis dos 4 fiscais — RBAC e seletores de "atribuir tarefa" devem listar só colaboradores do setor relevante | MEDIUM | Novo enum `Setor { FISCAL, DP, CONTABIL }` em `Usuario`; pequeno mas toca toda tela de atribuição de tarefa avulsa |
+| **`TipoObrigacao` estendido com setor** | Hoje o enum mistura tipos (ICMS, DAS, SPED) sem campo de setor explícito — ao adicionar FOLHA, FGTS, INSS, ESOCIAL, ECD, ECF, DEFIS, BALANCETE ao mesmo enum, fica implícito demais qual obrigação pertence a qual setor | MEDIUM | Recomendado adicionar campo `setor` a uma tabela de "tipo de obrigação" (hoje é só enum) ou, no mínimo, mapear setor→tipos em código central, não espalhado |
+| **Motor de geração com periodicidade configurável (mensal vs anual)** | ECD/ECF/DEFIS são a primeira necessidade real de obrigação não-mensal — sem isso, o job mensal teria que ter lógica especial "só gera em maio" hardcoded, ou rodar um job separado para anuais | **HIGH** | Maior risco arquitetural da milestone. Hoje o job roda 1x/mês e gera tudo que é "deste mês". Precisa de um conceito de `periodicidade` (MENSAL/ANUAL) por tipo de obrigação + lógica "só gera obrigação anual X no mês de disparo Y, com competência = ano anterior" |
+| **Dashboards duplicados por setor, sem visão unificada** | Decisão explícita do usuário para simplificar v2.0 | LOW | Reaproveita componentes existentes (Recharts/shadcn chart) só filtrando por setor — sem agregação cross-setor, sem mudança de schema em `DesempenhoMensal` além de um campo `setor` |
+| **`DesempenhoMensal` segmentado por setor** | Sem isso, o ranking/evolução mensal misturaria desempenho fiscal com DP/Contábil do mesmo colaborador, o que nunca acontece pois colaboradores são fixos por setor — mas a agregação SQL (`GROUP BY competencia, colaboradorId`) ainda precisa do filtro implícito de setor para os relatórios "por setor" | LOW | Como colaboradores já são fixos por setor (campo `Setor` em `Usuario`), o filtro vem de JOIN com `Usuario.setor` — não precisa de coluna nova em `DesempenhoMensal` |
+| **7 colaboradores placeholder renomeáveis** | Mesmo padrão usado no Fiscal v1.0 (colaborador1-4 → nomes reais depois) | LOW | Seed script simples, já há precedente direto |
+
+### Differentiators (mantidos do v1.0, agora replicados por setor)
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Dashboard comparativo de desempenho por setor | Dono enxerga gargalos por equipe (DP atrasando vs Contábil em dia) sem misturar dados | LOW (réplica) | Mesma UI, filtro de setor |
+| Ranking de empresas problemáticas por setor | Uma empresa pode ser tranquila no fiscal mas problemática no DP (ex: alta rotatividade de funcionários gerando muitas rescisões) — informação só aparece se segmentada por setor | LOW (réplica) | Reaproveita lógica de ranking já validada |
+| Histórico de conclusões por tarefa (passo a passo) | Mesmo valor do Fiscal: rastreabilidade de quem fez o quê e quando, útil em auditoria trabalhista/contábil | LOW (já existe genérico) | `TarefaHistorico` já é setor-agnóstico |
+
+### Anti-Features (v2.0)
+
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|------------------|--------------|
+| Cálculo automático de folha de pagamento dentro do sistema | "Já que estamos automatizando, por que não calcular a folha também?" | Cálculo de folha exige tabelas de INSS/IRRF atualizadas, convenções coletivas por categoria, regras de adicional noturno/hora extra — é o domínio de um software de folha dedicado (ex: Domínio, Alterdata), não de um gestor de tarefas. Replicar isso é reconstruir um ERP de RH inteiro | Manter o sistema como **gestor de tarefas e prazos** (igual ao padrão já estabelecido para ICMS/PIS-COFINS no Fiscal): a tarefa "Gerar Folha de Pagamento" referencia o sistema de folha externo já usado pelo escritório, sem recalcular nada |
+| Execução/integração direta com eSocial (envio automático de eventos) | "Já que sabemos o prazo, por que não enviar automaticamente?" | eSocial exige certificado digital, assinatura, validação de schema XML complexa e tratamento de erros de rejeição — escopo de uma integração robusta, fora do core value ("nunca perder prazo") que é sobre visibilidade, não automação de envio | Mesma decisão já tomada no v1.0 para ICMS/PIS-COFINS: o sistema referencia/explica o passo a passo, não executa |
+| Cadastro completo de funcionários (módulo de RH) | "Já que tem DP, por que não cadastrar os funcionários também (admissão, dados pessoais, histórico)?" | Isso é o domínio de um sistema de RH/folha completo — duplicaria dados que já existem no software de folha do escritório, criando dois lugares de verdade e risco de dados trabalhistas sensíveis (LGPD) desatualizados | Cadastro de `Empresa` ganha, no máximo, um campo simples "tem funcionários CLT? (sim/não)" ou contagem aproximada — suficiente para decidir se gera ou não as obrigações de folha/FGTS/eSocial daquela empresa |
+| Visão unificada de dashboard entre os 3 setores | "Já que o dono vê tudo, por que não um dashboard combinado?" | Já decidido explicitamente como fora de escopo nesta milestone pelo usuário — combinar métricas de 3 setores com cadências diferentes (mensal vs anual) complica a UI sem necessidade validada ainda | Dashboards separados por setor, reavaliar visão unificada em milestone futura quando houver demanda real |
+| Calendário de convenções coletivas por categoria profissional | Departamento pessoal de fato depende de convenções coletivas para datas de reajuste, piso salarial etc. | Convenções coletivas variam por sindicato/categoria/região e mudam anualmente — manter isso atualizado é trabalho equivalente a um produto jurídico-trabalhista dedicado, fora do escopo de "nunca perder prazo de obrigação" | Tarefas avulsas cobrem casos pontuais (ex: "verificar reajuste sindicato X"); não modelar como obrigação recorrente automática |
+
+## Feature Dependencies — v2.0
+
+```
+[Setor em Usuario]
+    └──requires antes de──> [Filtro de colaboradores por setor nos seletores]
+                                └──requires antes de──> [Atribuição de tarefa avulsa por setor]
+
+[Empresa com 1 responsável por setor]
+    └──requires──> [Migração de Empresa.responsavelId único → relação por setor]
+                       └──requires──> [Reescrita de toda query/tela que hoje lê empresa.responsavel]
+                       └──enhances──> [Dashboard "minhas empresas" por colaborador DP/Contábil]
+
+[Motor de geração com periodicidade configurável (mensal/anual)]
+    └──requires antes de──> [Geração ANUAL: ECD]
+    └──requires antes de──> [Geração ANUAL: ECF]
+    └──requires antes de──> [Geração ANUAL: DEFIS]
+    └──enhances──> [Reuso futuro para outras obrigações anuais não previstas hoje]
+
+[Campo "empresa tem funcionários CLT?"]
+    └──requires antes de──> [Geração mensal de obrigações DP (Folha/FGTS/INSS/eSocial)]
+    (sem esse filtro, empresas só-pró-labore recebem tarefas DP falsas)
+
+[TipoObrigacao estendido + mapeamento setor→tipo]
+    └──requires antes de──> [Qualquer geração de obrigação DP ou Contábil]
+    └──conflicts com──> [Adicionar tipos novos direto no enum existente sem mapear setor] (gera ambiguidade de qual obrigação pertence a qual setor)
+
+[Dashboards duplicados por setor] ──enhances──> [Dashboard comparativo de desempenho] (reuso de componente, não bloqueante)
+```
+
+### Dependency Notes — v2.0
+
+- **Empresa com 1 responsável por setor requer migração de schema antes de qualquer feature DP/Contábil:** é a mudança mais arriscada e mais "na base" — toda tela existente do Fiscal que assume `empresa.responsavel` único vai quebrar ou exibir dado errado se não for migrada primeiro. Deve ser a primeira fase técnica da v2.0, antes de qualquer geração de tarefa DP/Contábil.
+- **Motor de periodicidade anual requer ser resolvido antes do ECD/ECF/DEFIS, mas não bloqueia DP:** todas as obrigações DP (Folha, FGTS, INSS, eSocial) são mensais e reaproveitam o motor mensal já existente sem mudança estrutural. Só o Contábil (ECD/ECF/DEFIS) força a extensão de periodicidade — isso significa que **DP pode ser entregue em paralelo ou antes do Contábil**, já que sua complexidade arquitetural é menor.
+- **Campo "tem funcionários CLT" é um bloqueador pequeno mas real para DP:** sem ele, o sistema geraria tarefas de folha/FGTS/eSocial para as ~poucas empresas-cliente que não têm CLT (ex: holdings, empresas só com sócio pró-labore), gerando ruído e desconfiança no sistema desde o primeiro mês.
+- **TipoObrigacao + mapeamento setor conflita com "adicionar direto no enum":** o enum atual (`ICMS, PIS_COFINS, SPED_FISCAL, SPED_CONTRIBUICOES, DAS`) não tem conceito de setor. Adicionar `FOLHA, FGTS, INSS, ESOCIAL, ECD, ECF, DEFIS, BALANCETE` sem um mapeamento explícito setor→tipo funciona tecnicamente mas torna qualquer query "obrigações do setor X" dependente de uma lista hardcoded espalhada pelo código — recomendação é centralizar esse mapeamento em um único lugar (constante ou tabela) desde o início.
+
+## MVP Definition — v2.0
+
+### Launch With (v2.0)
+
+Mínimo para replicar o valor central do Fiscal nos 2 novos setores.
+
+- [ ] Migração `Empresa`: responsável por setor (fiscal/DP/contábil) — **fundação obrigatória, sem isso nada mais funciona corretamente**
+- [ ] `Setor` em `Usuario` + 7 colaboradores placeholder (4 DP + 3 Contábil)
+- [ ] Campo "empresa tem funcionários CLT?" — evita geração de tarefa DP falsa
+- [ ] Geração mensal DP: Folha de Pagamento, FGTS, INSS, eSocial (eventos periódicos) — só para empresas com funcionários
+- [ ] Geração mensal Contábil: Escrituração/Balancete — para todas as empresas
+- [ ] Extensão do motor de geração para suportar periodicidade ANUAL
+- [ ] Geração anual Contábil: ECD (Lucro Real), ECF (todas exceto MEI/Simples conforme regra), DEFIS (Simples Nacional)
+- [ ] Tarefas avulsas habilitadas para os novos colaboradores DP/Contábil (reuso do mecanismo existente)
+- [ ] Dashboards (desempenho, evolução mensal, ranking de empresas) duplicados para DP e para Contábil — páginas separadas
+
+### Add After Validation (v2.x)
+
+- [ ] Rescisão/desligamento como obrigação com prazo derivado de evento (não fixo por competência) — trigger: usuário reportar que rescisões pontuais não se encaixam bem no modelo de "competência mensal fixa" atual
+- [ ] Férias e 13º salário como lembretes/obrigações semi-recorrentes (datas variam por funcionário) — trigger: depois que o fluxo mensal estiver estável, se DP achar falta desse controle
+- [ ] Campo "quantidade de funcionários" na Empresa (não só booleano) — trigger: se quantidade afetar volume/complexidade de tarefa de forma que o dono queira ver no dashboard
+
+### Future Consideration (v3+)
+
+- [ ] Visão unificada de dashboard entre os 3 setores — explicitamente fora de escopo desta milestone por decisão do usuário
+- [ ] Cadastro de funcionários (mini-RH) dentro do sistema — redundante com software de folha existente, alto risco de duplicar fonte de verdade
+- [ ] Integração/envio automático ao eSocial — mesma decisão já tomada para Fiscal (só referenciar, não executar)
+- [ ] Calendário de convenções coletivas por sindicato/categoria — escopo de produto jurídico-trabalhista separado
+
+## Feature Prioritization Matrix — v2.0
+
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|----------------------|----------|
+| Migração responsável por setor | HIGH | HIGH | P1 |
+| Setor em Usuario + colaboradores placeholder | HIGH | LOW | P1 |
+| Geração mensal DP (Folha/FGTS/INSS/eSocial) | HIGH | LOW | P1 |
+| Campo "tem funcionários CLT" | MEDIUM | LOW | P1 |
+| Geração mensal Contábil (Escrituração/Balancete) | HIGH | LOW | P1 |
+| Motor de periodicidade anual | HIGH | HIGH | P1 |
+| Geração anual ECD/ECF/DEFIS | HIGH | MEDIUM (depende do motor anual) | P1 |
+| Dashboards duplicados DP/Contábil | HIGH | LOW | P1 |
+| Tarefas avulsas para novos colaboradores | MEDIUM | LOW | P1 |
+| Rescisão como obrigação orientada a evento | MEDIUM | MEDIUM | P2 |
+| Férias/13º como lembrete | LOW-MEDIUM | MEDIUM | P2 |
+| Quantidade de funcionários (não só booleano) | LOW | LOW | P3 |
+| Dashboard unificado cross-setor | LOW (explicitamente descartado) | HIGH | P3 (fora de escopo) |
+| Cadastro de funcionários / mini-RH | LOW (redundante) | HIGH | P3 (anti-feature) |
+| Integração automática eSocial | LOW (fora do core value) | HIGH | P3 (anti-feature) |
+
+**Priority key:**
+- P1: Must have para v2.0
+- P2: Should have, considerar após v2.0 estabilizar
+- P3: Nice to have ou explicitamente fora de escopo
+
+## Competitor Feature Analysis — v2.0
+
+| Feature | Nuubes / Sistema Makro / Contmatic / Alterdata (mercado) | Agenda Fiscal v1.0 (hoje) | Nosso plano v2.0 |
+|---------|-----------------------------------------------------------|----------------------------|--------------------|
+| Separação por setor (Fiscal/DP/Contábil) | Sim — "Áreas de Trabalho" pré-definidas por departamento, padrão estabelecido no mercado | Só Fiscal | Replicar o padrão de mercado: 3 setores com geração e dashboard próprios |
+| Geração automática de tarefa recorrente por área | Sim, padrão do mercado | Sim, só Fiscal | Estender para DP e Contábil, reaproveitando motor existente |
+| Workflow por tipo de cliente | Sim (ex: cliente Simples vs Lucro Real tem fluxo diferente) | Sim, via `RegimeTributario` | Já coberto pelo padrão existente — DEFIS só Simples, ECD/ECF só Lucro Real, igual a DAS vs ICMS hoje |
+| Cálculo de folha integrado | Sim (módulos completos de folha) | Não se aplica (não existe DP ainda) | **Não replicar** — manter como gestor de tarefas, referenciando ferramentas externas de folha (mesma filosofia do ICMS/PIS-COFINS) |
+| Dashboard comparativo de desempenho por colaborador | Parcial (alguns oferecem relatórios, mas dashboards comparativos visuais são descritos como diferencial do usuário em relação a ferramentas genéricas) | Sim, validado como diferencial central no v1.0 | Replicar como diferencial em DP e Contábil — é o "algo inovador" que o usuário já busca |
+
+## Sources — v2.0
+
+- [Checklist do Departamento Pessoal — Blog Alterdata](https://blog.alterdata.com.br/obrigacoes-departamento-pessoal/) — MEDIUM
+- [Contabilidade e departamento pessoal: rotinas — Anderson Hernandes](https://andersonhernandes.com.br/contabilidade-e-departamento-pessoal/) — MEDIUM
+- [Rotinas de departamento pessoal: checklist mensal — Convenia](https://blog.convenia.com.br/rotinas-de-departamento-pessoal/) — MEDIUM
+- [Agenda Permanente de Obrigações Trabalhistas e Previdenciárias — Guia Trabalhista](https://www.guiatrabalhista.com.br/guia/agenda.htm) — MEDIUM
+- [ECD e ECF 2026 — IOB Notícias](https://noticias.iob.com.br/ecd-e-ecf/) — MEDIUM
+- [ECD: Guia 2026 — Conta Azul](https://contaazul.com/blog/parceiros/ecd/) — MEDIUM
+- [ECF 2025 — IOB](https://iob.com.br/escrituracao-contabil-fiscal/) — MEDIUM
+- [DEFIS 2026: prazo, regras e como entregar — Contábeis](https://www.contabeis.com.br/noticias/75213/defis-2026-prazo-regras-e-como-entregar/) — MEDIUM
+- [Obrigações Acessórias Federais 2026: Calendário Completo](https://escolasuperioresn.com.br/obrigacoes-acessorias-federais-2026-calendario-completo/) — MEDIUM
+- [DCTFWeb 2026 — Contajá](https://contaja.com.br/blog/dctfweb-o-que-e/) — MEDIUM
+- [Prazos fiscais críticos maio 2026 — Ledware](https://www.ledware.com.br/2026/05/04/prazos-fiscais-criticos-maio-2026-esocial-efd-reinf-dctfweb-ecd-irpf/) — MEDIUM
+- [Desligamento e rescisão complementar S-2299/S-2399 — Senior Documentação](https://documentacao.senior.com.br/gestao-de-pessoas-hcm/esocial/manual-processos/desligamento.htm) — MEDIUM
+- [Prazo da rescisão CLT — BPO Folha de Pagamento](https://bpofolhadepagamento.com.br/departamento-pessoal/qual-o-prazo-para-pagar-a-rescisao-clt-e-quais-as-multas-pelo-atraso/) — MEDIUM
+- [Software para automação de tarefas contábeis — Nuubes](https://nuubes.com/nuubes-contabil-gestao-de-tarefas-contabeis/) — LOW (single source, marketing page)
+- [Sistema para Escritórios Contábeis — System Sistemas de Gestão](https://www.systempro.com.br/solucoes/empresas-contabeis/) — LOW
+- [Férias e 13º Salário — Guia Trabalhista](https://www.guiatrabalhista.com.br/obras/ferias-13-salario.htm) — MEDIUM
+- Leitura direta do `prisma/schema.prisma` do projeto (Agenda Fiscal v1.0) — HIGH (fonte primária, código existente)
+
+---
+*Feature research for: Agenda Fiscal v2.0 — Expansão Multi-Setor (DP e Contábil)*
+*Researched: 2026-06-22*
+</content>
