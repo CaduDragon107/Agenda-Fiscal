@@ -5,10 +5,10 @@ milestone_name: Expansao Multi-Setor (DP e Contabil)
 current_phase: 05
 current_phase_name: funda-o-multi-setor-schema-autoriza-o-e-empresas
 status: executing
-stopped_at: Phase 5 UI-SPEC approved
-last_updated: "2026-06-23T20:43:30.523Z"
-last_activity: 2026-06-23
-last_activity_desc: Phase 05 execution started
+stopped_at: Plan 05-04 Task 4 checkpoint (human-verify D-09/D-10) awaiting approval
+last_updated: "2026-06-24T07:25:00.000Z"
+last_activity: 2026-06-24
+last_activity_desc: Plan 05-04 Tasks 1-3 completed and committed; Task 4 (blocking human-verify checkpoint) awaiting user verification
 progress:
   total_phases: 4
   completed_phases: 0
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 ## Current Position
 
 Phase: 05 (funda-o-multi-setor-schema-autoriza-o-e-empresas) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 05
-Last activity: 2026-06-23 — Phase 05 execution started
+Plan: 4 of 4 (in progress — Tasks 1-3 done, Task 4 blocking checkpoint pending)
+Status: Blocked on checkpoint — Plan 05-04 Task 4 (human-verify D-09/D-10)
+Last activity: 2026-06-24 — Plan 05-04 Tasks 1-3 completed (form 3-selector grid + CLT checkbox, sector-aware table, deriveEmpresaRows data-layer omission + regression test); Task 4 checkpoint awaiting human approval
 
 ## Performance Metrics
 
@@ -108,12 +108,17 @@ Recent decisions affecting current work:
 - [Phase 03-02]: instrumentation.ts criado na raiz do projeto (nao em src/) - contrato exato do Next.js 15 App Router para o boot hook ser descoberto
 - [Phase 03-03]: gerarTarefasDoMesAction guarda role DONO como primeiro check apos auth(), antes de qualquer acesso ao banco (T-3-01) - botao GerarTarefasButton e so defesa em profundidade, nao a barreira real
 - [Phase 03-03]: GerarTarefasButton usa router.refresh() (nao revalidatePath client-side) para repopular a lista Server Component apos a geracao
+- [Phase 05-04]: useForm tipado com z.input<typeof empresaSchema> (nao EmpresaInput/z.infer) quando o schema tem campo .default() -- zodResolver's Resolver e tipado pelo INPUT (pre-default), nao pelo OUTPUT (pos-default, campo obrigatorio); usar o tipo de output como generic do useForm quebra a compatibilidade estrutural do Resolver/Control sob tsc
+- [Phase 05-04]: deriveEmpresaRows (src/app/(app)/empresas/derive-rows.ts) e a fronteira de seguranca real de D-10 -- omite responsaveis cross-setor no data layer (server, antes do payload RSC) para viewer nao-DONO; coluna escondida em empresas-table.tsx e so segunda barreira defensiva, nao o controle primario
+- [Phase 05-04]: npx prisma generate necessario antes de qualquer tsc --noEmit nesta sessao -- client gerado estava desatualizado em relacao ao schema.prisma ja migrado (Setor enum + EmpresaResponsavelSetor model dos Plans 01-03), nao e install de pacote novo (fora do escopo da Rule 3 exclusion)
 
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
+
+- [Phase 5] NOVO — Plan 05-04 Task 4 (checkpoint:human-verify, gate="blocking") aguardando verificação humana dos comportamentos D-09/D-10 antes de a plan ser considerada completa. Servidor de dev (`npm run dev`) iniciado em background (http://localhost:3000) para facilitar a verificação. Ver `.planning/phases/05-funda-o-multi-setor-schema-autoriza-o-e-empresas/05-04-SUMMARY.md` seção "Próximos Passos" para o estado exato e os passos de verificação.
 
 - [Phase 1] ~~Inspecionar a estrutura real da planilha de importação~~ — RESOLVIDO nesta sessão: a fonte real de EMPR-02 é `Lista de Empresas com CNPJ.xlsx` (não "Controle pis e cofins.xlsx"), inspecionada diretamente. 198 empresas em 3 regimes: Lucro Real=61, Simples Nacional=80, Lucro Presumido=50, 7 sem regime identificável. Ver `01-RESEARCH.md` Pattern 3.5.
 - [Phase 3] ~~NOVO — TASK-01 define regras de geração mensal só para Lucro Real e Simples Nacional; ~25% das empresas reais (50/198, Lucro Presumido) ainda não têm regra de obrigação definida.~~ — Tratado em 03-01 (ver 03-RESEARCH.md/03-CONTEXT.md); Lucro Presumido permanece fora do escopo de geração automática do v1 por decisão registrada na fase.
@@ -149,6 +154,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-23T17:23:17.515Z
-Stopped at: Phase 5 UI-SPEC approved
-Resume file: .planning/phases/05-funda-o-multi-setor-schema-autoriza-o-e-empresas/05-UI-SPEC.md
+Last session: 2026-06-24T07:25:00.000Z
+Stopped at: Plan 05-04 Task 4 checkpoint (human-verify D-09/D-10) awaiting approval
+Resume file: .planning/phases/05-funda-o-multi-setor-schema-autoriza-o-e-empresas/05-04-SUMMARY.md
