@@ -632,14 +632,14 @@ describe("obrigacoesAnuaisParaCompetencia — exatamente 1 disparo por obrigaç�
 
 **Risco geral:** a única claim desta pesquisa que ainda carece de confirmação explícita do usuário/planner é A1 (formato `"YYYY"` vs `"YYYY-ANUAL"`) — todas as outras claims técnicas centrais (estrutura de catálogo, idempotência, cálculo de prazo, filtro por regime) foram verificadas por leitura direta de código existente ou execução local, replicando o padrão de confiabilidade já estabelecido em `06-RESEARCH.md`.
 
-## Open Questions
+## Open Questions (RESOLVED — both deferred to Phase 8 by design; non-blocking for Phase 7)
 
-1. **O formato `"YYYY"` para competência anual pode colidir visualmente/cognitivamente com alguma feature futura de filtro por ano nos dashboards (Phase 8)?**
+1. **(RESOLVED — deferred to Phase 8) O formato `"YYYY"` para competência anual pode colidir visualmente/cognitivamente com alguma feature futura de filtro por ano nos dashboards (Phase 8)?**
    - What we know: a constraint `@@unique` já garante correção técnica independente do formato escolhido (D-09 confirma isso). Dashboards futuros (DASH/CONT-07/08/09) provavelmente vão querer agrupar tarefas por ano de competência em algum momento.
    - What's unclear: se um dashboard que filtra "tarefas de 2026" deveria incluir tanto as mensais ("2026-01".."2026-12") quanto a anual ("2026") sob o mesmo filtro de UI, ou se são conceitualmente períodos diferentes (ano-base da apuração anual vs. ano-calendário das tarefas mensais).
    - Recommendation: não bloquear esta fase por isso — é uma decisão de UI da Phase 8, não desta fase. Documentar a escolha de formato claramente no código (comentário no enum/schema) para que o planner da Phase 8 saiba que precisa tratar os dois formatos distintamente ao construir queries de dashboard.
 
-2. **Empresas sem responsável Contábil hoje (100% delas, mesma situação herdada de DP) — o relatório de "puladas" precisa de alguma ação diferenciada para obrigações anuais vs. mensais?**
+2. **(RESOLVED — non-blocking, generic message kept) Empresas sem responsável Contábil hoje (100% delas, mesma situação herdada de DP) — o relatório de "puladas" precisa de alguma ação diferenciada para obrigações anuais vs. mensais?**
    - What we know: D-11 já estabelece "pular e listar" por empresa, sem distinção entre mensal e anual. A pesquisa recomenda (Pitfall 4) deduplicar a lista por empresa, não por tipo de obrigação.
    - What's unclear: se o DONO, ao ver "Empresa X sem responsável Contábil" em fevereiro (mês de criação do DEFIS), precisa de algum contexto adicional indicando "esta empresa também perderia a obrigação anual DEFIS este ano" — ou se a mensagem genérica já é suficiente porque resolver o responsável resolve ambos os eixos retroativamente na próxima execução (mensal ou manual).
    - Recommendation: manter a mensagem genérica (mesmo padrão já usado para DP) — o planner pode considerar adicionar uma nota textual diferenciando "esta competência também inclui uma obrigação anual" apenas se o esforço for trivial, mas não é um requisito bloqueante.
