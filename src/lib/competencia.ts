@@ -20,6 +20,15 @@ export const competenciaSchema = z
   .string()
   .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Competência deve estar no formato YYYY-MM");
 
+// Formato canônico de competência ANUAL ("YYYY") usado pelas obrigações
+// anuais do motor Contábil (ECD/ECF/DEFIS — Fase 7). Distinto do formato
+// mensal acima (4 dígitos sem hífen vs 7 caracteres "YYYY-MM"); a unicidade
+// entre os dois eixos é garantida pelo enum TipoObrigacao ser sempre
+// distinto entre obrigações mensais e anuais, não pelo formato textual.
+export const competenciaAnualSchema = z
+  .string()
+  .regex(/^\d{4}$/, "Competência anual deve estar no formato YYYY");
+
 export function competenciaAtual(): string {
   return format(new Date(), "yyyy-MM");
 }
