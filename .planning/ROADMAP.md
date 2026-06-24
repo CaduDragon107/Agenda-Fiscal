@@ -97,8 +97,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 1**
 
-- [ ] 07-01-PLAN.md — Camada de cálculo puro: enum TipoObrigacao +11 valores (db push), catálogos geracao-tarefas-contabil.ts (8 rotinas mensais por regime) e geracao-tarefas-contabil-anual.ts (ECD/ECF/DEFIS + obrigacoesAnuaisParaCompetencia), competenciaAnualSchema, testes unitários
-- [ ] 07-03-PLAN.md — Teste de regressão CONT-06: tarefa avulsa de Contábil reusa criarTarefa setor-aware (sem mudança de produção)
+- [x] 07-01-PLAN.md — Camada de cálculo puro: enum TipoObrigacao +11 valores (db push), catálogos geracao-tarefas-contabil.ts (8 rotinas mensais por regime) e geracao-tarefas-contabil-anual.ts (ECD/ECF/DEFIS + obrigacoesAnuaisParaCompetencia), competenciaAnualSchema, testes unitários
+- [x] 07-03-PLAN.md — Teste de regressão CONT-06: tarefa avulsa de Contábil reusa criarTarefa setor-aware (sem mudança de produção)
 
 **Wave 2** *(blocked on Plan 07-01)*
 
@@ -131,5 +131,5 @@ Phases execute in numeric order: 5 → 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 5. Fundação Multi-Setor — Schema, Autorização e Empresas | 4/4 | Complete   | 2026-06-24 |
 | 6. Motor de Geração — Departamento Pessoal | 3/3 | Complete   | 2026-06-24 |
-| 7. Motor de Geração — Contábil (mensal e anual) | 0/TBD | Not started | - |
+| 7. Motor de Geração — Contábil (mensal e anual) | 2/3 | In Progress|  |
 | 8. Dashboards Multi-Setor — DP e Contábil | 0/TBD | Not started | - |
