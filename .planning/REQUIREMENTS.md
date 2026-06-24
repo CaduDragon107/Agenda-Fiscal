@@ -61,7 +61,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DP-02**: Geração automática mensal de FGTS
 - [x] **DP-03**: Geração automática mensal de INSS
 - [x] **DP-04**: Geração automática mensal de eventos periódicos de eSocial
-- [ ] **DP-05**: Tarefas avulsas atribuíveis aos colaboradores de DP (reuso do mecanismo existente)
+- [x] **DP-05**: Tarefas avulsas atribuíveis aos colaboradores de DP (reuso do mecanismo existente)
 - [ ] **DP-06**: Dashboard de desempenho por colaborador DP (no prazo vs atrasado)
 - [ ] **DP-07**: Dashboard de evolução mensal DP
 - [ ] **DP-08**: Dashboard de ranking de empresas problemáticas no DP
@@ -144,7 +144,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | DP-02 | Phase 6 | Complete |
 | DP-03 | Phase 6 | Complete |
 | DP-04 | Phase 6 | Complete |
-| DP-05 | Phase 6 | Pending |
+| DP-05 | Phase 6 | Complete |
 | DP-06 | Phase 8 | Pending |
 | DP-07 | Phase 8 | Pending |
 | DP-08 | Phase 8 | Pending |
