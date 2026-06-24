@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: verifying
-stopped_at: Plan 05-04 Task 4 checkpoint (human-verify D-09/D-10) awaiting approval
-last_updated: "2026-06-24T10:41:28.041Z"
+stopped_at: Phase 6 context gathered
+last_updated: "2026-06-24T10:58:32.207Z"
 last_activity: 2026-06-24 — Plan 05-04 Tasks 1-3 completed (form 3-selector grid + CLT checkbox, sector-aware table, deriveEmpresaRows data-layer omission + regression test); Task 4 checkpoint awaiting human approval
 progress:
   total_phases: 4
@@ -153,6 +153,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-24T07:25:00.000Z
-Stopped at: Plan 05-04 Task 4 checkpoint (human-verify D-09/D-10) awaiting approval
-Resume file: .planning/phases/05-funda-o-multi-setor-schema-autoriza-o-e-empresas/05-04-SUMMARY.md
+Last session: 2026-06-24T10:58:32.198Z
+Stopped at: Phase 6 context gathered
+Resume file: .planning/phases/06-motor-de-gera-o-departamento-pessoal/06-CONTEXT.md
