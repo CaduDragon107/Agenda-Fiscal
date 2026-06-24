@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { listarEmpresas, listarResponsaveis } from "@/modules/empresas/queries";
+import { deriveEmpresaRows } from "./derive-rows";
 import { EmpresasTable } from "./empresas-table";
 
 /**
@@ -12,6 +13,12 @@ import { EmpresasTable } from "./empresas-table";
  * withVisibilityScope (colaborador -> só sua carteira, dono -> todas).
  * Renderiza EXATAMENTE o que o backend retorna — nenhum .filter() client-side
  * por responsavelId (T-01-IDOR-READ).
+ *
+ * v2.0 (Plano 05-04, D-10 — fronteira de segurança CRÍTICA): o resultado de
+ * listarEmpresas passa por deriveEmpresaRows(empresas, role, setor) ANTES de
+ * chegar em <EmpresasTable>. Para um viewer não-DONO, essa derivação já
+ * omite (null) os responsáveis dos outros setores no servidor — os dados
+ * cross-setor nunca entram no EmpresaRow nem no payload RSC/HTML.
  */
 export default async function EmpresasPage() {
   const session = await auth();
@@ -25,6 +32,7 @@ export default async function EmpresasPage() {
   ]);
 
   const isDono = session.user.role === "DONO";
+  const rows = deriveEmpresaRows(empresas, session.user.role, session.user.setor);
 
   return (
     <div className="flex flex-col gap-6">
@@ -35,7 +43,12 @@ export default async function EmpresasPage() {
         </Button>
       </div>
 
-      <EmpresasTable empresas={empresas} responsaveis={responsaveis} isDono={isDono} />
+      <EmpresasTable
+        empresas={rows}
+        responsaveis={responsaveis}
+        isDono={isDono}
+        setor={session.user.setor}
+      />
     </div>
   );
 }

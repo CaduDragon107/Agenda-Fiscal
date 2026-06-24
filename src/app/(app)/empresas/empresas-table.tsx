@@ -44,19 +44,34 @@ import {
 import type { RegimeTributario } from "@prisma/client";
 import { excluirEmpresa } from "../actions";
 
+export type ResponsavelSetor = { id: string; nome: string } | null;
+
+/**
+ * v2.0 (Plano 05-04, D-10): os campos `responsavelFiscal*`/`responsavelDp*`/
+ * `responsavelContabil*` são preenchidos por `deriveEmpresaRows`
+ * (derive-rows.ts) — para um viewer não-DONO, os campos dos setores que NÃO
+ * são o do próprio viewer já chegam aqui como `null` (fronteira de
+ * segurança no data layer, não apenas na renderização desta tabela).
+ */
 export type EmpresaRow = {
   id: string;
   nome: string;
   cnpj: string;
   regimeTributario: RegimeTributario;
   responsavelId: string;
-  responsavel: { id: string; nome: string } | null;
+  responsavelFiscal: ResponsavelSetor;
+  responsavelFiscalId: string | null;
+  responsavelDp: ResponsavelSetor;
+  responsavelDpId: string | null;
+  responsavelContabil: ResponsavelSetor;
+  responsavelContabilId: string | null;
 };
 
 type EmpresasTableProps = {
   empresas: EmpresaRow[];
   responsaveis: { id: string; nome: string }[];
   isDono: boolean;
+  setor: "FISCAL" | "DP" | "CONTABIL" | null;
 };
 
 const REGIME_LABEL: Record<RegimeTributario, string> = {
@@ -87,10 +102,13 @@ function formatarCnpj(cnpj: string): string {
   );
 }
 
-export function EmpresasTable({ empresas, responsaveis, isDono }: EmpresasTableProps) {
+export function EmpresasTable({ empresas, responsaveis, isDono, setor }: EmpresasTableProps) {
   const [busca, setBusca] = useState("");
   const [regimeFiltro, setRegimeFiltro] = useState<"TODOS" | RegimeTributario>("TODOS");
   const [responsavelFiltro, setResponsavelFiltro] = useState<string>("TODOS");
+  const [semResponsavelFiltro, setSemResponsavelFiltro] = useState<"TODAS" | "DP" | "CONTABIL">(
+    "TODAS"
+  );
   const [empresaParaExcluir, setEmpresaParaExcluir] = useState<EmpresaRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -103,6 +121,12 @@ export function EmpresasTable({ empresas, responsaveis, isDono }: EmpresasTableP
       if (responsavelFiltro !== "TODOS" && empresa.responsavelId !== responsavelFiltro) {
         return false;
       }
+      if (semResponsavelFiltro === "DP" && empresa.responsavelDpId !== null) {
+        return false;
+      }
+      if (semResponsavelFiltro === "CONTABIL" && empresa.responsavelContabilId !== null) {
+        return false;
+      }
       if (termo) {
         const nomeMatch = empresa.nome.toLowerCase().includes(termo);
         const cnpjMatch = empresa.cnpj.replace(/\D/g, "").includes(termo.replace(/\D/g, ""));
@@ -110,7 +134,7 @@ export function EmpresasTable({ empresas, responsaveis, isDono }: EmpresasTableP
       }
       return true;
     });
-  }, [empresas, busca, regimeFiltro, responsavelFiltro]);
+  }, [empresas, busca, regimeFiltro, responsavelFiltro, semResponsavelFiltro]);
 
   const columns = useMemo<ColumnDef<EmpresaRow>[]>(
     () => [
@@ -132,11 +156,50 @@ export function EmpresasTable({ empresas, responsaveis, isDono }: EmpresasTableP
           </Badge>
         ),
       },
-      {
-        id: "responsavel",
-        header: "Responsável",
-        cell: ({ row }) => row.original.responsavel?.nome ?? "-",
-      },
+      ...(isDono
+        ? ([
+            {
+              id: "responsavelFiscal",
+              header: "Responsável Fiscal",
+              cell: ({ row }) =>
+                row.original.responsavelFiscal?.nome ?? (
+                  <Badge className="bg-amber-500 text-white">Sem responsável</Badge>
+                ),
+            },
+            {
+              id: "responsavelDp",
+              header: "Responsável DP",
+              cell: ({ row }) =>
+                row.original.responsavelDp?.nome ?? (
+                  <Badge className="bg-amber-500 text-white">Sem responsável</Badge>
+                ),
+            },
+            {
+              id: "responsavelContabil",
+              header: "Responsável Contábil",
+              cell: ({ row }) =>
+                row.original.responsavelContabil?.nome ?? (
+                  <Badge className="bg-amber-500 text-white">Sem responsável</Badge>
+                ),
+            },
+          ] as ColumnDef<EmpresaRow>[])
+        : ([
+            {
+              id: "responsavelProprioSetor",
+              header: `Responsável ${setor === "DP" ? "DP" : setor === "CONTABIL" ? "Contábil" : "Fiscal"}`,
+              cell: ({ row }) => {
+                const nome =
+                  setor === "DP"
+                    ? row.original.responsavelDp?.nome
+                    : setor === "CONTABIL"
+                      ? row.original.responsavelContabil?.nome
+                      : row.original.responsavelFiscal?.nome;
+                return (
+                  nome ?? <Badge className="bg-amber-500 text-white">Sem responsável</Badge>
+                );
+              },
+            },
+          ] as ColumnDef<EmpresaRow>[])),
       {
         id: "acoes",
         header: "Ações",
@@ -166,7 +229,7 @@ export function EmpresasTable({ empresas, responsaveis, isDono }: EmpresasTableP
         ),
       },
     ],
-    []
+    [isDono, setor]
   );
 
   const table = useReactTable({
@@ -198,6 +261,24 @@ export function EmpresasTable({ empresas, responsaveis, isDono }: EmpresasTableP
   }
 
   if (empresas.length === 0) {
+    // D-09: colaborador de DP/Contábil sem nenhuma empresa atribuída ainda
+    // vê uma mensagem explicativa, não o estado vazio genérico (que é
+    // voltado para DONO/Fiscal — sugere importar/cadastrar, ação que um
+    // colaborador de DP/Contábil não deveria tomar para resolver "ainda não
+    // tenho atribuição").
+    if (!isDono && (setor === "DP" || setor === "CONTABIL")) {
+      const setorLabel = setor === "DP" ? "DP" : "Contábil";
+      return (
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <h2 className="text-xl font-semibold">Nenhuma empresa atribuída a você ainda</h2>
+          <p className="max-w-md text-sm text-muted-foreground">
+            Você ainda não é responsável por nenhuma empresa no setor {setorLabel}. Fale
+            com o dono do escritório para receber suas atribuições.
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-center">
         <h2 className="text-xl font-semibold">Nenhuma empresa cadastrada</h2>
@@ -255,6 +336,30 @@ export function EmpresasTable({ empresas, responsaveis, isDono }: EmpresasTableP
               ))}
             </SelectContent>
           </Select>
+        ) : null}
+        {isDono ? (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant={semResponsavelFiltro === "DP" ? "default" : "outline"}
+              onClick={() =>
+                setSemResponsavelFiltro((atual) => (atual === "DP" ? "TODAS" : "DP"))
+              }
+            >
+              Sem responsável DP
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={semResponsavelFiltro === "CONTABIL" ? "default" : "outline"}
+              onClick={() =>
+                setSemResponsavelFiltro((atual) => (atual === "CONTABIL" ? "TODAS" : "CONTABIL"))
+              }
+            >
+              Sem responsável Contábil
+            </Button>
+          </>
         ) : null}
       </div>
 
