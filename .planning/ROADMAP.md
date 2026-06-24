@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Motor de Geração Automática Mensal** - Geração automática mensal de tarefas recorrentes por regime tributário, com prazos ajustados por dia útil/feriado e sem duplicação (completed 2026-06-18)
 - [x] **Phase 4: Dashboards Comparativos** - Dashboards de desempenho por colaborador, evolução mensal e comparativo entre empresas (completed 2026-06-22)
 - [x] **Phase 5: Fundação Multi-Setor — Schema, Autorização e Empresas** - Empresa passa a ter 1 responsável por setor (Fiscal/DP/Contábil) com backfill verificado dos 197 registros existentes, autorização passa a ser setor-aware sem regressão no Fiscal, e o cadastro de empresas expõe os 3 responsáveis e o campo "tem funcionários CLT?" (completed 2026-06-24)
-- [ ] **Phase 6: Motor de Geração — Departamento Pessoal** - Geração automática mensal de Folha de Pagamento, FGTS, INSS e eventos de eSocial para empresas com funcionários CLT, mais tarefas avulsas para a equipe de DP
+- [x] **Phase 6: Motor de Geração — Departamento Pessoal** - Geração automática mensal de Folha de Pagamento, FGTS, INSS e eventos de eSocial para empresas com funcionários CLT, mais tarefas avulsas para a equipe de DP (completed 2026-06-24)
 - [ ] **Phase 7: Motor de Geração — Contábil (mensal e anual)** - Geração automática mensal de Escrituração/Balancete para todas as empresas, mais a primeira periodicidade anual do sistema (ECD, ECF, DEFIS), com tarefas avulsas para a equipe Contábil
 - [ ] **Phase 8: Dashboards Multi-Setor — DP e Contábil** - Dono visualiza, em páginas próprias por setor, o desempenho comparativo dos colaboradores de DP e Contábil, a evolução mensal e o ranking de empresas problemáticas, com dados reais de geração já em produção
 
@@ -79,7 +79,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 2** *(blocked on Plan 06-01)*
 
-- [ ] 06-02-PLAN.md — Orquestração: segundo loop DP em executarGeracaoMensal (responsaveisPorSetor setor=DP, pular-e-listar), AcaoGeracaoResult + UI com semResponsavelDp, testes de integração
+- [x] 06-02-PLAN.md — Orquestração: segundo loop DP em executarGeracaoMensal (responsaveisPorSetor setor=DP, pular-e-listar), AcaoGeracaoResult + UI com semResponsavelDp, testes de integração
 
 ### Phase 7: Motor de Geração — Contábil (mensal e anual)
 
@@ -121,6 +121,6 @@ Phases execute in numeric order: 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Fundação Multi-Setor — Schema, Autorização e Empresas | 4/4 | Complete   | 2026-06-24 |
-| 6. Motor de Geração — Departamento Pessoal | 2/3 | In Progress|  |
+| 6. Motor de Geração — Departamento Pessoal | 3/3 | Complete   | 2026-06-24 |
 | 7. Motor de Geração — Contábil (mensal e anual) | 0/TBD | Not started | - |
 | 8. Dashboards Multi-Setor — DP e Contábil | 0/TBD | Not started | - |
