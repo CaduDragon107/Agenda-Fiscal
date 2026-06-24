@@ -68,11 +68,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Contábil
 
-- [ ] **CONT-01**: Geração automática mensal de Escrituração/Balancete Contábil, para todas as empresas
-- [ ] **CONT-02**: Motor de geração estendido para suportar periodicidade ANUAL, além da mensal já existente
-- [ ] **CONT-03**: Geração automática anual de ECD (Escrituração Contábil Digital) para empresas Lucro Real
-- [ ] **CONT-04**: Geração automática anual de ECF (Escrituração Contábil Fiscal)
-- [ ] **CONT-05**: Geração automática anual de DEFIS para empresas Simples Nacional
+- [x] **CONT-01**: Geração automática mensal de Escrituração/Balancete Contábil, para todas as empresas
+- [x] **CONT-02**: Motor de geração estendido para suportar periodicidade ANUAL, além da mensal já existente
+- [x] **CONT-03**: Geração automática anual de ECD (Escrituração Contábil Digital) para empresas Lucro Real
+- [x] **CONT-04**: Geração automática anual de ECF (Escrituração Contábil Fiscal)
+- [x] **CONT-05**: Geração automática anual de DEFIS para empresas Simples Nacional
 - [ ] **CONT-06**: Tarefas avulsas atribuíveis aos colaboradores Contábil (reuso do mecanismo existente)
 - [ ] **CONT-07**: Dashboard de desempenho por colaborador Contábil (no prazo vs atrasado)
 - [ ] **CONT-08**: Dashboard de evolução mensal Contábil
@@ -148,11 +148,11 @@ Explicitly excluded. Documented to prevent scope creep.
 | DP-06 | Phase 8 | Pending |
 | DP-07 | Phase 8 | Pending |
 | DP-08 | Phase 8 | Pending |
-| CONT-01 | Phase 7 | Pending |
-| CONT-02 | Phase 7 | Pending |
-| CONT-03 | Phase 7 | Pending |
-| CONT-04 | Phase 7 | Pending |
-| CONT-05 | Phase 7 | Pending |
+| CONT-01 | Phase 7 | Complete |
+| CONT-02 | Phase 7 | Complete |
+| CONT-03 | Phase 7 | Complete |
+| CONT-04 | Phase 7 | Complete |
+| CONT-05 | Phase 7 | Complete |
 | CONT-06 | Phase 7 | Pending |
 | CONT-07 | Phase 8 | Pending |
 | CONT-08 | Phase 8 | Pending |
