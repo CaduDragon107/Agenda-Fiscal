@@ -25,10 +25,23 @@
  * garante continuidade live→frozen (D-05) sem degrau no boundary. Snapshot
  * e geração de tarefas sobem ou caem juntos (mesma `tx`, sem transação
  * separada).
+ *
+ * NOVO (Plano 06-02): segundo loop, dentro da MESMA transação, gera as
+ * tarefas de Departamento Pessoal (DP) para empresas com
+ * `temFuncionariosClt=true`, lendo o responsável via `responsaveisPorSetor`
+ * filtrado por `setor: "DP"` (CRÍTICO — nunca omitir esse filtro, ver
+ * Pitfall 2 do RESEARCH.md desta fase, sob risco de pegar o responsável
+ * FISCAL em vez do DP). Empresas CLT sem responsável de DP são puladas e
+ * listadas em `semResponsavelDp` (D-01/D-02/D-03) — nunca `throw`, para não
+ * bloquear a geração Fiscal nem a de outras empresas CLT. O loop Fiscal
+ * (linhas abaixo) permanece intocado, lendo `Empresa.responsavelId`
+ * (coluna legada) — decisão arquitetural explícita do RESEARCH.md de NÃO
+ * migrar o Fiscal para a junction table nesta fase.
  */
 
 import { db } from "@/lib/db";
 import { gerarTarefasDoMes } from "@/lib/geracao-tarefas";
+import { gerarTarefasDoMesDp } from "@/lib/geracao-tarefas-dp";
 import { calcularSnapshotMensal } from "@/modules/dashboards/snapshot";
 import { format, subMonths } from "date-fns";
 
@@ -48,9 +61,11 @@ function competenciaParaDataLocal(competencia: string): Date {
   return new Date(ano, mes - 1, 1);
 }
 
-export async function executarGeracaoMensal(
-  competencia: string
-): Promise<{ criadas: number; puladas: number }> {
+export async function executarGeracaoMensal(competencia: string): Promise<{
+  criadas: number;
+  puladas: number;
+  semResponsavelDp: { empresaId: string; nome: string }[];
+}> {
   return db.$transaction(async (tx) => {
     // Fecha o snapshot do mes ANTERIOR antes de gerar as tarefas do novo mes
     // (Pitfall 1 — competenciaAnterior, nunca a propria competencia recebida).
@@ -71,10 +86,43 @@ export async function executarGeracaoMensal(
       select: { id: true, regimeTributario: true, responsavelId: true },
     });
 
-    const tarefas = gerarTarefasDoMes(empresas, competencia);
+    const tarefasFiscal = gerarTarefasDoMes(empresas, competencia);
+
+    // Loop DP (Plano 06-02): empresas com funcionarios CLT, responsavel lido
+    // via responsaveisPorSetor filtrado por setor "DP". CRITICO: o filtro
+    // setor:"DP" dentro do select e obrigatorio (Pitfall 2) — sem ele,
+    // responsaveisPorSetor[0] poderia pegar o responsavel FISCAL.
+    const empresasClt = await tx.empresa.findMany({
+      where: { ativo: true, temFuncionariosClt: true },
+      select: {
+        id: true,
+        nome: true,
+        responsaveisPorSetor: {
+          where: { setor: "DP" },
+          select: { usuarioId: true },
+        },
+      },
+    });
+
+    const comResponsavelDp = empresasClt.filter(
+      (e) => e.responsaveisPorSetor.length > 0
+    );
+    const semResponsavelDp = empresasClt
+      .filter((e) => e.responsaveisPorSetor.length === 0)
+      .map((e) => ({ empresaId: e.id, nome: e.nome })); // D-02: pular e listar, nunca throw (D-03)
+
+    const tarefasDp = gerarTarefasDoMesDp(
+      comResponsavelDp.map((e) => ({
+        id: e.id,
+        responsavelId: e.responsaveisPorSetor[0].usuarioId,
+      })),
+      competencia
+    );
+
+    const tarefas = [...tarefasFiscal, ...tarefasDp];
 
     if (tarefas.length === 0) {
-      return { criadas: 0, puladas: 0 };
+      return { criadas: 0, puladas: 0, semResponsavelDp };
     }
 
     const resultado = await tx.tarefa.createMany({
@@ -88,6 +136,7 @@ export async function executarGeracaoMensal(
     return {
       criadas: resultado.count,
       puladas: tarefas.length - resultado.count,
+      semResponsavelDp,
     };
   });
 }

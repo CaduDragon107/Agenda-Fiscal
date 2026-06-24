@@ -12,7 +12,12 @@ import { competenciaAtual, competenciaSchema } from "@/lib/competencia";
  * Resultado da geração manual de tarefas do mês.
  */
 export type AcaoGeracaoResult =
-  | { ok: true; criadas: number; puladas: number }
+  | {
+      ok: true;
+      criadas: number;
+      puladas: number;
+      semResponsavelDp: { empresaId: string; nome: string }[];
+    }
   | { ok: false; error: string };
 
 /**
@@ -305,11 +310,11 @@ export async function gerarTarefasDoMesAction(
   }
 
   try {
-    const { criadas, puladas } = await executarGeracaoMensal(
+    const { criadas, puladas, semResponsavelDp } = await executarGeracaoMensal(
       competenciaResolvida
     );
     revalidatePath("/tarefas");
-    return { ok: true, criadas, puladas };
+    return { ok: true, criadas, puladas, semResponsavelDp };
   } catch {
     return { ok: false, error: "Erro ao gerar tarefas. Tente novamente." };
   }

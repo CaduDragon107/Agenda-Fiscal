@@ -32,6 +32,14 @@ export function GerarTarefasButton() {
     toast.success(
       `Geradas ${resultado.criadas} tarefas novas, ${resultado.puladas} já existiam.`
     );
+
+    if (resultado.semResponsavelDp.length > 0) {
+      const nomes = resultado.semResponsavelDp.map((e) => e.nome).join(", ");
+      toast.warning(
+        `${resultado.semResponsavelDp.length} empresa(s) com funcionários CLT sem responsável de DP atribuído: ${nomes}. Atribua um responsável na tela de Empresas.`
+      );
+    }
+
     router.refresh();
   }
 
