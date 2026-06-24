@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import Holidays from "date-holidays";
-import { anticiparParaDiaUtil } from "@/lib/dia-util";
+import { isSaturday, isSunday } from "date-fns";
+import { anticiparParaDiaUtil, calcularQuintoDiaUtil } from "@/lib/dia-util";
 
 /**
  * tests/dia-util.test.ts
@@ -67,5 +68,34 @@ describe("anticiparParaDiaUtil", () => {
     const resultado = anticiparParaDiaUtil(diaUtilComum);
 
     expect(mesmaData(resultado, diaUtilComum)).toBe(true);
+  });
+});
+
+describe("calcularQuintoDiaUtil", () => {
+  it("retorna terca-feira 07/07/2026 para competencia junho/2026 (mes seguinte sem feriado nos 5 primeiros dias uteis)", () => {
+    const resultado = calcularQuintoDiaUtil("2026-06");
+    expect(mesmaData(resultado, new Date(2026, 6, 7))).toBe(true);
+  });
+
+  it("retorna sexta-feira 08/01/2027 para competencia dezembro/2026, empurrado pelo feriado de Ano Novo", () => {
+    const resultado = calcularQuintoDiaUtil("2026-12");
+    expect(mesmaData(resultado, new Date(2027, 0, 8))).toBe(true);
+  });
+
+  it("o resultado nunca cai em sabado, domingo ou feriado nacional, varrendo competencias de pelo menos 2 anos", () => {
+    const hd = new Holidays("BR");
+    const competencias: string[] = [];
+    for (const ano of [2026, 2027]) {
+      for (let mes = 1; mes <= 12; mes++) {
+        competencias.push(`${ano}-${String(mes).padStart(2, "0")}`);
+      }
+    }
+
+    for (const competencia of competencias) {
+      const resultado = calcularQuintoDiaUtil(competencia);
+      expect(isSaturday(resultado)).toBe(false);
+      expect(isSunday(resultado)).toBe(false);
+      expect(hd.isHoliday(resultado)).toBe(false);
+    }
   });
 });
