@@ -17,6 +17,7 @@ export type AcaoGeracaoResult =
       criadas: number;
       puladas: number;
       semResponsavelDp: { empresaId: string; nome: string }[];
+      semResponsavelContabil: { empresaId: string; nome: string }[];
     }
   | { ok: false; error: string };
 
@@ -310,11 +311,10 @@ export async function gerarTarefasDoMesAction(
       competenciaResolvida = competenciaAtual();
     }
 
-    const { criadas, puladas, semResponsavelDp } = await executarGeracaoMensal(
-      competenciaResolvida
-    );
+    const { criadas, puladas, semResponsavelDp, semResponsavelContabil } =
+      await executarGeracaoMensal(competenciaResolvida);
     revalidatePath("/tarefas");
-    return { ok: true, criadas, puladas, semResponsavelDp };
+    return { ok: true, criadas, puladas, semResponsavelDp, semResponsavelContabil };
   } catch {
     return { ok: false, error: "Erro ao gerar tarefas. Tente novamente." };
   }

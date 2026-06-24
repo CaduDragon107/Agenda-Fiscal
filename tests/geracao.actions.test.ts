@@ -115,11 +115,20 @@ describe("gerarTarefasDoMesAction — sucesso DONO", () => {
     const dono = mockDonoUser();
 
     authMock.mockResolvedValue({ user: dono });
+    // NOTA: esta action usa competenciaAtual() (sem argumento) -- a depender
+    // do mes real em que a suite roda, o bloco Contabil ANUAL pode disparar
+    // 0 ou 1 obrigacao extra (fevereiro=DEFIS, abril=ECD, junho=ECF),
+    // adicionando uma chamada extra de empresa.findMany. mockResolvedValue
+    // (sem "Once") cobre qualquer chamada adicional alem das 3 explicitas
+    // abaixo, retornando [] (nenhuma empresa elegivel) de forma estavel
+    // independente do mes de execucao.
+    findManyMock.mockResolvedValue([]);
     findManyMock
       .mockResolvedValueOnce([
         { id: "empresa_1", regimeTributario: "SIMPLES_NACIONAL", responsavelId: "user_colaborador_1" },
       ])
-      .mockResolvedValueOnce([]); // loop DP: nenhuma empresa CLT
+      .mockResolvedValueOnce([]) // loop DP: nenhuma empresa CLT
+      .mockResolvedValueOnce([]); // bloco Contabil mensal: nenhuma empresa LUCRO_REAL/PRESUMIDO
     createManyMock.mockResolvedValue({ count: 3 });
 
     const resultado = await gerarTarefasDoMesAction();
@@ -129,6 +138,7 @@ describe("gerarTarefasDoMesAction — sucesso DONO", () => {
       expect(resultado.criadas).toBe(3);
       expect(typeof resultado.puladas).toBe("number");
       expect(Array.isArray(resultado.semResponsavelDp)).toBe(true);
+      expect(Array.isArray(resultado.semResponsavelContabil)).toBe(true);
     }
   });
 });

@@ -40,6 +40,13 @@ export function GerarTarefasButton() {
         );
       }
 
+      if (resultado.semResponsavelContabil.length > 0) {
+        const nomes = resultado.semResponsavelContabil.map((e) => e.nome).join(", ");
+        toast.warning(
+          `${resultado.semResponsavelContabil.length} empresa(s) Lucro Real/Presumido sem responsável Contábil atribuído: ${nomes}. Atribua um responsável na tela de Empresas.`
+        );
+      }
+
       router.refresh();
     } catch {
       toast.error("Erro ao gerar tarefas. Tente novamente.");
