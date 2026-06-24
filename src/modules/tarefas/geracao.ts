@@ -37,11 +37,31 @@
  * (linhas abaixo) permanece intocado, lendo `Empresa.responsavelId`
  * (coluna legada) — decisão arquitetural explícita do RESEARCH.md de NÃO
  * migrar o Fiscal para a junction table nesta fase.
+ *
+ * NOVO (Plano 07-02): terceiro e quarto blocos, dentro da MESMA transação,
+ * geram as tarefas Contábil mensais (8 rotinas para LUCRO_REAL/
+ * LUCRO_PRESUMIDO, D-03 — SIMPLES_NACIONAL excluído) e Contábil anuais
+ * (DEFIS/ECD/ECF, condicionais ao mês via `obrigacoesAnuaisParaCompetencia`).
+ * Ambos os blocos filtram o responsável via `responsaveisPorSetor` com
+ * `setor: "CONTABIL"` (mesmo padrão CRÍTICO do bloco DP — nunca ler
+ * `empresa.responsavelId`). O bloco anual filtra empresas elegíveis
+ * DINAMICAMENTE por `regra.regimesElegiveis` (Pitfall 3 — DEFIS é o
+ * inverso de ECD/ECF, nunca reusar o filtro hardcoded do bloco mensal).
+ * Empresas sem responsável Contábil (mensal ou qualquer obrigação anual
+ * disparada no mês) são deduplicadas por `empresaId` (Pitfall 4) antes de
+ * retornar em `semResponsavelContabil`.
  */
 
 import { db } from "@/lib/db";
 import { gerarTarefasDoMes } from "@/lib/geracao-tarefas";
 import { gerarTarefasDoMesDp } from "@/lib/geracao-tarefas-dp";
+import { gerarTarefasDoMesContabil } from "@/lib/geracao-tarefas-contabil";
+import {
+  obrigacoesAnuaisParaCompetencia,
+  calcularPrazoAnual,
+  TITULO_OBRIGACAO_ANUAL,
+  type TipoObrigacaoAnual,
+} from "@/lib/geracao-tarefas-contabil-anual";
 import { calcularSnapshotMensal } from "@/modules/dashboards/snapshot";
 import { format, subMonths } from "date-fns";
 
@@ -65,6 +85,7 @@ export async function executarGeracaoMensal(competencia: string): Promise<{
   criadas: number;
   puladas: number;
   semResponsavelDp: { empresaId: string; nome: string }[];
+  semResponsavelContabil: { empresaId: string; nome: string }[];
 }> {
   return db.$transaction(async (tx) => {
     // Fecha o snapshot do mes ANTERIOR antes de gerar as tarefas do novo mes
@@ -119,10 +140,114 @@ export async function executarGeracaoMensal(competencia: string): Promise<{
       competencia
     );
 
-    const tarefas = [...tarefasFiscal, ...tarefasDp];
+    // Bloco Contábil MENSAL (Plano 07-02): empresas LUCRO_REAL/LUCRO_PRESUMIDO
+    // (D-03 — SIMPLES_NACIONAL excluído), responsavel lido via
+    // responsaveisPorSetor filtrado por setor "CONTABIL" (mesmo filtro
+    // CRITICO do bloco DP acima — nunca ler empresa.responsavelId legado
+    // para Contabil, T-CONT-01).
+    const empresasContabil = await tx.empresa.findMany({
+      where: {
+        ativo: true,
+        regimeTributario: { in: ["LUCRO_REAL", "LUCRO_PRESUMIDO"] },
+      },
+      select: {
+        id: true,
+        nome: true,
+        regimeTributario: true,
+        responsaveisPorSetor: {
+          where: { setor: "CONTABIL" },
+          select: { usuarioId: true },
+        },
+      },
+    });
+
+    const comResponsavelContabil = empresasContabil.filter(
+      (e) => e.responsaveisPorSetor.length > 0
+    );
+    const semResponsavelContabilMensal = empresasContabil
+      .filter((e) => e.responsaveisPorSetor.length === 0)
+      .map((e) => ({ empresaId: e.id, nome: e.nome })); // D-11: pular e listar, nunca throw
+
+    const tarefasContabilMensal = gerarTarefasDoMesContabil(
+      comResponsavelContabil.map((e) => ({
+        id: e.id,
+        regimeTributario: e.regimeTributario,
+        responsavelId: e.responsaveisPorSetor[0].usuarioId,
+      })),
+      competencia
+    );
+
+    // Bloco Contábil ANUAL (Plano 07-02): primeira periodicidade não-mensal
+    // do motor. obrigacoesAnuaisParaCompetencia decide, a partir da própria
+    // competência mensal recebida, se este mês dispara alguma obrigação
+    // anual (DEFIS/ECD/ECF) — retorna [] em 9 dos 12 meses, caminho normal.
+    const regrasAnuais = obrigacoesAnuaisParaCompetencia(competencia);
+
+    let tarefasContabilAnual: {
+      empresaId: string;
+      responsavelId: string;
+      titulo: string;
+      tipoObrigacao: TipoObrigacaoAnual;
+      competencia: string;
+      prazo: Date;
+    }[] = [];
+    const semResponsavelContabilAnual: { empresaId: string; nome: string }[] = [];
+
+    for (const { regra, competenciaAnual, anoVencimento } of regrasAnuais) {
+      // CRÍTICO (Pitfall 3): filtrar dinamicamente por regra.regimesElegiveis
+      // — nunca reusar o filtro hardcoded LUCRO_REAL/LUCRO_PRESUMIDO do bloco
+      // mensal. DEFIS é o caso inverso (SIMPLES_NACIONAL).
+      const empresasElegiveis = await tx.empresa.findMany({
+        where: { ativo: true, regimeTributario: { in: regra.regimesElegiveis } },
+        select: {
+          id: true,
+          nome: true,
+          responsaveisPorSetor: {
+            where: { setor: "CONTABIL" },
+            select: { usuarioId: true },
+          },
+        },
+      });
+
+      const comResponsavel = empresasElegiveis.filter(
+        (e) => e.responsaveisPorSetor.length > 0
+      );
+      const semResponsavel = empresasElegiveis
+        .filter((e) => e.responsaveisPorSetor.length === 0)
+        .map((e) => ({ empresaId: e.id, nome: e.nome }));
+
+      semResponsavelContabilAnual.push(...semResponsavel);
+
+      tarefasContabilAnual = tarefasContabilAnual.concat(
+        comResponsavel.map((e) => ({
+          empresaId: e.id,
+          responsavelId: e.responsaveisPorSetor[0].usuarioId,
+          titulo: `${TITULO_OBRIGACAO_ANUAL[regra.tipo]} — ${competenciaAnual}`,
+          tipoObrigacao: regra.tipo,
+          competencia: competenciaAnual, // "YYYY" — D-09
+          prazo: calcularPrazoAnual(anoVencimento, regra.mesVencimento, regra.diaVencimento),
+        }))
+      );
+    }
+
+    // Pitfall 4: deduplicar por empresaId — uma empresa sem responsável
+    // Contábil pode aparecer tanto no bloco mensal quanto em um ou mais
+    // blocos anuais disparados no mesmo mês; reportar uma única vez.
+    const semResponsavelContabilMap = new Map<string, { empresaId: string; nome: string }>();
+    for (const item of [...semResponsavelContabilMensal, ...semResponsavelContabilAnual]) {
+      semResponsavelContabilMap.set(item.empresaId, item);
+    }
+    const semResponsavelContabil = Array.from(semResponsavelContabilMap.values());
+
+    const tarefas = [
+      ...tarefasFiscal,
+      ...tarefasDp,
+      ...tarefasContabilMensal,
+      ...tarefasContabilAnual,
+    ];
 
     if (tarefas.length === 0) {
-      return { criadas: 0, puladas: 0, semResponsavelDp };
+      return { criadas: 0, puladas: 0, semResponsavelDp, semResponsavelContabil };
     }
 
     const resultado = await tx.tarefa.createMany({
@@ -137,6 +262,7 @@ export async function executarGeracaoMensal(competencia: string): Promise<{
       criadas: resultado.count,
       puladas: tarefas.length - resultado.count,
       semResponsavelDp,
+      semResponsavelContabil,
     };
   });
 }
