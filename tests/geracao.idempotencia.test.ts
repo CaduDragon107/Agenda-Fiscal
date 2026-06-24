@@ -211,6 +211,30 @@ describe("executarGeracaoMensal — idempotencia", () => {
     );
   });
 
+  it("CRÍTICO: a 2ª chamada de empresa.findMany filtra responsaveisPorSetor por setor:'DP' — regressão deste filtro reintroduziria o Pitfall 2 (pegar responsável FISCAL por engano)", async () => {
+    const { executarGeracaoMensal } = await import("@/modules/tarefas/geracao");
+
+    empresaFindManyMock
+      .mockResolvedValueOnce([]) // loop Fiscal vazio
+      .mockResolvedValueOnce([]); // loop DP vazio
+
+    createManyMock.mockResolvedValue({ count: 0 });
+
+    await executarGeracaoMensal("2026-07");
+
+    expect(empresaFindManyMock).toHaveBeenNthCalledWith(2, {
+      where: { ativo: true, temFuncionariosClt: true },
+      select: {
+        id: true,
+        nome: true,
+        responsaveisPorSetor: {
+          where: { setor: "DP" },
+          select: { usuarioId: true },
+        },
+      },
+    });
+  });
+
   it("idempotência DP: segunda execução na mesma competência não duplica tarefas de DP", async () => {
     const { executarGeracaoMensal } = await import("@/modules/tarefas/geracao");
 
