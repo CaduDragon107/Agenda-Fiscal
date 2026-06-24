@@ -23,7 +23,7 @@
  */
 
 import Holidays from "date-holidays";
-import { isSaturday, isSunday, subDays } from "date-fns";
+import { addDays, addMonths, isSaturday, isSunday, subDays } from "date-fns";
 
 // Singleton em escopo de módulo — instanciar UMA vez, nunca por chamada.
 // Sem argumento de estado: apenas feriados nacionais (Out of Scope:
@@ -44,6 +44,35 @@ export function anticiparParaDiaUtil(date: Date): Date {
   let atual = date;
   while (!isDiaUtil(atual)) {
     atual = subDays(atual, 1);
+  }
+  return atual;
+}
+
+/**
+ * Conta 5 dias úteis PARA FRENTE a partir do 1º dia do mês de vencimento
+ * (mês seguinte ao da `competencia`), usado pela regra de prazo da Folha de
+ * Pagamento (D-01 do CONTEXT.md da Fase 6 — DP).
+ *
+ * Reusa o mesmo singleton `hd` e a mesma função `isDiaUtil` de
+ * `anticiparParaDiaUtil` — nunca instancia um segundo `Holidays("BR")`
+ * (T-06-01).
+ *
+ * O resultado já É um dia útil por construção (a contagem só incrementa em
+ * dias úteis) — NÃO compor com `anticiparParaDiaUtil` sobre o retorno desta
+ * função.
+ */
+export function calcularQuintoDiaUtil(competencia: string): Date {
+  const [ano, mes] = competencia.split("-").map(Number);
+  const mesVencimento = addMonths(new Date(ano, mes - 1, 1), 1);
+
+  let atual = mesVencimento;
+  let contador = 0;
+  while (contador < 5) {
+    if (isDiaUtil(atual)) {
+      contador++;
+      if (contador === 5) break;
+    }
+    atual = addDays(atual, 1);
   }
   return atual;
 }

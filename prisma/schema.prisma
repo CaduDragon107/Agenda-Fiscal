@@ -39,6 +39,10 @@ enum TipoObrigacao {
   SPED_FISCAL
   SPED_CONTRIBUICOES
   DAS
+  FOLHA
+  ESOCIAL
+  FGTS
+  INSS
 }
 
 model Usuario {
