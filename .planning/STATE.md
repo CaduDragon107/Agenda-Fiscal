@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: verifying
+status: executing
 stopped_at: Phase 6 context gathered
-last_updated: "2026-06-24T10:58:32.207Z"
-last_activity: 2026-06-24 — Plan 05-04 Tasks 1-3 completed (form 3-selector grid + CLT checkbox, sector-aware table, deriveEmpresaRows data-layer omission + regression test); Task 4 checkpoint awaiting human approval
+last_updated: "2026-06-24T12:59:26.563Z"
+last_activity: 2026-06-24 -- Phase 06 execution started
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 7
+  completed_plans: 5
   percent: 25
-current_phase: 05
-current_phase_name: funda-o-multi-setor-schema-autoriza-o-e-empresas
+current_phase: 06
+current_phase_name: motor-de-gera-o-departamento-pessoal
 ---
 
 # Project State
@@ -23,14 +23,14 @@ current_phase_name: funda-o-multi-setor-schema-autoriza-o-e-empresas
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** A equipe nunca perde um prazo — fiscal, de pessoal ou contábil — de nenhum cliente, e o dono sempre sabe em tempo real o status de tudo, em qualquer setor.
-**Current focus:** Phase 05 — funda-o-multi-setor-schema-autoriza-o-e-empresas
+**Current focus:** Phase 06 — motor-de-gera-o-departamento-pessoal
 
 ## Current Position
 
-Phase: 05 (funda-o-multi-setor-schema-autoriza-o-e-empresas) — EXECUTING
-Plan: 4 of 4 (in progress — Tasks 1-3 done, Task 4 blocking checkpoint pending)
-Status: Blocked on checkpoint — Plan 05-04 Task 4 (human-verify D-09/D-10)
-Last activity: 2026-06-24 — Plan 05-04 Tasks 1-3 completed (form 3-selector grid + CLT checkbox, sector-aware table, deriveEmpresaRows data-layer omission + regression test); Task 4 checkpoint awaiting human approval
+Phase: 06 (motor-de-gera-o-departamento-pessoal) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-06-24 -- Phase 06 execution started
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Last activity: 2026-06-24 — Plan 05-04 Tasks 1-3 completed (form 3-selector gr
 | Phase 03 P01 | 18min | 3 tasks | 7 files |
 | Phase 03 P02 | 12min | 2 tasks | 4 files |
 | Phase 03 P03 | 15min | 2 tasks | 4 files |
+| Phase 06 P01 | 13min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -110,14 +111,14 @@ Recent decisions affecting current work:
 - [Phase 05-04]: useForm tipado com z.input<typeof empresaSchema> (nao EmpresaInput/z.infer) quando o schema tem campo .default() -- zodResolver's Resolver e tipado pelo INPUT (pre-default), nao pelo OUTPUT (pos-default, campo obrigatorio); usar o tipo de output como generic do useForm quebra a compatibilidade estrutural do Resolver/Control sob tsc
 - [Phase 05-04]: deriveEmpresaRows (src/app/(app)/empresas/derive-rows.ts) e a fronteira de seguranca real de D-10 -- omite responsaveis cross-setor no data layer (server, antes do payload RSC) para viewer nao-DONO; coluna escondida em empresas-table.tsx e so segunda barreira defensiva, nao o controle primario
 - [Phase 05-04]: npx prisma generate necessario antes de qualquer tsc --noEmit nesta sessao -- client gerado estava desatualizado em relacao ao schema.prisma ja migrado (Setor enum + EmpresaResponsavelSetor model dos Plans 01-03), nao e install de pacote novo (fora do escopo da Rule 3 exclusion)
+- [Phase ?]: [Phase 06-01] Catalogo de DP mantido flat (array), nao Record<RegimeTributario,...> como o Fiscal -- DP nao varia por regime tributario, apenas pelo gate temFuncionariosClt aplicado no chamador (Plan 06-02)
+- [Phase ?]: [Phase 06-01] calcularQuintoDiaUtil nao compoe com anticiparParaDiaUtil -- resultado ja e dia util por construcao da propria contagem para frente
 
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
-
-- [Phase 5] NOVO — Plan 05-04 Task 4 (checkpoint:human-verify, gate="blocking") aguardando verificação humana dos comportamentos D-09/D-10 antes de a plan ser considerada completa. Servidor de dev (`npm run dev`) iniciado em background (http://localhost:3000) para facilitar a verificação. Ver `.planning/phases/05-funda-o-multi-setor-schema-autoriza-o-e-empresas/05-04-SUMMARY.md` seção "Próximos Passos" para o estado exato e os passos de verificação.
 
 - [Phase 1] ~~Inspecionar a estrutura real da planilha de importação~~ — RESOLVIDO nesta sessão: a fonte real de EMPR-02 é `Lista de Empresas com CNPJ.xlsx` (não "Controle pis e cofins.xlsx"), inspecionada diretamente. 198 empresas em 3 regimes: Lucro Real=61, Simples Nacional=80, Lucro Presumido=50, 7 sem regime identificável. Ver `01-RESEARCH.md` Pattern 3.5.
 - [Phase 3] ~~NOVO — TASK-01 define regras de geração mensal só para Lucro Real e Simples Nacional; ~25% das empresas reais (50/198, Lucro Presumido) ainda não têm regra de obrigação definida.~~ — Tratado em 03-01 (ver 03-RESEARCH.md/03-CONTEXT.md); Lucro Presumido permanece fora do escopo de geração automática do v1 por decisão registrada na fase.
@@ -153,6 +154,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-24T10:58:32.198Z
+Last session: 2026-06-24T12:58:56.754Z
 Stopped at: Phase 6 context gathered
 Resume file: .planning/phases/06-motor-de-gera-o-departamento-pessoal/06-CONTEXT.md

@@ -74,7 +74,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 1**
 
-- [ ] 06-01-PLAN.md — Camada de cálculo puro: enum TipoObrigacao +FOLHA/ESOCIAL/FGTS/INSS (db push), calcularQuintoDiaUtil (5º dia útil), catálogo geracao-tarefas-dp.ts + testes unitários
+- [x] 06-01-PLAN.md — Camada de cálculo puro: enum TipoObrigacao +FOLHA/ESOCIAL/FGTS/INSS (db push), calcularQuintoDiaUtil (5º dia útil), catálogo geracao-tarefas-dp.ts + testes unitários
 - [ ] 06-03-PLAN.md — Teste de regressão DP-05: tarefa avulsa de DP reusa criarTarefa setor-aware (sem mudança de produção)
 
 **Wave 2** *(blocked on Plan 06-01)*
@@ -121,6 +121,6 @@ Phases execute in numeric order: 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Fundação Multi-Setor — Schema, Autorização e Empresas | 4/4 | Complete   | 2026-06-24 |
-| 6. Motor de Geração — Departamento Pessoal | 0/3 | Not started | - |
+| 6. Motor de Geração — Departamento Pessoal | 1/3 | In Progress|  |
 | 7. Motor de Geração — Contábil (mensal e anual) | 0/TBD | Not started | - |
 | 8. Dashboards Multi-Setor — DP e Contábil | 0/TBD | Not started | - |
