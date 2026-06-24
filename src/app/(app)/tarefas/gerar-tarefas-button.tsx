@@ -21,26 +21,31 @@ export function GerarTarefasButton() {
 
   async function handleClick() {
     setIsPending(true);
-    const resultado = await gerarTarefasDoMesAction();
-    setIsPending(false);
+    try {
+      const resultado = await gerarTarefasDoMesAction();
 
-    if (!resultado.ok) {
-      toast.error(resultado.error);
-      return;
-    }
+      if (!resultado.ok) {
+        toast.error(resultado.error);
+        return;
+      }
 
-    toast.success(
-      `Geradas ${resultado.criadas} tarefas novas, ${resultado.puladas} já existiam.`
-    );
-
-    if (resultado.semResponsavelDp.length > 0) {
-      const nomes = resultado.semResponsavelDp.map((e) => e.nome).join(", ");
-      toast.warning(
-        `${resultado.semResponsavelDp.length} empresa(s) com funcionários CLT sem responsável de DP atribuído: ${nomes}. Atribua um responsável na tela de Empresas.`
+      toast.success(
+        `Geradas ${resultado.criadas} tarefas novas, ${resultado.puladas} já existiam.`
       );
-    }
 
-    router.refresh();
+      if (resultado.semResponsavelDp.length > 0) {
+        const nomes = resultado.semResponsavelDp.map((e) => e.nome).join(", ");
+        toast.warning(
+          `${resultado.semResponsavelDp.length} empresa(s) com funcionários CLT sem responsável de DP atribuído: ${nomes}. Atribua um responsável na tela de Empresas.`
+        );
+      }
+
+      router.refresh();
+    } catch {
+      toast.error("Erro ao gerar tarefas. Tente novamente.");
+    } finally {
+      setIsPending(false);
+    }
   }
 
   return (

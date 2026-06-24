@@ -289,27 +289,27 @@ export async function salvarMotivoPendencia(
 export async function gerarTarefasDoMesAction(
   competencia?: string
 ): Promise<AcaoGeracaoResult> {
-  const session = await auth();
-  if (!session?.user) {
-    return { ok: false, error: "Não autenticado" };
-  }
-
-  if (session.user.role !== "DONO") {
-    return { ok: false, error: "não autorizado" };
-  }
-
-  let competenciaResolvida: string;
-  if (competencia !== undefined) {
-    const parsed = competenciaSchema.safeParse(competencia);
-    if (!parsed.success) {
-      return { ok: false, error: "Competência inválida." };
-    }
-    competenciaResolvida = parsed.data;
-  } else {
-    competenciaResolvida = competenciaAtual();
-  }
-
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return { ok: false, error: "Não autenticado" };
+    }
+
+    if (session.user.role !== "DONO") {
+      return { ok: false, error: "não autorizado" };
+    }
+
+    let competenciaResolvida: string;
+    if (competencia !== undefined) {
+      const parsed = competenciaSchema.safeParse(competencia);
+      if (!parsed.success) {
+        return { ok: false, error: "Competência inválida." };
+      }
+      competenciaResolvida = parsed.data;
+    } else {
+      competenciaResolvida = competenciaAtual();
+    }
+
     const { criadas, puladas, semResponsavelDp } = await executarGeracaoMensal(
       competenciaResolvida
     );
