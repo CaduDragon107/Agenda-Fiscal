@@ -5,6 +5,10 @@ import { EmpresaForm } from "../empresa-form";
 
 /**
  * Tela "Nova empresa" (EMPR-01).
+ *
+ * v2.0 (Plano 05-04, SETOR-03): busca as 3 listas de responsáveis
+ * (Fiscal/DP/Contábil), cada uma filtrada por setor, e passa `isDono` para
+ * controlar o disabled dos 3 seletores no form (D-02 — UX apenas).
  */
 export default async function NovaEmpresaPage() {
   const session = await auth();
@@ -12,12 +16,21 @@ export default async function NovaEmpresaPage() {
     redirect("/login");
   }
 
-  const responsaveis = await listarResponsaveis();
+  const [responsaveisFiscal, responsaveisDp, responsaveisContabil] = await Promise.all([
+    listarResponsaveis("FISCAL"),
+    listarResponsaveis("DP"),
+    listarResponsaveis("CONTABIL"),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">Nova empresa</h1>
-      <EmpresaForm responsaveis={responsaveis} />
+      <EmpresaForm
+        responsaveisFiscal={responsaveisFiscal}
+        responsaveisDp={responsaveisDp}
+        responsaveisContabil={responsaveisContabil}
+        isDono={session.user.role === "DONO"}
+      />
     </div>
   );
 }

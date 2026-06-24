@@ -6,9 +6,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import type { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -41,13 +43,19 @@ export type ResponsavelOption = {
 };
 
 type EmpresaFormProps = {
-  responsaveis: ResponsavelOption[];
+  responsaveisFiscal: ResponsavelOption[];
+  responsaveisDp: ResponsavelOption[];
+  responsaveisContabil: ResponsavelOption[];
+  isDono: boolean;
   empresa?: {
     id: string;
     nome: string;
     cnpj: string;
     regimeTributario: EmpresaInput["regimeTributario"];
-    responsavelId: string;
+    responsavelFiscalId: string;
+    responsavelDpId: string | null;
+    responsavelContabilId: string | null;
+    temFuncionariosClt: boolean;
     contatos: string | null;
     particularidades: string | null;
   };
@@ -59,31 +67,48 @@ type EmpresaFormProps = {
  * Reusado por novo/page.tsx ("Nova empresa") e [id]/editar/page.tsx
  * ("Editar empresa: {nome}"). Valida client-side via zodResolver(empresaSchema)
  * (mesmo schema usado server-side em actions.ts).
+ *
+ * v2.0 (Plano 05-04, SETOR-01/SETOR-03): 3 seletores de responsável
+ * (Fiscal/DP/Contábil), cada um filtrado por setor, mais o checkbox "Tem
+ * funcionários CLT?" (EMPR-03). `isDono` controla apenas o `disabled` dos 3
+ * Selects (UX) — o enforcement real é server-side (Plano 05-03, D-02).
  */
-export function EmpresaForm({ responsaveis, empresa }: EmpresaFormProps) {
+export function EmpresaForm({
+  responsaveisFiscal,
+  responsaveisDp,
+  responsaveisContabil,
+  isDono,
+  empresa,
+}: EmpresaFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<EmpresaInput>({
+  const form = useForm<z.input<typeof empresaSchema>>({
     resolver: zodResolver(empresaSchema),
     defaultValues: {
       nome: empresa?.nome ?? "",
       cnpj: empresa?.cnpj ?? "",
       regimeTributario: empresa?.regimeTributario ?? "LUCRO_REAL",
-      responsavelId: empresa?.responsavelId ?? "",
+      responsavelFiscalId: empresa?.responsavelFiscalId ?? "",
+      responsavelDpId: empresa?.responsavelDpId ?? "",
+      responsavelContabilId: empresa?.responsavelContabilId ?? "",
+      temFuncionariosClt: empresa?.temFuncionariosClt ?? false,
       contatos: empresa?.contatos ?? "",
       particularidades: empresa?.particularidades ?? "",
     },
   });
 
-  async function onSubmit(values: EmpresaInput) {
+  async function onSubmit(values: z.input<typeof empresaSchema>) {
     setIsSubmitting(true);
 
     const formData = new FormData();
     formData.set("nome", values.nome);
     formData.set("cnpj", values.cnpj);
     formData.set("regimeTributario", values.regimeTributario);
-    formData.set("responsavelId", values.responsavelId);
+    formData.set("responsavelFiscalId", values.responsavelFiscalId);
+    formData.set("responsavelDpId", values.responsavelDpId ?? "");
+    formData.set("responsavelContabilId", values.responsavelContabilId ?? "");
+    formData.set("temFuncionariosClt", String(values.temFuncionariosClt ?? false));
     formData.set("contatos", values.contatos ?? "");
     formData.set("particularidades", values.particularidades ?? "");
 
@@ -162,30 +187,92 @@ export function EmpresaForm({ responsaveis, empresa }: EmpresaFormProps) {
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="responsavelId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Responsável</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione o responsável" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {responsaveis.map((responsavel) => (
-                        <SelectItem key={responsavel.id} value={responsavel.id}>
-                          {responsavel.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="responsavelFiscalId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsável Fiscal</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!isDono}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione o responsável" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {responsaveisFiscal.map((responsavel) => (
+                          <SelectItem key={responsavel.id} value={responsavel.id}>
+                            {responsavel.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="responsavelDpId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsável DP</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? ""}
+                      disabled={!isDono}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Sem responsável" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Sem responsável</SelectItem>
+                        {responsaveisDp.map((responsavel) => (
+                          <SelectItem key={responsavel.id} value={responsavel.id}>
+                            {responsavel.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="responsavelContabilId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsável Contábil</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? ""}
+                      disabled={!isDono}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Sem responsável" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Sem responsável</SelectItem>
+                        {responsaveisContabil.map((responsavel) => (
+                          <SelectItem key={responsavel.id} value={responsavel.id}>
+                            {responsavel.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -210,6 +297,30 @@ export function EmpresaForm({ responsaveis, empresa }: EmpresaFormProps) {
                   <FormControl>
                     <Textarea rows={4} {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="temFuncionariosClt"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(checked) => field.onChange(checked === true)}
+                        aria-label="Tem funcionários CLT?"
+                      />
+                    </FormControl>
+                    <FormLabel className="!mt-0">Tem funcionários CLT?</FormLabel>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Define se esta empresa recebe automaticamente as obrigações de
+                    Folha de Pagamento, FGTS, INSS e eSocial (Fase 6).
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
