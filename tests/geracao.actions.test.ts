@@ -115,9 +115,11 @@ describe("gerarTarefasDoMesAction — sucesso DONO", () => {
     const dono = mockDonoUser();
 
     authMock.mockResolvedValue({ user: dono });
-    findManyMock.mockResolvedValue([
-      { id: "empresa_1", regimeTributario: "SIMPLES_NACIONAL", responsavelId: "user_colaborador_1" },
-    ]);
+    findManyMock
+      .mockResolvedValueOnce([
+        { id: "empresa_1", regimeTributario: "SIMPLES_NACIONAL", responsavelId: "user_colaborador_1" },
+      ])
+      .mockResolvedValueOnce([]); // loop DP: nenhuma empresa CLT
     createManyMock.mockResolvedValue({ count: 3 });
 
     const resultado = await gerarTarefasDoMesAction();
@@ -126,6 +128,7 @@ describe("gerarTarefasDoMesAction — sucesso DONO", () => {
     if (resultado.ok) {
       expect(resultado.criadas).toBe(3);
       expect(typeof resultado.puladas).toBe("number");
+      expect(Array.isArray(resultado.semResponsavelDp)).toBe(true);
     }
   });
 });
