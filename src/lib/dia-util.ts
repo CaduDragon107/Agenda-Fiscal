@@ -23,7 +23,15 @@
  */
 
 import Holidays from "date-holidays";
-import { addDays, addMonths, isSaturday, isSunday, subDays } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  isSaturday,
+  isSunday,
+  lastDayOfMonth,
+  setDate,
+  subDays,
+} from "date-fns";
 
 // Singleton em escopo de módulo — instanciar UMA vez, nunca por chamada.
 // Sem argumento de estado: apenas feriados nacionais (Out of Scope:
@@ -75,4 +83,23 @@ export function calcularQuintoDiaUtil(competencia: string): Date {
     atual = addDays(atual, 1);
   }
   return atual;
+}
+
+/**
+ * Calcula o prazo-base (antes do ajuste de dia útil via
+ * `anticiparParaDiaUtil`) de uma obrigação de dia-base fixo: vence no mês
+ * SEGUINTE ao da `competencia` apurada, no dia `diaBase` — ou no último dia
+ * do mês quando este for mais curto (ex.: diaBase=31 em fevereiro), via
+ * `lastDayOfMonth`, nunca hardcoded (Pitfall: `setDate(date, 31)` rola
+ * silenciosamente para o mês seguinte em meses curtos).
+ *
+ * Compartilhado entre o catálogo Fiscal (`geracao-tarefas.ts`) e o catálogo
+ * de DP (`geracao-tarefas-dp.ts`) — mesma regra D-03/D-04 em ambos.
+ */
+export function calcularPrazoBaseDiaFixo(competencia: string, diaBase: number): Date {
+  const [ano, mes] = competencia.split("-").map(Number);
+  const mesVencimento = addMonths(new Date(ano, mes - 1, 1), 1);
+  const ultimoDia = lastDayOfMonth(mesVencimento).getDate();
+  const dia = Math.min(diaBase, ultimoDia);
+  return setDate(mesVencimento, dia);
 }

@@ -24,8 +24,11 @@
  * sem banco nem mocks.
  */
 
-import { addMonths, lastDayOfMonth, setDate } from "date-fns";
-import { anticiparParaDiaUtil, calcularQuintoDiaUtil } from "./dia-util";
+import {
+  anticiparParaDiaUtil,
+  calcularPrazoBaseDiaFixo,
+  calcularQuintoDiaUtil,
+} from "./dia-util";
 
 export type TipoObrigacaoDp = "FOLHA" | "ESOCIAL" | "FGTS" | "INSS";
 
@@ -47,20 +50,6 @@ export const TITULO_OBRIGACAO_DP: Record<TipoObrigacaoDp, string> = {
   FGTS: "FGTS",
   INSS: "INSS",
 };
-
-/**
- * Mesma regra D-03/D-04 do catálogo Fiscal: toda obrigação de dia-base fixo
- * vence no mês SEGUINTE ao da competência apurada, e diaBase=31 (não usado
- * hoje pelo DP, mas mantido genérico) cairia no último dia do mês quando
- * este for mais curto, via `lastDayOfMonth` (nunca hardcoded).
- */
-function calcularPrazoBaseDiaFixo(competencia: string, diaBase: number): Date {
-  const [ano, mes] = competencia.split("-").map(Number);
-  const mesVencimento = addMonths(new Date(ano, mes - 1, 1), 1);
-  const ultimoDia = lastDayOfMonth(mesVencimento).getDate();
-  const dia = Math.min(diaBase, ultimoDia);
-  return setDate(mesVencimento, dia);
-}
 
 export type TarefaParaCriar = {
   empresaId: string;

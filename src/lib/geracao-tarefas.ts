@@ -19,8 +19,7 @@
  * sem banco nem mocks.
  */
 
-import { addMonths, lastDayOfMonth, setDate } from "date-fns";
-import { anticiparParaDiaUtil } from "./dia-util";
+import { anticiparParaDiaUtil, calcularPrazoBaseDiaFixo } from "./dia-util";
 import type { RegimeTributario } from "@prisma/client";
 
 export type TipoObrigacao =
@@ -55,19 +54,6 @@ export const TITULO_OBRIGACAO: Record<TipoObrigacao, string> = {
   DAS: "DAS",
 };
 
-/**
- * D-03: toda obrigação vence no mês SEGUINTE ao da competência apurada.
- * D-04: diaBase 31 deve usar o último dia do mês quando este não tiver 31
- * dias (ex: fevereiro) — via date-fns lastDayOfMonth, nunca hardcoded.
- */
-function calcularPrazoBase(competencia: string, diaBase: number): Date {
-  const [ano, mes] = competencia.split("-").map(Number);
-  const mesVencimento = addMonths(new Date(ano, mes - 1, 1), 1);
-  const ultimoDia = lastDayOfMonth(mesVencimento).getDate();
-  const dia = Math.min(diaBase, ultimoDia);
-  return setDate(mesVencimento, dia);
-}
-
 export type TarefaParaCriar = {
   empresaId: string;
   responsavelId: string;
@@ -88,7 +74,7 @@ export function gerarTarefasDoMes(
 
   return empresas.flatMap((empresa) =>
     CATALOGO_OBRIGACOES[empresa.regimeTributario].map((regra) => {
-      const prazoBase = calcularPrazoBase(competencia, regra.diaBase);
+      const prazoBase = calcularPrazoBaseDiaFixo(competencia, regra.diaBase);
       const prazo = anticiparParaDiaUtil(prazoBase); // D-05
 
       return {
