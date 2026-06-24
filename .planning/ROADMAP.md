@@ -93,7 +93,16 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. As tarefas anuais e mensais do Contábil convivem na mesma competência/ano sem colidir entre si e sem corromper os cálculos de prazo/dia útil de nenhuma das duas periodicidades.
   4. Qualquer colaborador do Contábil consegue criar uma tarefa avulsa e atribuí-la a si mesmo ou a outro colega do Contábil, reaproveitando o mecanismo de tarefas avulsas já existente.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+**Wave 1**
+
+- [ ] 07-01-PLAN.md — Camada de cálculo puro: enum TipoObrigacao +11 valores (db push), catálogos geracao-tarefas-contabil.ts (8 rotinas mensais por regime) e geracao-tarefas-contabil-anual.ts (ECD/ECF/DEFIS + obrigacoesAnuaisParaCompetencia), competenciaAnualSchema, testes unitários
+- [ ] 07-03-PLAN.md — Teste de regressão CONT-06: tarefa avulsa de Contábil reusa criarTarefa setor-aware (sem mudança de produção)
+
+**Wave 2** *(blocked on Plan 07-01)*
+
+- [ ] 07-02-PLAN.md — Orquestração: blocos Contábil mensal + anual em executarGeracaoMensal (setor=CONTABIL, pular-e-listar deduplicado), semResponsavelContabil ponta a ponta na UI, testes de integração
 
 ### Phase 8: Dashboards Multi-Setor — DP e Contábil
 
