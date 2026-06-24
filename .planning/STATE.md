@@ -1,20 +1,19 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.0
-milestone_name: Expansao Multi-Setor (DP e Contabil)
-current_phase: 05
-current_phase_name: funda-o-multi-setor-schema-autoriza-o-e-empresas
-status: executing
+milestone_name: milestone
+status: verifying
 stopped_at: Plan 05-04 Task 4 checkpoint (human-verify D-09/D-10) awaiting approval
-last_updated: "2026-06-24T07:25:00.000Z"
-last_activity: 2026-06-24
-last_activity_desc: Plan 05-04 Tasks 1-3 completed and committed; Task 4 (blocking human-verify checkpoint) awaiting user verification
+last_updated: "2026-06-24T10:41:28.041Z"
+last_activity: 2026-06-24 — Plan 05-04 Tasks 1-3 completed (form 3-selector grid + CLT checkbox, sector-aware table, deriveEmpresaRows data-layer omission + regression test); Task 4 checkpoint awaiting human approval
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 4
+  percent: 25
+current_phase: 05
+current_phase_name: funda-o-multi-setor-schema-autoriza-o-e-empresas
 ---
 
 # Project State

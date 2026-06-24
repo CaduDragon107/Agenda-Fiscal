@@ -47,13 +47,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Fundação Multi-Setor
 
-- [ ] **SETOR-01**: Empresa passa a ter 1 responsável por setor (fiscal/DP/contábil), substituindo o responsável único atual — migração de schema com backfill verificado das 197 empresas existentes para o setor Fiscal
+- [x] **SETOR-01**: Empresa passa a ter 1 responsável por setor (fiscal/DP/contábil), substituindo o responsável único atual — migração de schema com backfill verificado das 197 empresas existentes para o setor Fiscal
 - [ ] **SETOR-02**: Usuário ganha campo Setor (FISCAL/DP/CONTABIL); sistema é populado com 7 colaboradores placeholder (4 DP + 3 Contábil), renomeáveis depois
-- [ ] **SETOR-03**: Seletores de atribuição de tarefa avulsa e responsável de empresa filtram colaboradores pelo setor relevante
+- [x] **SETOR-03**: Seletores de atribuição de tarefa avulsa e responsável de empresa filtram colaboradores pelo setor relevante
 
 ### Empresas
 
-- [ ] **EMPR-03**: Empresa ganha campo "tem funcionários CLT?" (sim/não), usado para decidir se gera obrigações de DP — evita tarefas falsas para empresas só com pró-labore
+- [x] **EMPR-03**: Empresa ganha campo "tem funcionários CLT?" (sim/não), usado para decidir se gera obrigações de DP — evita tarefas falsas para empresas só com pró-labore
 
 ### Departamento Pessoal (DP)
 
@@ -136,10 +136,10 @@ Explicitly excluded. Documented to prevent scope creep.
 | DASH-02 | Phase 4 | Complete |
 | DASH-03 | Phase 4 | Complete |
 | INFRA-01 | Phase 1 | Complete |
-| SETOR-01 | Phase 5 | Pending |
+| SETOR-01 | Phase 5 | Complete |
 | SETOR-02 | Phase 5 | Pending |
-| SETOR-03 | Phase 5 | Pending |
-| EMPR-03 | Phase 5 | Pending |
+| SETOR-03 | Phase 5 | Complete |
+| EMPR-03 | Phase 5 | Complete |
 | DP-01 | Phase 6 | Pending |
 | DP-02 | Phase 6 | Pending |
 | DP-03 | Phase 6 | Pending |

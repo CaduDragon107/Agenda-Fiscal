@@ -42,9 +42,9 @@ key-decisions:
 requirements-completed: [SETOR-01, SETOR-03, EMPR-03]
 
 # Metrics
-duration: 50min
+duration: 55min
 completed: 2026-06-24
-status: blocked-on-checkpoint
+status: complete
 ---
 
 # Phase 5 Plan 04: UI Multi-Setor de Empresas — Form, Tabela e Derivação Segura Summary
@@ -75,7 +75,7 @@ Each task was committed atomically:
 2. **Task 2: Tabela setor-aware + derivação setor-aware no data layer da page** - `1dc04a1` (feat)
 3. **Task 3: Teste automatizado da omissão cross-setor de deriveEmpresaRows (D-10)** - `ef3c728` (test)
 
-**Task 4 (checkpoint:human-verify, gate="blocking") NÃO executada nesta sessão** — aguardando verificação humana (ver "Próximos Passos").
+4. **Task 4: [CHECKPOINT] Verificação humana dos estados setor-aware (D-09/D-10)** - aprovada pelo usuário diretamente na conversa ("aprovado") após validar os 3 cenários (DONO 3-colunas/filtros, colaborador DP estado-vazio→view escopada sem leak cross-setor no payload RSC, colaborador Fiscal sem regressão).
 
 **Plan metadata:** *(este commit — SUMMARY.md/STATE.md/ROADMAP.md, commitado imediatamente após este file write)*
 
@@ -143,17 +143,15 @@ Nenhum além das 3 deviations documentadas acima (todas Rule 1/3, auto-fixadas d
 
 Nenhum — sem configuração de serviço externo. O servidor de desenvolvimento (`npm run dev`) foi iniciado em background por este executor para a verificação humana da Task 4 (checkpoint), disponível em http://localhost:3000.
 
-## Próximos Passos — CHECKPOINT BLOQUEANTE (Task 4)
+## Checkpoint Humano (Task 4) — Resolvido
 
-Esta plan está **bloqueada na Task 4** (`type="checkpoint:human-verify"`, `gate="blocking"`), que requer verificação visual humana dos comportamentos D-09/D-10 que não têm infraestrutura de teste de componente (a parte automatizável de D-10 — a omissão de dados no data layer — já tem regressão via Task 3; o que falta é a confirmação visual ponta-a-ponta, incluindo inspeção do payload RSC).
+Usuário validou diretamente na conversa os 3 cenários de `how-to-verify` (DONO: 3 colunas + filtros + badge âmbar; colaborador DP: estado vazio por setor seguido de view escopada a 1 coluna sem vazamento cross-setor no payload RSC; colaborador Fiscal: sem regressão) e respondeu **"aprovado"**. Checkpoint fechado, plano 05-04 e fase 05 completos.
 
-Ver a seção CHECKPOINT REACHED da resposta deste executor para os passos exatos de verificação (login como DONO, colaborador DP, colaborador Fiscal existente) e o `resume-signal` esperado ("approved" ou descrição dos problemas).
-
-**As Tasks 1-3 estão completas, commitadas e verificadas** (`tsc --noEmit` limpo, suite de testes 119/119 verde, greps de aceitação de cada task passando). Apenas a Task 4 (checkpoint humano) resta para fechar esta plan.
+**Todas as 4 tasks estão completas, commitadas e verificadas** (`tsc --noEmit` limpo, suite de testes 119/119 verde, checkpoint humano aprovado).
 
 ---
 *Phase: 05-funda-o-multi-setor-schema-autoriza-o-e-empresas*
-*Status: blocked-on-checkpoint (Task 4 de 4)*
+*Status: complete (4 de 4 tasks)*
 
 ## Self-Check: PASSED
 
