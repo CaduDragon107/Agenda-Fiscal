@@ -62,4 +62,13 @@ describe("gerarTarefasDoMesDp", () => {
       expect(tarefa.titulo.length).toBeGreaterThan(0);
     }
   });
+
+  it("lança erro para competencia em formato não canônico, em vez de propagar Invalid Date silenciosamente", () => {
+    const empresas = [{ id: "e1", responsavelId: "u1" }];
+
+    expect(() => gerarTarefasDoMesDp(empresas, "2026-13")).toThrow();
+    expect(() => gerarTarefasDoMesDp(empresas, "abc")).toThrow();
+    expect(() => gerarTarefasDoMesDp(empresas, "")).toThrow();
+    expect(() => gerarTarefasDoMesDp(empresas, "2026-1")).toThrow();
+  });
 });

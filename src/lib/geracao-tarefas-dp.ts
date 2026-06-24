@@ -29,6 +29,7 @@ import {
   calcularPrazoBaseDiaFixo,
   calcularQuintoDiaUtil,
 } from "./dia-util";
+import { competenciaSchema } from "./competencia";
 
 export type TipoObrigacaoDp = "FOLHA" | "ESOCIAL" | "FGTS" | "INSS";
 
@@ -60,10 +61,22 @@ export type TarefaParaCriar = {
   prazo: Date;
 };
 
+/**
+ * @throws {Error} se `competencia` não estiver no formato canônico "YYYY-MM"
+ * (mesma validação de `competenciaSchema` em `lib/competencia.ts`). Esta
+ * função pura não tem como saber se o chamador já validou a string — quem
+ * a invoca fora do caminho `actions.ts` (que aplica `competenciaSchema`
+ * antes de chegar aqui) deve garantir o formato canônico, ou esta validação
+ * lança em vez de produzir `Invalid Date` silenciosamente.
+ */
 export function gerarTarefasDoMesDp(
   empresas: { id: string; responsavelId: string }[],
   competencia: string
 ): TarefaParaCriar[] {
+  if (!competenciaSchema.safeParse(competencia).success) {
+    throw new Error(`competencia inválida: ${competencia}`);
+  }
+
   const [ano, mes] = competencia.split("-").map(Number);
   const nomeMes = new Date(ano, mes - 1, 1).toLocaleDateString("pt-BR", {
     month: "long",
