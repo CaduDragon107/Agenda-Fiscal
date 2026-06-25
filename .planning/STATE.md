@@ -2,9 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 13º Salário e Notificações In-App
+current_phase: 9
+current_phase_name: 13º Salário Automático
 status: planning
-last_updated: "2026-06-25T23:30:00.000Z"
+stopped_at: Phase 9 context gathered
+last_updated: "2026-06-25T23:55:04.036Z"
 last_activity: 2026-06-25
+last_activity_desc: "ROADMAP.md created for v2.1 (Phase 9: 13º Salário Automático; Phase 10: Notificações In-App)"
 progress:
   total_phases: 2
   completed_phases: 0
@@ -177,9 +181,9 @@ Items acknowledged at v2.0 milestone close (2026-06-25):
 
 ## Session Continuity
 
-Last session: 2026-06-25T23:30:00.000Z
-Stopped at: ROADMAP.md created for v2.1 (Phase 9: 13º Salário Automático; Phase 10: Notificações In-App). Awaiting user approval, then phase planning.
-Resume file: .planning/ROADMAP.md
+Last session: 2026-06-25T23:55:04.025Z
+Stopped at: Phase 9 context gathered
+Resume file: .planning/phases/09-13-sal-rio-autom-tico/09-CONTEXT.md
 
 ## Operator Next Steps
 
