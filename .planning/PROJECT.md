@@ -14,9 +14,15 @@ A equipe nunca perde um prazo — fiscal, de pessoal ou contábil — de nenhum 
 
 O sistema agora atende 3 setores (Fiscal, DP, Contábil) para a mesma carteira de ~197 empresas, com responsável próprio por setor, geração automática mensal (DP) e mensal+anual (Contábil — primeira periodicidade anual do sistema), e dashboards comparativos replicados para os 2 novos setores via módulo de queries único parametrizado por setor.
 
-## Next Milestone Goals
+## Current Milestone: v2.1 13º Salário e Notificações In-App
 
-Ainda não definidos — rodar `/gsd-new-milestone` para abrir o próximo ciclo (questionamento → pesquisa → requisitos → roadmap). Candidatos levantados durante v2.0 (ver REQUIREMENTS.md "Future Requirements"): DP-09 (rescisão), DP-10 (férias/13º), EMPR-04 (quantidade de funcionários), NOTF-01 (notificações), ATCH-01 (comprovantes).
+**Goal:** Completar a cobertura de obrigações DP (13º salário automático) e dar à equipe um canal de notificação in-app, além dos alertas visuais já existentes.
+
+**Target features:**
+- DP-09: Geração automática anual de tarefa de 13º salário (empresas com `temFuncionariosClt`), reaproveitando o motor de periodicidade anual já validado no Contábil (ECD/ECF/DEFIS)
+- NOTF-01: Notificação in-app (sino/badge) para tarefa vencendo em breve, tarefa atrasada, e tarefa avulsa atribuída ao usuário — visível só para o responsável (dono vê de todas)
+
+**Explicitamente fora deste milestone:** Férias e rescisão (DP-10) continuam manuais via tarefa avulsa (mecanismo já existente, sem mudança de código) — não há cadastro de funcionários individuais nesta milestone.
 
 <details>
 <summary>v1.0 MVP — Goal (archived)</summary>
@@ -71,7 +77,8 @@ Ainda não definidos — rodar `/gsd-new-milestone` para abrir o próximo ciclo 
 
 ### Active
 
-(A definir no próximo milestone via `/gsd-new-milestone`)
+- [ ] DP-09: Geração automática anual de tarefa de 13º salário para empresas com funcionários CLT
+- [ ] NOTF-01: Notificação in-app de tarefa vencendo em breve, atrasada, ou avulsa atribuída ao usuário
 
 ### Out of Scope
 
@@ -80,7 +87,8 @@ Ainda não definidos — rodar `/gsd-new-milestone` para abrir o próximo ciclo 
 - Execução remota dos scripts de automação a partir do site — v1 apenas referencia/explica o uso das ferramentas existentes, sem rodá-las
 - Anexos/comprovantes ao concluir tarefa — usa checkbox simples; comprovantes ficam para depois
 - Visão unificada de dashboard entre os 3 setores — v2.0 mantém dashboards separados por setor (decisão explícita desta milestone), reafirmada e ainda válida no fechamento
-- Rescisão/desligamento, férias/13º como obrigações de DP (DP-09/DP-10) — fora do v2.0; candidatos a v2.x se a equipe sentir falta
+- Rescisão/desligamento, férias como obrigações de DP (DP-10) — cadastro de funcionários individuais (nome, data de admissão) descartado para v2.1; ficam manuais via tarefa avulsa. 13º salário (DP-09) entrou em escopo no v2.1, gerado a nível de empresa (não por funcionário)
+- Notificação por email — v2.1 cobre só in-app; email fica candidato a versão futura
 - Cálculo automático de folha de pagamento / execução automática de eSocial — mesma razão do v1.0 (fora do core value, risco de certificado digital/LGPD), reafirmada nesta milestone para o Contábil/DP
 
 ## Context
@@ -140,4 +148,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-25 after v2.0 milestone*
+*Last updated: 2026-06-25 after starting v2.1 milestone*
