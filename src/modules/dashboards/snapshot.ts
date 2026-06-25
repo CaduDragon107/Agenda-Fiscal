@@ -27,7 +27,7 @@
  */
 
 import { endOfMonth, startOfMonth } from "date-fns";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, Setor } from "@prisma/client";
 
 /**
  * Converte uma competência "YYYY-MM" num Date local no dia 1 desse mês.
@@ -48,6 +48,7 @@ function competenciaParaDataLocal(competencia: string): Date {
 export type LinhaSnapshotMensal = {
   competencia: string;
   colaboradorId: string;
+  setor: Setor;
   totalConcluidas: number;
   concluidasNoPrazo: number;
   totalEmpresas: number;
@@ -214,7 +215,26 @@ export async function calcularSnapshotMensal(
     ...categoriasPorColaborador.keys(),
   ]);
 
-  return Array.from(colaboradorIds).map((colaboradorId) => {
+  // Enriquecimento pos-agregacao (08-PATTERNS.md linha 120): lookup unico de
+  // Usuario.setor, sem novo join na query de Tarefa. select explicito —
+  // NUNCA `colaborador: true`/`responsavel: true`, que vazaria senhaHash
+  // (T-08-04).
+  const colaboradores = await tx.usuario.findMany({
+    where: { id: { in: [...colaboradorIds] } },
+    select: { id: true, setor: true },
+  });
+  const setorPorColaborador = new Map<string, Setor | null>(
+    colaboradores.map((c) => [c.id, c.setor])
+  );
+
+  const linhas: LinhaSnapshotMensal[] = [];
+
+  for (const colaboradorId of colaboradorIds) {
+    const setor = setorPorColaborador.get(colaboradorId);
+    // Defensivo: Usuario.setor null nunca lanca — apenas pula a linha (sem
+    // setor nao ha como gravar em DesempenhoMensal.setor, NOT NULL).
+    if (!setor) continue;
+
     const concluido = porColaborador.get(colaboradorId) ?? {
       totalConcluidas: 0,
       concluidasNoPrazo: 0,
@@ -228,9 +248,10 @@ export async function calcularSnapshotMensal(
       totalVencidas: 0,
     };
 
-    return {
+    linhas.push({
       competencia,
       colaboradorId,
+      setor,
       totalConcluidas: concluido.totalConcluidas,
       concluidasNoPrazo: concluido.concluidasNoPrazo,
       totalEmpresas: totalEmpresasPorColaborador.get(colaboradorId) ?? 0,
@@ -240,6 +261,8 @@ export async function calcularSnapshotMensal(
       totalPendentesSemMotivo: criado.totalPendentesSemMotivo,
       totalPendentesComMotivo: criado.totalPendentesComMotivo,
       totalVencidas: criado.totalVencidas,
-    };
-  });
+    });
+  }
+
+  return linhas;
 }

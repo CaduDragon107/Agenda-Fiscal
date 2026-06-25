@@ -19,6 +19,11 @@ const authMock = vi.fn();
 // desempenhoMensal.createMany dentro da mesma transacao, antes da geracao.
 const tarefaFindManyMock = vi.fn();
 const empresaGroupByMock = vi.fn();
+// NOVO (Plan 08-02): calcularSnapshotMensal agora tambem faz um lookup de
+// Usuario.setor (enriquecimento pos-agregacao) — sem esse mock, o `tx` desta
+// suite quebraria com "Cannot read properties of undefined (reading
+// 'findMany')".
+const usuarioFindManyMock = vi.fn();
 const desempenhoMensalCreateManyMock = vi.fn();
 
 vi.mock("@/lib/db", () => {
@@ -30,6 +35,9 @@ vi.mock("@/lib/db", () => {
     tarefa: {
       createMany: (...args: unknown[]) => createManyMock(...args),
       findMany: (...args: unknown[]) => tarefaFindManyMock(...args),
+    },
+    usuario: {
+      findMany: (...args: unknown[]) => usuarioFindManyMock(...args),
     },
     desempenhoMensal: {
       createMany: (...args: unknown[]) => desempenhoMensalCreateManyMock(...args),
@@ -58,10 +66,12 @@ describe("gerarTarefasDoMesAction — RBAC", () => {
     authMock.mockReset();
     tarefaFindManyMock.mockReset();
     empresaGroupByMock.mockReset();
+    usuarioFindManyMock.mockReset();
     desempenhoMensalCreateManyMock.mockReset();
 
     tarefaFindManyMock.mockResolvedValue([]);
     empresaGroupByMock.mockResolvedValue([]);
+    usuarioFindManyMock.mockResolvedValue([]);
     desempenhoMensalCreateManyMock.mockResolvedValue({ count: 0 });
   });
 
@@ -101,10 +111,12 @@ describe("gerarTarefasDoMesAction — sucesso DONO", () => {
     authMock.mockReset();
     tarefaFindManyMock.mockReset();
     empresaGroupByMock.mockReset();
+    usuarioFindManyMock.mockReset();
     desempenhoMensalCreateManyMock.mockReset();
 
     tarefaFindManyMock.mockResolvedValue([]);
     empresaGroupByMock.mockResolvedValue([]);
+    usuarioFindManyMock.mockResolvedValue([]);
     desempenhoMensalCreateManyMock.mockResolvedValue({ count: 0 });
   });
 

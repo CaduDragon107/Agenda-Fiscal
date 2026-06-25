@@ -16,6 +16,7 @@ const dbMocks = vi.hoisted(() => ({
   tarefaCreateManyMock: vi.fn(),
   tarefaFindManyMock: vi.fn(),
   empresaGroupByMock: vi.fn(),
+  usuarioFindManyMock: vi.fn(),
   desempenhoMensalCreateManyMock: vi.fn(),
 }));
 
@@ -28,6 +29,9 @@ vi.mock("@/lib/db", () => {
     tarefa: {
       createMany: (...args: unknown[]) => dbMocks.tarefaCreateManyMock(...args),
       findMany: (...args: unknown[]) => dbMocks.tarefaFindManyMock(...args),
+    },
+    usuario: {
+      findMany: (...args: unknown[]) => dbMocks.usuarioFindManyMock(...args),
     },
     desempenhoMensal: {
       createMany: (...args: unknown[]) => dbMocks.desempenhoMensalCreateManyMock(...args),
@@ -44,17 +48,34 @@ vi.mock("@/lib/db", () => {
 function criarTxMock() {
   const tarefaFindManyMock = vi.fn();
   const empresaGroupByMock = vi.fn();
+  const usuarioFindManyMock = vi.fn();
   const desempenhoMensalCreateManyMock = vi.fn();
+
+  // default: todo colaborador mencionado nos testes existentes pertence ao
+  // setor FISCAL, a menos que um teste sobrescreva explicitamente — evita
+  // quebrar os testes pre-existentes (regressao) que nao mockam usuario.
+  usuarioFindManyMock.mockResolvedValue([
+    { id: "user_1", setor: "FISCAL" },
+    { id: "user_2", setor: "FISCAL" },
+    { id: "user_3", setor: "FISCAL" },
+  ]);
 
   const tx = {
     tarefa: { findMany: (...args: unknown[]) => tarefaFindManyMock(...args) },
     empresa: { groupBy: (...args: unknown[]) => empresaGroupByMock(...args) },
+    usuario: { findMany: (...args: unknown[]) => usuarioFindManyMock(...args) },
     desempenhoMensal: {
       createMany: (...args: unknown[]) => desempenhoMensalCreateManyMock(...args),
     },
   };
 
-  return { tx, tarefaFindManyMock, empresaGroupByMock, desempenhoMensalCreateManyMock };
+  return {
+    tx,
+    tarefaFindManyMock,
+    empresaGroupByMock,
+    usuarioFindManyMock,
+    desempenhoMensalCreateManyMock,
+  };
 }
 
 describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
@@ -94,6 +115,7 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
     expect(linhaUser1).toEqual({
       competencia: "2026-02",
       colaboradorId: "user_1",
+      setor: "FISCAL",
       totalConcluidas: 2,
       concluidasNoPrazo: 1,
       totalEmpresas: 30,
@@ -107,6 +129,7 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
     expect(linhaUser2).toEqual({
       competencia: "2026-02",
       colaboradorId: "user_2",
+      setor: "FISCAL",
       totalConcluidas: 1,
       concluidasNoPrazo: 1,
       totalEmpresas: 20,
@@ -155,6 +178,80 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
     expect(arg.select).toHaveProperty("responsavelId", true);
     expect(arg.select).not.toHaveProperty("responsavel");
     expect(arg.select).not.toHaveProperty("colaborador");
+  });
+});
+
+describe("calcularSnapshotMensal — setor derivado de Usuario.setor (T-08-03, Plan 08-02)", () => {
+  it("cada LinhaSnapshotMensal carrega o setor correto do colaborador (DP/CONTABIL/FISCAL distintos)", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock, usuarioFindManyMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([
+      {
+        responsavelId: "user_dp",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-15T10:00:00") }],
+      },
+      {
+        responsavelId: "user_cont",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-15T10:00:00") }],
+      },
+      {
+        responsavelId: "user_fiscal",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-15T10:00:00") }],
+      },
+    ]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    empresaGroupByMock.mockResolvedValue([]);
+    usuarioFindManyMock.mockResolvedValue([
+      { id: "user_dp", setor: "DP" },
+      { id: "user_cont", setor: "CONTABIL" },
+      { id: "user_fiscal", setor: "FISCAL" },
+    ]);
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+
+    expect(resultado.find((r) => r.colaboradorId === "user_dp")?.setor).toBe("DP");
+    expect(resultado.find((r) => r.colaboradorId === "user_cont")?.setor).toBe("CONTABIL");
+    expect(resultado.find((r) => r.colaboradorId === "user_fiscal")?.setor).toBe("FISCAL");
+  });
+
+  it("colaborador com Usuario.setor null nao quebra — linha e omitida do resultado (defensivo, nunca lanca)", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock, usuarioFindManyMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([
+      {
+        responsavelId: "user_sem_setor",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-15T10:00:00") }],
+      },
+    ]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    empresaGroupByMock.mockResolvedValue([]);
+    usuarioFindManyMock.mockResolvedValue([{ id: "user_sem_setor", setor: null }]);
+
+    const linhas = await calcularSnapshotMensal(tx as never, "2026-02");
+    expect(linhas.find((r) => r.colaboradorId === "user_sem_setor")).toBeUndefined();
+  });
+
+  it("lookup de Usuario usa select explicito {id, setor} — nunca 'colaborador: true'/'responsavel: true' (T-08-04)", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock, usuarioFindManyMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    empresaGroupByMock.mockResolvedValue([]);
+    usuarioFindManyMock.mockResolvedValue([]);
+
+    await calcularSnapshotMensal(tx as never, "2026-02");
+
+    const arg = usuarioFindManyMock.mock.calls[0][0] as {
+      select: Record<string, unknown>;
+    };
+    expect(arg.select).toEqual({ id: true, setor: true });
   });
 });
 
@@ -314,7 +411,8 @@ describe("calcularSnapshotMensal — paridade com query live (avulsa)", () => {
 
     // Tarefa avulsa: nao tem `competencia` no mock pois a query nunca filtra
     // por esse campo — representa uma tarefa criada manualmente (Fase 2)
-    // cujo concluidoEm cai dentro do range do mes-alvo.
+    // cujo concluidoEm cai dentro do range do mes-alvo. user_3 ja esta no
+    // default usuarioFindManyMock de criarTxMock() (setor FISCAL).
     tarefaFindManyMock.mockResolvedValue([
       {
         responsavelId: "user_3",
@@ -345,6 +443,7 @@ describe("executarGeracaoMensal — congelamento do mes anterior (snapshot)", ()
     tarefaCreateManyMock,
     tarefaFindManyMock,
     empresaGroupByMock,
+    usuarioFindManyMock,
     desempenhoMensalCreateManyMock,
   } = dbMocks;
 
@@ -353,12 +452,16 @@ describe("executarGeracaoMensal — congelamento do mes anterior (snapshot)", ()
     tarefaCreateManyMock.mockReset();
     tarefaFindManyMock.mockReset();
     empresaGroupByMock.mockReset();
+    usuarioFindManyMock.mockReset();
     desempenhoMensalCreateManyMock.mockReset();
 
     empresaFindManyMock.mockResolvedValue([]);
     tarefaCreateManyMock.mockResolvedValue({ count: 0 });
     tarefaFindManyMock.mockResolvedValue([]);
     empresaGroupByMock.mockResolvedValue([]);
+    // default: user_1 (usado nos 3 testes deste describe) pertence ao setor
+    // FISCAL — evita que a linha do snapshot seja descartada por setor null.
+    usuarioFindManyMock.mockResolvedValue([{ id: "user_1", setor: "FISCAL" }]);
     desempenhoMensalCreateManyMock.mockResolvedValue({ count: 0 });
   });
 
