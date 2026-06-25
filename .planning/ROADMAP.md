@@ -117,8 +117,20 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. O dono visualiza os mesmos três tipos de dashboard (desempenho, evolução mensal, ranking) para o setor Contábil, em página própria.
   5. As consultas dos 3 dashboards de DP e dos 3 dashboards de Contábil reaproveitam o mesmo módulo de queries parametrizado por setor já usado no Fiscal — sem três módulos de dashboard duplicados e sem o código órfão do módulo de dashboard singular antigo.
 
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
+
+**Wave 1**
+
+- [ ] 08-01-PLAN.md — Fundação: helper tarefaSetorWhere (classificação por setor) + migração [BLOCKING] DesempenhoMensal.setor com backfill FISCAL verificado
+
+**Wave 2** *(blocked on Plan 08-01)*
+
+- [ ] 08-02-PLAN.md — Parametrização por setor das 3 queries de dashboard + snapshot setor-aware, sem regressão Fiscal
+
+**Wave 3** *(blocked on Plan 08-02)*
+
+- [ ] 08-03-PLAN.md — UI: abas Fiscal/DP/Contábil, EmptyState setor-aware, deleção do módulo órfão singular + checkpoint visual
 
 ## Progress
 
@@ -132,4 +144,4 @@ Phases execute in numeric order: 5 → 6 → 7 → 8
 | 5. Fundação Multi-Setor — Schema, Autorização e Empresas | 4/4 | Complete   | 2026-06-24 |
 | 6. Motor de Geração — Departamento Pessoal | 3/3 | Complete   | 2026-06-24 |
 | 7. Motor de Geração — Contábil (mensal e anual) | 3/3 | Complete   | 2026-06-24 |
-| 8. Dashboards Multi-Setor — DP e Contábil | 0/TBD | Not started | - |
+| 8. Dashboards Multi-Setor — DP e Contábil | 0/3 | Planned | - |
