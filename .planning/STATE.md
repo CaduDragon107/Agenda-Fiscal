@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: Awaiting next milestone
-stopped_at: "Plan 08-03 Tasks 1-2 complete, Task 3 checkpoint:human-verify pending"
+stopped_at: "v2.0 milestone archived"
 last_updated: "2026-06-25T16:54:09.879Z"
 last_activity: 2026-06-25 — Milestone v2.0 completed and archived
 progress:
@@ -20,10 +20,10 @@ current_phase_name: dashboards-multi-setor-dp-e-cont-bil
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-23)
+See: .planning/PROJECT.md (updated 2026-06-25)
 
 **Core value:** A equipe nunca perde um prazo — fiscal, de pessoal ou contábil — de nenhum cliente, e o dono sempre sabe em tempo real o status de tudo, em qualquer setor.
-**Current focus:** Phase 08 complete — milestone v2.0 fully delivered
+**Current focus:** Planning next milestone (run `/gsd-new-milestone`)
 
 ## Current Position
 
