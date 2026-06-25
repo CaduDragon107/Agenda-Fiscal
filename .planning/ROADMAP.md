@@ -122,7 +122,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 1**
 
-- [ ] 08-01-PLAN.md — Fundação: helper tarefaSetorWhere (classificação por setor) + migração [BLOCKING] DesempenhoMensal.setor com backfill FISCAL verificado
+- [x] 08-01-PLAN.md — Fundação: helper tarefaSetorWhere (classificação por setor) + migração [BLOCKING] DesempenhoMensal.setor com backfill FISCAL verificado
 
 **Wave 2** *(blocked on Plan 08-01)*
 
@@ -144,4 +144,4 @@ Phases execute in numeric order: 5 → 6 → 7 → 8
 | 5. Fundação Multi-Setor — Schema, Autorização e Empresas | 4/4 | Complete   | 2026-06-24 |
 | 6. Motor de Geração — Departamento Pessoal | 3/3 | Complete   | 2026-06-24 |
 | 7. Motor de Geração — Contábil (mensal e anual) | 3/3 | Complete   | 2026-06-24 |
-| 8. Dashboards Multi-Setor — DP e Contábil | 0/3 | Planned | - |
+| 8. Dashboards Multi-Setor — DP e Contábil | 1/3 | In Progress|  |
