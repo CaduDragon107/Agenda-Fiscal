@@ -126,7 +126,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 2** *(blocked on Plan 08-01)*
 
-- [ ] 08-02-PLAN.md — Parametrização por setor das 3 queries de dashboard + snapshot setor-aware, sem regressão Fiscal
+- [x] 08-02-PLAN.md — Parametrização por setor das 3 queries de dashboard + snapshot setor-aware, sem regressão Fiscal
 
 **Wave 3** *(blocked on Plan 08-02)*
 
@@ -144,4 +144,4 @@ Phases execute in numeric order: 5 → 6 → 7 → 8
 | 5. Fundação Multi-Setor — Schema, Autorização e Empresas | 4/4 | Complete   | 2026-06-24 |
 | 6. Motor de Geração — Departamento Pessoal | 3/3 | Complete   | 2026-06-24 |
 | 7. Motor de Geração — Contábil (mensal e anual) | 3/3 | Complete   | 2026-06-24 |
-| 8. Dashboards Multi-Setor — DP e Contábil | 1/3 | In Progress|  |
+| 8. Dashboards Multi-Setor — DP e Contábil | 2/3 | In Progress|  |
