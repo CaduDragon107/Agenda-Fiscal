@@ -185,8 +185,9 @@ model DesempenhoMensal {
   totalPendentesComMotivo  Int      @default(0)
   totalVencidas            Int      @default(0)
   createdAt           DateTime @default(now())
+  setor                Setor    @default(FISCAL)
 
-  @@unique([competencia, colaboradorId])
+  @@unique([competencia, colaboradorId, setor])
   @@index([competencia])
   @@index([colaboradorId])
   @@map("desempenho_mensal")
