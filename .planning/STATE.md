@@ -5,7 +5,7 @@ milestone_name: milestone
 status: Awaiting next milestone
 stopped_at: "v2.0 milestone archived"
 last_updated: "2026-06-25T16:54:09.879Z"
-last_activity: 2026-06-25 — Milestone v2.0 completed and archived
+last_activity: 2026-06-25 — Quick task 260625-p9h: corrigidos WR-01/02/03, IN-01/02 do 08-REVIEW.md
 progress:
   total_phases: 4
   completed_phases: 4
@@ -138,6 +138,7 @@ None yet.
 - [Phase 7] NOVO — Periodicidade anual (ECD/ECF/DEFIS) precisa de formato de competência explícito (ex. "YYYY") e testes simulando 12 ticks mensais do cron ao longo de um ano, verificando exatamente 1 tarefa anual por empresa por ano (ver research/PITFALLS.md Pitfall B2).
 - [Phase 8] ~~Dashboards de DP/Contábil devem reaproveitar o módulo de queries parametrizado por setor já usado no Fiscal, nunca duplicar em módulos separados; deletar o módulo órfão `src/modules/dashboard/` (singular) durante esta fase~~ — RESOLVIDO em 08-02 (queries parametrizadas) + 08-03 (órfão já estava deletado desde commit c453704 pré-Wave 1; confirmado zero imports remanescentes).
 - [Phase 8] NOVO — Plan 08-03 Task 3 (`checkpoint:human-verify`, gate="blocking") aguardando o dono confirmar visualmente as 3 abas (Fiscal/DP/Contábil) em `/dashboards` contra 08-UI-SPEC.md — ver `08-03-SUMMARY.md` seção "Checkpoint Status" para os passos de verificação pendentes.
+- [Phase 8] ~~WR-01/WR-02/WR-03/IN-01/IN-02 de `08-REVIEW.md` (deferidos no fechamento da fase)~~ — RESOLVIDO no quick task 260625-p9h: totalNoPrazo inteiro exposto (WR-01), ranking respeita `?meses=` (WR-02), `usuarioSchema` exige setor para COLABORADOR (WR-03), carteira do snapshot escopada por setor (IN-01), default de `quantidadeMeses` alinhado a 6 (IN-02). 182/182 testes verdes, `tsc --noEmit` limpo.
 
 ### Quick Tasks Completed
 
@@ -152,6 +153,7 @@ None yet.
 | 260618-kk8 | Adicionar opcao de filtro Pendentes na tela de tarefas | 2026-06-18 | 3bbb2e5 | [260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t](./quick/260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t/) |
 | 260622-lty | Trocar grafico Evolucao Mensal de Area/Line para barras agrupadas com 5 categorias (criadas/concluidas/pendentes/pendentes-com-motivo/vencidas) | 2026-06-22 | c393331 | [260622-lty-trocar-grafico-evolucao-mensal-para-barr](./quick/260622-lty-trocar-grafico-evolucao-mensal-para-barr/) |
 | 260622-r6n | Mudar paleta de cores dos graficos do dashboard (escala de cinza -> esquema semaforo: azul/verde/amarelo/laranja/vermelho) | 2026-06-22 | 6104e79 | [260622-r6n-mudar-paleta-de-cores-dos-graficos-do-da](./quick/260622-r6n-mudar-paleta-de-cores-dos-graficos-do-da/) |
+| 260625-p9h | Corrigir achados WR-01, WR-02, WR-03, IN-01, IN-02 do 08-REVIEW.md (dashboards multi-setor) | 2026-06-25 | 7515665 | [260625-p9h-corrigir-achados-wr-01-wr-02-wr-03-in-01](./quick/260625-p9h-corrigir-achados-wr-01-wr-02-wr-03-in-01/) |
 
 ## Deferred Items
 
