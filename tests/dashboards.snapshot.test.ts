@@ -237,6 +237,80 @@ describe("calcularSnapshotMensal — setor derivado de Usuario.setor (T-08-03, P
     expect(linhas.find((r) => r.colaboradorId === "user_sem_setor")).toBeUndefined();
   });
 
+  it("colaborador com tarefas recorrentes de MAIS DE UM setor (via tipoObrigacao) produz 1 linha POR setor, sem contaminacao cross-setor (CR-01, code review Phase 08)", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock, usuarioFindManyMock } = criarTxMock();
+
+    // user_dp tem Usuario.setor = "DP" mas concluiu 1 tarefa FOLHA (DP) e 1
+    // tarefa ICMS (FISCAL) no mesmo periodo — cenario real: colaborador de
+    // DP cobrindo uma tarefa Fiscal avulsa/recorrente atribuida a ele.
+    tarefaFindManyMock.mockResolvedValueOnce([
+      {
+        responsavelId: "user_dp",
+        tipoObrigacao: "FOLHA",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-15T10:00:00") }],
+      },
+      {
+        responsavelId: "user_dp",
+        tipoObrigacao: "ICMS",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-16T10:00:00") }],
+      },
+    ]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    empresaGroupByMock.mockResolvedValue([{ responsavelId: "user_dp", _count: { id: 12 } }]);
+    usuarioFindManyMock.mockResolvedValue([{ id: "user_dp", setor: "DP" }]);
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+
+    const linhaDp = resultado.find((r) => r.colaboradorId === "user_dp" && r.setor === "DP");
+    const linhaFiscal = resultado.find(
+      (r) => r.colaboradorId === "user_dp" && r.setor === "FISCAL"
+    );
+
+    expect(resultado).toHaveLength(2);
+    expect(linhaDp).toBeDefined();
+    expect(linhaDp?.totalConcluidas).toBe(1);
+    expect(linhaFiscal).toBeDefined();
+    expect(linhaFiscal?.totalConcluidas).toBe(1);
+    // CRITICO: nenhuma linha deve somar as 2 tarefas — isso seria a
+    // contaminacao cross-setor que o fix de CR-01 elimina.
+    expect(linhaDp?.totalConcluidas).not.toBe(2);
+  });
+
+  it("tarefa avulsa (tipoObrigacao null) e classificada pelo Usuario.setor do colaborador, mesmo que difira de outra tarefa recorrente do mesmo colaborador classificada por tipoObrigacao", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock, usuarioFindManyMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([
+      {
+        // avulsa: tipoObrigacao null -> classificada por Usuario.setor (CONTABIL)
+        responsavelId: "user_cont",
+        tipoObrigacao: null,
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-15T10:00:00") }],
+      },
+      {
+        // recorrente ECD -> classificada por tipoObrigacao (CONTABIL tambem,
+        // mesma linha esperada)
+        responsavelId: "user_cont",
+        tipoObrigacao: "ECD",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-18T10:00:00") }],
+      },
+    ]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    empresaGroupByMock.mockResolvedValue([{ responsavelId: "user_cont", _count: { id: 8 } }]);
+    usuarioFindManyMock.mockResolvedValue([{ id: "user_cont", setor: "CONTABIL" }]);
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].setor).toBe("CONTABIL");
+    expect(resultado[0].totalConcluidas).toBe(2);
+  });
+
   it("lookup de Usuario usa select explicito {id, setor} — nunca 'colaborador: true'/'responsavel: true' (T-08-04)", async () => {
     const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
     const { tx, tarefaFindManyMock, empresaGroupByMock, usuarioFindManyMock } = criarTxMock();

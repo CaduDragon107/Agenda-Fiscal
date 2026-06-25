@@ -27,7 +27,43 @@
  */
 
 import { endOfMonth, startOfMonth } from "date-fns";
-import type { Prisma, Setor } from "@prisma/client";
+import type { Prisma, Setor, TipoObrigacao } from "@prisma/client";
+import { TIPOS_OBRIGACAO_POR_SETOR } from "@/lib/tipo-obrigacao-setor";
+
+/**
+ * Indice inverso de TIPOS_OBRIGACAO_POR_SETOR (TipoObrigacao -> Setor),
+ * construido em runtime a partir da MESMA fonte de verdade — nunca duplicar
+ * o mapeamento (Pitfall B4). Garantidamente total para todo TipoObrigacao
+ * nao-nulo (completude verificada em tests/tipo-obrigacao-setor.test.ts).
+ */
+const SETOR_POR_TIPO_OBRIGACAO = new Map<TipoObrigacao, Setor>(
+  Object.entries(TIPOS_OBRIGACAO_POR_SETOR).flatMap(([setor, tipos]) =>
+    tipos.map((tipo) => [tipo, setor as Setor] as const)
+  )
+);
+
+/**
+ * Deriva o setor de uma tarefa, espelhando a logica de `tarefaSetorWhere`
+ * (T-08-03): recorrentes (tipoObrigacao nao-nulo) sao classificadas pelo
+ * tipoObrigacao; avulsas (tipoObrigacao null) sao classificadas pelo setor
+ * do colaborador responsavel — aqui obtido do MESMO lookup de Usuario.setor
+ * ja usado para o enriquecimento da linha (responsavel.setor do
+ * responsavelId desta tarefa e, por definicao, o Usuario.setor desse
+ * colaborador), sem precisar de um join extra na query de Tarefa.
+ */
+function setorDaTarefa(
+  tipoObrigacao: TipoObrigacao | null,
+  setorPorColaborador: Map<string, Setor | null>,
+  responsavelId: string
+): Setor | null {
+  if (tipoObrigacao) return SETOR_POR_TIPO_OBRIGACAO.get(tipoObrigacao) ?? null;
+  return setorPorColaborador.get(responsavelId) ?? null;
+}
+
+/** Chave composta (colaborador, setor) para particionar a agregacao por setor (T-08-03). */
+function chaveColaboradorSetor(colaboradorId: string, setor: Setor): string {
+  return `${colaboradorId}::${setor}`;
+}
 
 /**
  * Converte uma competência "YYYY-MM" num Date local no dia 1 desse mês.
@@ -69,6 +105,9 @@ export async function calcularSnapshotMensal(
 
   // 1 query: todas as tarefas cujo concluidoEm cai no range do mes-alvo,
   // independente de Tarefa.competencia (inclui avulsas, competencia=null).
+  // tipoObrigacao selecionado para classificacao por setor (T-08-03) —
+  // SEM essa classificacao, tarefas de outros setores do mesmo colaborador
+  // contaminariam a linha congelada (CR-01, code review Phase 08).
   const tarefasNoPeriodo = await tx.tarefa.findMany({
     where: {
       status: "CONCLUIDA",
@@ -76,6 +115,7 @@ export async function calcularSnapshotMensal(
     },
     select: {
       responsavelId: true,
+      tipoObrigacao: true,
       prazo: true,
       historico: {
         select: { concluidoEm: true },
@@ -85,41 +125,6 @@ export async function calcularSnapshotMensal(
       },
     },
   });
-
-  // Agregacao em memoria por colaborador (Tarefa.responsavelId, nunca
-  // Empresa.responsavelId — Pitfall 3).
-  const porColaborador = new Map<
-    string,
-    { totalConcluidas: number; concluidasNoPrazo: number; totalTarefasPeriodo: number }
-  >();
-
-  for (const t of tarefasNoPeriodo) {
-    const concluidoEm = t.historico[0]?.concluidoEm;
-    if (!concluidoEm) continue; // defensivo: CONCLUIDA sempre tem historico no range filtrado
-
-    const atual =
-      porColaborador.get(t.responsavelId) ??
-      { totalConcluidas: 0, concluidasNoPrazo: 0, totalTarefasPeriodo: 0 };
-
-    atual.totalConcluidas += 1;
-    atual.totalTarefasPeriodo += 1; // mesma populacao filtrada por concluidoEm (D-03)
-    if (concluidoEm <= t.prazo) {
-      atual.concluidasNoPrazo += 1; // D-01/D-02
-    }
-
-    porColaborador.set(t.responsavelId, atual);
-  }
-
-  // Contexto D-03: tamanho de carteira (numero de empresas ativas) por
-  // colaborador, mesma convencao de Pattern 2 do RESEARCH.md.
-  const carteiras = await tx.empresa.groupBy({
-    by: ["responsavelId"],
-    where: { ativo: true },
-    _count: { id: true },
-  });
-  const totalEmpresasPorColaborador = new Map<string, number>(
-    carteiras.map((c) => [c.responsavelId, c._count.id])
-  );
 
   // ---------------------------------------------------------------------
   // POPULACAO PARALELA "criadas" (quick task 260622-lty, DASH-02):
@@ -159,13 +164,72 @@ export async function calcularSnapshotMensal(
     },
     select: {
       responsavelId: true,
+      tipoObrigacao: true,
       status: true,
       motivoPendencia: true,
       prazo: true,
     },
   });
 
-  const categoriasPorColaborador = new Map<
+  // Enriquecimento ANTES da agregacao (nao depois, como antes do fix de
+  // CR-01): precisamos de Usuario.setor de cada colaborador para classificar
+  // tarefas avulsas (tipoObrigacao null) por setor — ver setorDaTarefa().
+  // select explicito — NUNCA `colaborador: true`/`responsavel: true`, que
+  // vazaria senhaHash (T-08-04).
+  const colaboradorIdsBrutos = new Set<string>([
+    ...tarefasNoPeriodo.map((t) => t.responsavelId),
+    ...tarefasCriadas.map((t) => t.responsavelId),
+  ]);
+  const colaboradores = await tx.usuario.findMany({
+    where: { id: { in: [...colaboradorIdsBrutos] } },
+    select: { id: true, setor: true },
+  });
+  const setorPorColaborador = new Map<string, Setor | null>(
+    colaboradores.map((c) => [c.id, c.setor])
+  );
+
+  // Agregacao em memoria por (colaborador, setor) — Tarefa.responsavelId
+  // (nunca Empresa.responsavelId, Pitfall 3), particionada por setor real da
+  // tarefa (T-08-03/CR-01: sem isso, tarefas de outros setores do mesmo
+  // colaborador contaminariam a linha congelada).
+  const porColaboradorSetor = new Map<
+    string,
+    { totalConcluidas: number; concluidasNoPrazo: number; totalTarefasPeriodo: number }
+  >();
+
+  for (const t of tarefasNoPeriodo) {
+    const concluidoEm = t.historico[0]?.concluidoEm;
+    if (!concluidoEm) continue; // defensivo: CONCLUIDA sempre tem historico no range filtrado
+
+    const setor = setorDaTarefa(t.tipoObrigacao, setorPorColaborador, t.responsavelId);
+    if (!setor) continue; // defensivo: sem setor classificavel, sem como gravar (NOT NULL)
+    const chave = chaveColaboradorSetor(t.responsavelId, setor);
+
+    const atual =
+      porColaboradorSetor.get(chave) ??
+      { totalConcluidas: 0, concluidasNoPrazo: 0, totalTarefasPeriodo: 0 };
+
+    atual.totalConcluidas += 1;
+    atual.totalTarefasPeriodo += 1; // mesma populacao filtrada por concluidoEm (D-03)
+    if (concluidoEm <= t.prazo) {
+      atual.concluidasNoPrazo += 1; // D-01/D-02
+    }
+
+    porColaboradorSetor.set(chave, atual);
+  }
+
+  // Contexto D-03: tamanho de carteira (numero de empresas ativas) por
+  // colaborador, mesma convencao de Pattern 2 do RESEARCH.md.
+  const carteiras = await tx.empresa.groupBy({
+    by: ["responsavelId"],
+    where: { ativo: true },
+    _count: { id: true },
+  });
+  const totalEmpresasPorColaborador = new Map<string, number>(
+    carteiras.map((c) => [c.responsavelId, c._count.id])
+  );
+
+  const categoriasPorColaboradorSetor = new Map<
     string,
     {
       totalCriadas: number;
@@ -177,8 +241,12 @@ export async function calcularSnapshotMensal(
   >();
 
   for (const t of tarefasCriadas) {
+    const setor = setorDaTarefa(t.tipoObrigacao, setorPorColaborador, t.responsavelId);
+    if (!setor) continue; // defensivo: sem setor classificavel, sem como gravar (NOT NULL)
+    const chave = chaveColaboradorSetor(t.responsavelId, setor);
+
     const atual =
-      categoriasPorColaborador.get(t.responsavelId) ?? {
+      categoriasPorColaboradorSetor.get(chave) ?? {
         totalCriadas: 0,
         totalConcluidasNoPeriodo: 0,
         totalPendentesSemMotivo: 0,
@@ -203,44 +271,31 @@ export async function calcularSnapshotMensal(
       }
     }
 
-    categoriasPorColaborador.set(t.responsavelId, atual);
+    categoriasPorColaboradorSetor.set(chave, atual);
   }
 
-  // Uniao dos colaboradores presentes em QUALQUER das duas populacoes
-  // (concluidoEm-no-range OU criadas-no-mes) — defaultando ausentes a 0 em
-  // cada lado, para nunca perder uma linha de colaborador que so aparece
+  // Uniao das chaves (colaborador, setor) presentes em QUALQUER das duas
+  // populacoes (concluidoEm-no-range OU criadas-no-mes) — defaultando
+  // ausentes a 0 em cada lado, para nunca perder uma linha que so aparece
   // numa das duas consultas.
-  const colaboradorIds = new Set<string>([
-    ...porColaborador.keys(),
-    ...categoriasPorColaborador.keys(),
+  const chaves = new Set<string>([
+    ...porColaboradorSetor.keys(),
+    ...categoriasPorColaboradorSetor.keys(),
   ]);
-
-  // Enriquecimento pos-agregacao (08-PATTERNS.md linha 120): lookup unico de
-  // Usuario.setor, sem novo join na query de Tarefa. select explicito —
-  // NUNCA `colaborador: true`/`responsavel: true`, que vazaria senhaHash
-  // (T-08-04).
-  const colaboradores = await tx.usuario.findMany({
-    where: { id: { in: [...colaboradorIds] } },
-    select: { id: true, setor: true },
-  });
-  const setorPorColaborador = new Map<string, Setor | null>(
-    colaboradores.map((c) => [c.id, c.setor])
-  );
 
   const linhas: LinhaSnapshotMensal[] = [];
 
-  for (const colaboradorId of colaboradorIds) {
-    const setor = setorPorColaborador.get(colaboradorId);
-    // Defensivo: Usuario.setor null nunca lanca — apenas pula a linha (sem
-    // setor nao ha como gravar em DesempenhoMensal.setor, NOT NULL).
-    if (!setor) continue;
+  for (const chave of chaves) {
+    const separador = chave.lastIndexOf("::");
+    const colaboradorId = chave.slice(0, separador);
+    const setor = chave.slice(separador + 2) as Setor;
 
-    const concluido = porColaborador.get(colaboradorId) ?? {
+    const concluido = porColaboradorSetor.get(chave) ?? {
       totalConcluidas: 0,
       concluidasNoPrazo: 0,
       totalTarefasPeriodo: 0,
     };
-    const criado = categoriasPorColaborador.get(colaboradorId) ?? {
+    const criado = categoriasPorColaboradorSetor.get(chave) ?? {
       totalCriadas: 0,
       totalConcluidasNoPeriodo: 0,
       totalPendentesSemMotivo: 0,
