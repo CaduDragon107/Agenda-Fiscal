@@ -73,6 +73,7 @@ describe("listarDesempenhoColaboradoresMesAtual", () => {
     expect(caio).toBeDefined();
     expect(caio?.totalConcluidas).toBe(2);
     expect(caio?.percentualNoPrazo).toBe(50);
+    expect(caio?.totalNoPrazo).toBe(1);
   });
 
   it("exclui tarefas PENDENTE do denominador de % no prazo por colaboradores (D-02)", async () => {
@@ -224,6 +225,41 @@ describe("listarEvolucaoMensal", () => {
     desempenhoMensalGroupByMock.mockReset();
   });
 
+  it("expõe totalNoPrazo como inteiro igual a noPrazo agregado (ex.: 1 de 2 concluidas -> totalNoPrazo=1, percentualNoPrazo=50)", async () => {
+    const { listarDesempenhoColaboradoresMesAtual } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    tarefaFindManyMock.mockResolvedValue([
+      {
+        responsavelId: "user_wr01",
+        prazo: new Date("2026-06-10T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-06-09T10:00:00") }], // no prazo
+      },
+      {
+        responsavelId: "user_wr01",
+        prazo: new Date("2026-06-11T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-06-13T10:00:00") }], // atrasada
+      },
+    ]);
+    empresaGroupByMock.mockResolvedValue([
+      { responsavelId: "user_wr01", _count: { id: 2 } },
+    ]);
+    usuarioFindManyMock.mockResolvedValue([
+      { id: "user_wr01", nome: "WR01" },
+    ]);
+
+    const resultado = await listarDesempenhoColaboradoresMesAtual(
+      new Date("2026-06-15T12:00:00"),
+      "FISCAL"
+    );
+
+    const item = resultado.find((r) => r.colaboradorId === "user_wr01");
+    expect(item?.totalNoPrazo).toBe(1);
+    expect(item?.totalConcluidas).toBe(2);
+    expect(item?.percentualNoPrazo).toBe(50);
+  });
+
   it("lê meses fechados via db.desempenhoMensal.groupBy e NÃO chama db.tarefa.findMany para competências fechadas (D-05)", async () => {
     const { listarEvolucaoMensal } = await import(
       "@/modules/dashboards/queries"
@@ -368,6 +404,60 @@ describe("listarEvolucaoMensal", () => {
 
     expect(resultado.length).toBe(3);
     expect(Array.isArray(resultado)).toBe(true);
+  });
+
+  it("ponto live soma totalNoPrazo inteiro, sem reverter o percentual arredondado (WR-01): totalConcluidas=150, noPrazo=1 -> percentual exato, nunca over-contado", async () => {
+    const { listarEvolucaoMensal } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    desempenhoMensalGroupByMock.mockResolvedValue([]);
+    // 1a chamada (listarDesempenhoColaboradoresMesAtual): mes corrente com
+    // 150 concluidas e apenas 1 no prazo — cenario onde o metodo antigo
+    // (Math.round((noPrazo/100%)*total)) over-contava em +1 por arredondamento.
+    tarefaFindManyMock.mockResolvedValueOnce(
+      Array.from({ length: 150 }, (_, i) => ({
+        responsavelId: "user_wr01b",
+        prazo: new Date("2026-06-10T23:59:59"),
+        historico: [
+          {
+            concluidoEm:
+              i === 0
+                ? new Date("2026-06-09T10:00:00") // a unica no prazo
+                : new Date("2026-06-15T10:00:00"), // atrasada
+          },
+        ],
+      }))
+    );
+    // 2a chamada (calcularCategoriasCriadas) — populacao "criadas" vazia.
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    empresaGroupByMock.mockResolvedValue([
+      { responsavelId: "user_wr01b", _count: { id: 1 } },
+    ]);
+    usuarioFindManyMock.mockResolvedValue([
+      { id: "user_wr01b", nome: "WR01b" },
+    ]);
+
+    const resultado = await listarEvolucaoMensal(1, "FISCAL");
+    const pontoLive = resultado[resultado.length - 1];
+
+    // noPrazo exato = 1 de 150 -> percentual = round(1/150*100) = 1
+    expect(pontoLive.percentual).toBe(1);
+  });
+
+  it("usa default quantidadeMeses=6 quando chamado sem o argumento (IN-02), alinhado ao default de producao em guard.ts", async () => {
+    const { listarEvolucaoMensal } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    desempenhoMensalGroupByMock.mockResolvedValue([]);
+    tarefaFindManyMock.mockResolvedValue([]);
+    empresaGroupByMock.mockResolvedValue([]);
+    usuarioFindManyMock.mockResolvedValue([]);
+
+    const resultado = await listarEvolucaoMensal(undefined as never, "FISCAL");
+
+    expect(resultado.length).toBe(6);
   });
 });
 
