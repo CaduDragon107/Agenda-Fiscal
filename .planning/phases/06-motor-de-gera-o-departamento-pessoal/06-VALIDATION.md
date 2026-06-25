@@ -1,10 +1,11 @@
 ---
 phase: 06
 slug: motor-de-gera-o-departamento-pessoal
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-24
+audited: 2026-06-24
 ---
 
 # Phase 06 — Validation Strategy
@@ -36,19 +37,18 @@ created: 2026-06-24
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 06-01-XX | TBD | 0 | DP-01 | — | Folha de Pagamento gerada no 5º dia útil do mês seguinte | unit | `npx vitest run tests/dia-util.test.ts` | ❌ Wave 0 — estender com casos de `calcularQuintoDiaUtil` | ⬜ pending |
-| 06-01-XX | TBD | 0 | DP-01 | — | Catálogo DP gera Folha de Pagamento corretamente | unit | `npx vitest run tests/geracao-tarefas-dp.test.ts` | ❌ Wave 0 — criar arquivo novo | ⬜ pending |
-| 06-01-XX | TBD | 1 | DP-02 | — | FGTS gerado dia-base 15, antecipa para dia útil anterior | unit | `npx vitest run tests/geracao-tarefas-dp.test.ts` | ❌ Wave 0 | ⬜ pending |
-| 06-01-XX | TBD | 1 | DP-03 | — | INSS gerado dia-base 15, antecipa para dia útil anterior | unit | `npx vitest run tests/geracao-tarefas-dp.test.ts` | ❌ Wave 0 | ⬜ pending |
-| 06-01-XX | TBD | 1 | DP-04 | — | Fechamento eSocial gerado dia-base 07, antecipa para dia útil anterior | unit | `npx vitest run tests/geracao-tarefas-dp.test.ts` | ❌ Wave 0 | ⬜ pending |
-| 06-01-XX | TBD | 1 | DP-05 | T-DP-01 | Tarefa avulsa de DP respeita escopo setor-aware (`withVisibilityScope`/`withTarefaScope`) | integration/regression | `npx vitest run tests/tarefas.idor.test.ts tests/tarefas.crud.test.ts` | ✅ existe — confirmar cobertura DP, estender com 1 fixture se necessário | ⬜ pending |
-| 06-01-XX | TBD | 1 | D-01/D-02/D-03 | T-DP-02 | Empresa CLT sem responsável DP é pulada (sem criar tarefa) e listada no retorno, sem bloquear outras empresas | unit/integration | `npx vitest run tests/geracao.idempotencia.test.ts` | ❌ Wave 0 — estender arquivo existente | ⬜ pending |
-| 06-01-XX | TBD | 1 | (idempotência) | — | Rodar geração 2x na mesma competência não duplica tarefas de DP | integration | `npx vitest run tests/geracao.idempotencia.test.ts` | ❌ Wave 0 — estender arquivo existente | ⬜ pending |
+| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | Status |
+|---------|------|------|-------------|------------|-----------------|-----------|-------------------|--------|
+| 06-01 | 06-01 | 1 | DP-01 | — | Folha de Pagamento gerada no 5º dia útil do mês seguinte (`calcularQuintoDiaUtil`) | unit | `npx vitest run tests/dia-util.test.ts` | ✅ COVERED |
+| 06-01 | 06-01 | 1 | DP-01 | — | Catálogo DP gera Folha de Pagamento corretamente | unit | `npx vitest run tests/geracao-tarefas-dp.test.ts` | ✅ COVERED |
+| 06-01 | 06-01 | 1 | DP-02 | — | FGTS gerado dia-base 15, antecipa para dia útil anterior | unit | `npx vitest run tests/geracao-tarefas-dp.test.ts` | ✅ COVERED |
+| 06-01 | 06-01 | 1 | DP-03 | — | INSS gerado dia-base 15, antecipa para dia útil anterior | unit | `npx vitest run tests/geracao-tarefas-dp.test.ts` | ✅ COVERED |
+| 06-01 | 06-01 | 1 | DP-04 | — | Fechamento eSocial gerado dia-base 07, antecipa para dia útil anterior | unit | `npx vitest run tests/geracao-tarefas-dp.test.ts` | ✅ COVERED |
+| 06-03 | 06-03 | 1 | DP-05 | T-DP-01 | Tarefa avulsa de DP respeita escopo setor-aware (`withVisibilityScope`/`withTarefaScope`) | integration/regression | `npx vitest run tests/tarefas.idor.test.ts tests/tarefas.dp.test.ts` | ✅ COVERED |
+| 06-02 | 06-02 | 2 | D-01/D-02/D-03 | T-DP-02 | Empresa CLT sem responsável DP é pulada (sem criar tarefa) e listada no retorno, sem bloquear outras empresas | unit/integration | `npx vitest run tests/geracao.idempotencia.test.ts` | ✅ COVERED |
+| 06-02 | 06-02 | 2 | (idempotência) | — | Rodar geração 2x na mesma competência não duplica tarefas de DP | integration | `npx vitest run tests/geracao.idempotencia.test.ts` | ✅ COVERED |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
-*Task IDs are placeholders (TBD) — the planner fills in exact Plan/Task IDs as PLAN.md files are written.*
+**Audit result (2026-06-24):** 8/8 rows automated and green (`npx vitest run` confirms 34/34 across `tests/geracao-tarefas-dp.test.ts`, `tests/dia-util.test.ts`, `tests/geracao.idempotencia.test.ts`, `tests/tarefas.idor.test.ts`, `tests/tarefas.dp.test.ts`). Cross-confirmed against `06-VERIFICATION.md`'s independent "5/5 truths verified" pass. No gaps found — `gsd-nyquist-auditor` was not spawned.
 
 ---
 
@@ -69,11 +69,21 @@ created: 2026-06-24
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved (retroactive audit, 2026-06-24)
+
+---
+
+## Validation Audit 2026-06-24
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
