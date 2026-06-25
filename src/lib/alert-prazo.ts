@@ -72,3 +72,39 @@ export function calcularAlertaPrazo(
   // Normal: prazo > agora + 3 dias
   return ALERTA_NORMAL;
 }
+
+/**
+ * Classifica o desempenho de uma tarefa para os dashboards comparativos.
+ * Retorna se a tarefa está atrasada e por quantos dias.
+ *
+ * Lógica:
+ * - CONCLUIDA com concluidoEm <= prazo → no prazo (atrasada=false, diasAtraso=0)
+ * - CONCLUIDA com concluidoEm > prazo → atrasada, diasAtraso = ceil(concluidoEm - prazo)
+ * - PENDENTE com referencia <= prazo → no prazo (ainda dentro do prazo)
+ * - PENDENTE com referencia > prazo → atrasada, diasAtraso = ceil(referencia - prazo)
+ */
+export function classificarTarefaDesempenho(
+  tarefa: { prazo: Date; status: "PENDENTE" | "CONCLUIDA"; concluidoEm: Date | null },
+  referencia: Date
+): { atrasada: boolean; diasAtraso: number } {
+  const MS_POR_DIA = 24 * 60 * 60 * 1000;
+
+  if (tarefa.status === "CONCLUIDA" && tarefa.concluidoEm) {
+    if (tarefa.concluidoEm <= tarefa.prazo) {
+      return { atrasada: false, diasAtraso: 0 };
+    }
+    const dias = Math.ceil(
+      (tarefa.concluidoEm.getTime() - tarefa.prazo.getTime()) / MS_POR_DIA
+    );
+    return { atrasada: true, diasAtraso: dias };
+  }
+
+  // PENDENTE (ou CONCLUIDA sem concluidoEm — fallback defensivo)
+  if (referencia <= tarefa.prazo) {
+    return { atrasada: false, diasAtraso: 0 };
+  }
+  const dias = Math.ceil(
+    (referencia.getTime() - tarefa.prazo.getTime()) / MS_POR_DIA
+  );
+  return { atrasada: true, diasAtraso: dias };
+}
