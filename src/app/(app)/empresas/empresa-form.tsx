@@ -37,6 +37,17 @@ const REGIME_OPTIONS: { value: EmpresaInput["regimeTributario"]; label: string }
   { value: "SIMPLES_NACIONAL", label: "Simples Nacional" },
 ];
 
+/**
+ * Sentinel usado pelos Selects de responsável DP/Contábil para representar
+ * "sem responsável" (null). Radix UI's `Select.Item` PROÍBE `value=""`
+ * (lança erro em runtime: "A <Select.Item /> must have a value prop that is
+ * not an empty string" — empty string é reservado internamente para limpar
+ * a seleção) — por isso nunca usar string vazia aqui. Este sentinel é
+ * convertido de/para `null` apenas na fronteira do campo (onValueChange/value),
+ * nunca chega ao FormData nem ao schema/Server Action.
+ */
+const SEM_RESPONSAVEL = "__sem_responsavel__";
+
 export type ResponsavelOption = {
   id: string;
   nome: string;
@@ -220,8 +231,10 @@ export function EmpresaForm({
                   <FormItem>
                     <FormLabel>Responsável DP</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value ?? ""}
+                      onValueChange={(value) =>
+                        field.onChange(value === SEM_RESPONSAVEL ? null : value)
+                      }
+                      value={field.value ?? SEM_RESPONSAVEL}
                       disabled={!isDono}
                     >
                       <FormControl>
@@ -230,7 +243,7 @@ export function EmpresaForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Sem responsável</SelectItem>
+                        <SelectItem value={SEM_RESPONSAVEL}>Sem responsável</SelectItem>
                         {responsaveisDp.map((responsavel) => (
                           <SelectItem key={responsavel.id} value={responsavel.id}>
                             {responsavel.nome}
@@ -250,8 +263,10 @@ export function EmpresaForm({
                   <FormItem>
                     <FormLabel>Responsável Contábil</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value ?? ""}
+                      onValueChange={(value) =>
+                        field.onChange(value === SEM_RESPONSAVEL ? null : value)
+                      }
+                      value={field.value ?? SEM_RESPONSAVEL}
                       disabled={!isDono}
                     >
                       <FormControl>
@@ -260,7 +275,7 @@ export function EmpresaForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Sem responsável</SelectItem>
+                        <SelectItem value={SEM_RESPONSAVEL}>Sem responsável</SelectItem>
                         {responsaveisContabil.map((responsavel) => (
                           <SelectItem key={responsavel.id} value={responsavel.id}>
                             {responsavel.nome}
