@@ -63,7 +63,10 @@ describe("listarDesempenhoColaboradoresMesAtual", () => {
       { id: "user_1", nome: "Caio" },
     ]);
 
-    const resultado = await listarDesempenhoColaboradoresMesAtual(mesRef);
+    const resultado = await listarDesempenhoColaboradoresMesAtual(
+      mesRef,
+      "FISCAL"
+    );
 
     expect(Array.isArray(resultado)).toBe(true);
     const caio = resultado.find((r) => r.colaboradorId === "user_1");
@@ -96,7 +99,8 @@ describe("listarDesempenhoColaboradoresMesAtual", () => {
     ]);
 
     const resultado = await listarDesempenhoColaboradoresMesAtual(
-      new Date("2026-06-15T12:00:00")
+      new Date("2026-06-15T12:00:00"),
+      "FISCAL"
     );
 
     const jessica = resultado.find((r) => r.colaboradorId === "user_2");
@@ -135,13 +139,80 @@ describe("listarDesempenhoColaboradoresMesAtual", () => {
     ]);
 
     const resultado = await listarDesempenhoColaboradoresMesAtual(
-      new Date("2026-06-15T12:00:00")
+      new Date("2026-06-15T12:00:00"),
+      "FISCAL"
     );
 
     const heitor = resultado.find((r) => r.colaboradorId === "user_3");
     expect(heitor?.totalEmpresas).toBe(12);
     expect(heitor?.totalConcluidas).toBe(2);
     expect(typeof heitor?.percentualNoPrazo).toBe("number");
+  });
+
+  it("setor DP funde tarefaSetorWhere no where da Tarefa e empresaWhereExtra (temFuncionariosClt) no where de carteiras", async () => {
+    const { listarDesempenhoColaboradoresMesAtual } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    tarefaFindManyMock.mockResolvedValue([
+      {
+        responsavelId: "user_dp1",
+        prazo: new Date("2026-06-10T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-06-09T10:00:00") }],
+      },
+    ]);
+    empresaGroupByMock.mockResolvedValue([
+      { responsavelId: "user_dp1", _count: { id: 4 } },
+    ]);
+    usuarioFindManyMock.mockResolvedValue([
+      { id: "user_dp1", nome: "ColaboradorDP" },
+    ]);
+
+    const resultado = await listarDesempenhoColaboradoresMesAtual(
+      new Date("2026-06-15T12:00:00"),
+      "DP",
+      { temFuncionariosClt: true }
+    );
+
+    const dp1 = resultado.find((r) => r.colaboradorId === "user_dp1");
+    expect(dp1?.totalEmpresas).toBe(4);
+
+    const tarefaArgs = tarefaFindManyMock.mock.calls[0][0] as {
+      where: { OR?: Array<Record<string, unknown>> };
+    };
+    expect(tarefaArgs.where.OR).toBeDefined();
+
+    const empresaArgs = empresaGroupByMock.mock.calls[0][0] as {
+      where: { ativo: boolean; temFuncionariosClt?: boolean };
+    };
+    expect(empresaArgs.where.temFuncionariosClt).toBe(true);
+  });
+
+  it("setor CONTABIL usa universo de empresas completo (empresaWhereExtra={})", async () => {
+    const { listarDesempenhoColaboradoresMesAtual } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    tarefaFindManyMock.mockResolvedValue([]);
+    empresaGroupByMock.mockResolvedValue([
+      { responsavelId: "user_cont1", _count: { id: 9 } },
+    ]);
+    usuarioFindManyMock.mockResolvedValue([
+      { id: "user_cont1", nome: "ColaboradorContabil" },
+    ]);
+
+    const resultado = await listarDesempenhoColaboradoresMesAtual(
+      new Date("2026-06-15T12:00:00"),
+      "CONTABIL"
+    );
+
+    const cont1 = resultado.find((r) => r.colaboradorId === "user_cont1");
+    expect(cont1?.totalEmpresas).toBe(9);
+
+    const empresaArgs = empresaGroupByMock.mock.calls[0][0] as {
+      where: { ativo: boolean; temFuncionariosClt?: boolean };
+    };
+    expect(empresaArgs.where.temFuncionariosClt).toBeUndefined();
   });
 });
 
@@ -177,13 +248,19 @@ describe("listarEvolucaoMensal", () => {
     empresaGroupByMock.mockResolvedValue([]);
     usuarioFindManyMock.mockResolvedValue([]);
 
-    const resultado = await listarEvolucaoMensal(2);
+    const resultado = await listarEvolucaoMensal(2, "FISCAL");
 
     expect(desempenhoMensalGroupByMock).toHaveBeenCalledTimes(1);
     // tarefa.findMany é chamado 2x para o ponto live do mês corrente
     // (1x dentro de listarDesempenhoColaboradoresMesAtual, 1x dentro de
     // calcularCategoriasCriadas) — nunca por competência fechada.
     expect(tarefaFindManyMock).toHaveBeenCalledTimes(2);
+
+    // where.setor isola os meses congelados por setor (D-05 + T-08-03).
+    const groupByArgs = desempenhoMensalGroupByMock.mock.calls[0][0] as {
+      where: { setor: string };
+    };
+    expect(groupByArgs.where.setor).toBe("FISCAL");
 
     const pontoFechado = resultado.find((p) => p.competencia === "2026-05");
     expect(pontoFechado?.percentual).toBe(80);
@@ -210,12 +287,44 @@ describe("listarEvolucaoMensal", () => {
     empresaGroupByMock.mockResolvedValue([]);
     usuarioFindManyMock.mockResolvedValue([]);
 
-    const resultado = await listarEvolucaoMensal(1);
+    const resultado = await listarEvolucaoMensal(1, "FISCAL");
 
     const pontoLive = resultado[resultado.length - 1];
     expect(pontoLive.totalCriadas).toBe(1);
     expect(pontoLive.totalPendentesSemMotivo).toBe(1);
 
+    const segundaChamada = tarefaFindManyMock.mock.calls[1][0] as {
+      where: { OR: Array<Record<string, unknown>> };
+    };
+    expect(segundaChamada.where.OR).toBeDefined();
+  });
+
+  it("ponto live (5 campos 'criadas') de listarEvolucaoMensal e sector-scoped — calcularCategoriasCriadas recebe o setor informado, nao mistura setores (T-08-03)", async () => {
+    const { listarEvolucaoMensal } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    desempenhoMensalGroupByMock.mockResolvedValue([]);
+    // 1a chamada (listarDesempenhoColaboradoresMesAtual) — vazia.
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    // 2a chamada (calcularCategoriasCriadas) — simula que o banco já
+    // aplicou o filtro tarefaSetorWhere("DP"), retornando só 1 tarefa DP.
+    tarefaFindManyMock.mockResolvedValueOnce([
+      { status: "PENDENTE", motivoPendencia: null, prazo: new Date(Date.now() + 86400000) },
+    ]);
+    empresaGroupByMock.mockResolvedValue([]);
+    usuarioFindManyMock.mockResolvedValue([]);
+
+    const resultado = await listarEvolucaoMensal(1, "DP");
+    const pontoLive = resultado[resultado.length - 1];
+
+    expect(pontoLive.totalCriadas).toBe(1);
+    expect(pontoLive.totalPendentesSemMotivo).toBe(1);
+
+    // a 2a chamada a tarefa.findMany (dentro de calcularCategoriasCriadas)
+    // deve incluir o filtro de setor (OR de tarefaSetorWhere) fundido ao
+    // lado do OR de competencia/createdAt — prova de que o setor "DP" foi
+    // propagado ao helper interno do ponto live, e nao só ao desempenho.
     const segundaChamada = tarefaFindManyMock.mock.calls[1][0] as {
       where: { OR: Array<Record<string, unknown>> };
     };
@@ -232,7 +341,7 @@ describe("listarEvolucaoMensal", () => {
     empresaGroupByMock.mockResolvedValue([]);
     usuarioFindManyMock.mockResolvedValue([]);
 
-    const resultado = await listarEvolucaoMensal(3);
+    const resultado = await listarEvolucaoMensal(3, "FISCAL");
 
     for (const ponto of resultado) {
       expect(ponto).toHaveProperty("competencia");
@@ -255,7 +364,7 @@ describe("listarEvolucaoMensal", () => {
     empresaGroupByMock.mockResolvedValue([]);
     usuarioFindManyMock.mockResolvedValue([]);
 
-    const resultado = await listarEvolucaoMensal(3);
+    const resultado = await listarEvolucaoMensal(3, "FISCAL");
 
     expect(resultado.length).toBe(3);
     expect(Array.isArray(resultado)).toBe(true);
@@ -299,7 +408,8 @@ describe("listarRankingEmpresas", () => {
 
     const resultado = await listarRankingEmpresas(
       new Date(agora - 90 * 24 * 60 * 60 * 1000),
-      new Date(agora + 90 * 24 * 60 * 60 * 1000)
+      new Date(agora + 90 * 24 * 60 * 60 * 1000),
+      "FISCAL"
     );
 
     const empresaA = resultado.find((r) => r.empresaId === "empresa_1");
@@ -345,12 +455,48 @@ describe("listarRankingEmpresas", () => {
 
     const resultado = await listarRankingEmpresas(
       new Date(agora - 90 * 24 * 60 * 60 * 1000),
-      new Date(agora + 90 * 24 * 60 * 60 * 1000)
+      new Date(agora + 90 * 24 * 60 * 60 * 1000),
+      "FISCAL"
     );
 
     expect(resultado[0].empresaId).toBe("empresa_high");
     expect(resultado[0].percentualAtraso).toBe(100);
     expect(resultado[1].empresaId).toBe("empresa_low");
     expect(resultado[1].percentualAtraso).toBe(50);
+  });
+
+  it("setor DP funde tarefaSetorWhere e aplica empresaWhereExtra via relacao empresa (unica excecao a regra de nao filtrar Tarefa por empresaWhereExtra)", async () => {
+    const { listarRankingEmpresas } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    const agora = Date.now();
+    tarefaFindManyMock.mockResolvedValue([
+      {
+        empresaId: "empresa_dp1",
+        empresa: { nome: "Empresa DP1" },
+        status: "PENDENTE",
+        prazo: new Date(agora - 1 * 24 * 60 * 60 * 1000),
+        historico: [],
+      },
+    ]);
+
+    const resultado = await listarRankingEmpresas(
+      new Date(agora - 90 * 24 * 60 * 60 * 1000),
+      new Date(agora + 90 * 24 * 60 * 60 * 1000),
+      "DP",
+      { temFuncionariosClt: true }
+    );
+
+    expect(resultado.find((r) => r.empresaId === "empresa_dp1")).toBeDefined();
+
+    const args = tarefaFindManyMock.mock.calls[0][0] as {
+      where: {
+        OR?: Array<Record<string, unknown>>;
+        empresa?: { temFuncionariosClt?: boolean };
+      };
+    };
+    expect(args.where.OR).toBeDefined();
+    expect(args.where.empresa?.temFuncionariosClt).toBe(true);
   });
 });

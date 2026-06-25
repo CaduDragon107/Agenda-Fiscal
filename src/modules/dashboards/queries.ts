@@ -1,6 +1,8 @@
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
+import type { Setor, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { competenciaAtual } from "@/lib/competencia";
+import { tarefaSetorWhere } from "@/lib/tipo-obrigacao-setor";
 
 /**
  * src/modules/dashboards/queries.ts
@@ -44,18 +46,24 @@ type DesempenhoColaborador = {
  * Maps não atravessam o boundary Server→Client (Plan 04-04/04-05).
  */
 export async function listarDesempenhoColaboradoresMesAtual(
-  mes: Date
+  mes: Date,
+  setor: Setor,
+  empresaWhereExtra: Prisma.EmpresaWhereInput = {}
 ): Promise<DesempenhoColaborador[]> {
   const inicio = startOfMonth(mes);
   const fim = endOfMonth(mes);
 
   // 1 query: todas as CONCLUIDA cujo concluidoEm cai no range do mês — mesmo
   // critério de população do snapshot da Plan 04-02 (não filtra por
-  // Tarefa.competencia, incluindo avulsas).
+  // Tarefa.competencia, incluindo avulsas). Filtro de setor via
+  // tarefaSetorWhere (T-08-03) — NUNCA aplicar empresaWhereExtra aqui
+  // (Pitfall 3 — seria estruturalmente redundante, o filtro de universo de
+  // empresas pertence à query de carteiras abaixo).
   const concluidas = await db.tarefa.findMany({
     where: {
       status: "CONCLUIDA",
       historico: { some: { concluidoEm: { gte: inicio, lte: fim } } },
+      ...tarefaSetorWhere(setor),
     },
     select: {
       responsavelId: true,
@@ -84,10 +92,12 @@ export async function listarDesempenhoColaboradoresMesAtual(
     porColaborador.set(t.responsavelId, atual);
   }
 
-  // contexto D-03: tamanho de carteira (nº de empresas ativas) por colaborador
+  // contexto D-03: tamanho de carteira (nº de empresas ativas) por
+  // colaborador. empresaWhereExtra (ex.: { temFuncionariosClt: true } para
+  // DP, D-02) é load-bearing AQUI — único lugar onde se aplica (Pitfall 3).
   const carteiras = await db.empresa.groupBy({
     by: ["responsavelId"],
-    where: { ativo: true },
+    where: { ativo: true, ...empresaWhereExtra },
     _count: { id: true },
   });
   const carteiraPorColaborador = new Map(
@@ -154,18 +164,24 @@ type CategoriasCriadas = {
  */
 async function calcularCategoriasCriadas(
   mes: Date,
-  competencia: string
+  competencia: string,
+  setor: Setor
 ): Promise<CategoriasCriadas> {
   const inicio = startOfMonth(mes);
   const fim = endOfMonth(mes);
   const agora = new Date();
 
+  // Filtro de setor (...tarefaSetorWhere(setor)) no top-level do where, ao
+  // lado do OR de competencia/createdAt — AND implícito entre os dois
+  // (T-08-03). Sem isso, os 5 campos "criadas" do ponto live de
+  // listarEvolucaoMensal misturariam tarefas de todos os setores.
   const tarefas = await db.tarefa.findMany({
     where: {
       OR: [
         { competencia },
         { competencia: null, createdAt: { gte: inicio, lte: fim } },
       ],
+      ...tarefaSetorWhere(setor),
     },
     select: {
       status: true,
@@ -212,7 +228,9 @@ async function calcularCategoriasCriadas(
  * Question 2 do RESEARCH.md, resolvida como "últimos 3 meses".
  */
 export async function listarEvolucaoMensal(
-  quantidadeMeses = 3
+  quantidadeMeses = 3,
+  setor: Setor,
+  empresaWhereExtra: Prisma.EmpresaWhereInput = {}
 ): Promise<PontoEvolucao[]> {
   const mesAtual = competenciaAtual();
   const competenciasFechadas = Array.from(
@@ -222,12 +240,13 @@ export async function listarEvolucaoMensal(
 
   // competências fechadas: UMA query agregada em db.desempenhoMensal — NUNCA
   // db.tarefa para essas competências (D-05). _sum inclui os 5 campos novos
-  // da populacao "criadas" (quick task 260622-lty, DASH-02).
+  // da populacao "criadas" (quick task 260622-lty, DASH-02). where.setor
+  // isola os meses congelados por setor (D-05 + T-08-03).
   const snapshots =
     competenciasFechadas.length > 0
       ? await db.desempenhoMensal.groupBy({
           by: ["competencia"],
-          where: { competencia: { in: competenciasFechadas } },
+          where: { competencia: { in: competenciasFechadas }, setor },
           _sum: {
             totalConcluidas: true,
             concluidasNoPrazo: true,
@@ -260,8 +279,16 @@ export async function listarEvolucaoMensal(
   // 1 ponto live: mês corrente, NUNCA persistido (D-05), mesmo critério de
   // população do snapshot (concluidoEm-no-range) para `percentual`, e mesma
   // populacao "criadas" (calcularCategoriasCriadas) para os 5 novos campos —
-  // garantindo continuidade live→frozen sem degrau no boundary.
-  const colaboradores = await listarDesempenhoColaboradoresMesAtual(new Date());
+  // garantindo continuidade live→frozen sem degrau no boundary. AMBOS os
+  // helpers do ponto live recebem `setor` (e o desempenho recebe também
+  // empresaWhereExtra) para que o ponto corrente fique totalmente
+  // sector-scoped (T-08-03) — sem isso só metade do ponto live ficaria
+  // isolada por setor.
+  const colaboradores = await listarDesempenhoColaboradoresMesAtual(
+    new Date(),
+    setor,
+    empresaWhereExtra
+  );
   const totalAtual = colaboradores.reduce(
     (acc, c) => ({
       total: acc.total + c.totalConcluidas,
@@ -273,7 +300,8 @@ export async function listarEvolucaoMensal(
   );
   const categoriasCriadasAtual = await calcularCategoriasCriadas(
     new Date(),
-    mesAtual
+    mesAtual,
+    setor
   );
   const pontoAtual: PontoEvolucao = {
     competencia: mesAtual,
@@ -311,11 +339,20 @@ type RankingEmpresa = {
  */
 export async function listarRankingEmpresas(
   periodoInicio: Date,
-  periodoFim: Date
+  periodoFim: Date,
+  setor: Setor,
+  empresaWhereExtra: Prisma.EmpresaWhereInput = {}
 ): Promise<RankingEmpresa[]> {
+  // Única exceção documentada à regra "nunca filtrar Tarefa por
+  // empresaWhereExtra" (08-PATTERNS.md): o universo do ranking É o universo
+  // de empresas, e esta função não tem uma query db.empresa separada para
+  // carregar o filtro — por isso empresaWhereExtra é aplicado via relação
+  // `empresa: { ...empresaWhereExtra }` no mesmo where da Tarefa.
   const tarefas = await db.tarefa.findMany({
     where: {
       prazo: { gte: periodoInicio, lte: periodoFim },
+      ...tarefaSetorWhere(setor),
+      empresa: { ...empresaWhereExtra },
     },
     select: {
       empresaId: true,
