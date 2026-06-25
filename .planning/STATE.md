@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 ## Current Position
 
 Phase: 08 (dashboards-multi-setor-dp-e-cont-bil) — EXECUTING
-Plan: 2 of 3
-Status: Executing Phase 08
-Last activity: 2026-06-25 -- Plans 08-01 and 08-02 complete
+Plan: 3 of 3 (Tasks 1-2 complete, Task 3 checkpoint:human-verify pending)
+Status: Executing Phase 08 — awaiting dono visual verification of /dashboards multi-setor UI
+Last activity: 2026-06-25 -- Plan 08-03 Tasks 1-2 complete (commits 3a6a4ac, fa823a7); Task 3 blocking human-verify checkpoint awaiting approval
 
 ## Performance Metrics
 
@@ -136,7 +136,8 @@ None yet.
 - [Phase 5] ~~Autorização setor-aware (`withVisibilityScope`/`withTarefaScope`) precisa de novos fixtures multi-setor E da suite de IDOR existente passando inalterada como regression gate, não substituída~~ — RESOLVIDO em 05-02 (3 novas factories de fixture, 4 arquivos de regressão IDOR/visibilidade intactos, 106→115 testes verdes).
 - [Phase 6] NOVO — `confirmarImportacao` (src/app/(app)/empresas/importar/actions.ts) grava `Empresa` direto via `db.empresa.create`, fora de `criarEmpresa`/`editarEmpresa` — desde 05-03 essas duas Server Actions gravam a linha FISCAL do junction em lockstep com `responsavelId`, mas o wizard de importação NÃO foi estendido (fora do escopo de 05-03) e continua criando empresas sem a linha `EmpresaResponsavelSetor`. Hoje é inofensivo (visibilidade FISCAL ainda lê `responsavelId` direto, Plan 05-02). Vira bug real no momento em que `responsavelId` for retirado (Phase 6) ou se alguém reimportar uma planilha antes disso — qualquer empresa importada nesse intervalo terá 0 linhas no junction table. Resolver junto com a retirada de `responsavelId`, ou antes da próxima reimportação em lote.
 - [Phase 7] NOVO — Periodicidade anual (ECD/ECF/DEFIS) precisa de formato de competência explícito (ex. "YYYY") e testes simulando 12 ticks mensais do cron ao longo de um ano, verificando exatamente 1 tarefa anual por empresa por ano (ver research/PITFALLS.md Pitfall B2).
-- [Phase 8] NOVO — Dashboards de DP/Contábil devem reaproveitar o módulo de queries parametrizado por setor já usado no Fiscal, nunca duplicar em módulos separados; deletar o módulo órfão `src/modules/dashboard/` (singular) durante esta fase (ver research/PITFALLS.md Pitfall B4).
+- [Phase 8] ~~Dashboards de DP/Contábil devem reaproveitar o módulo de queries parametrizado por setor já usado no Fiscal, nunca duplicar em módulos separados; deletar o módulo órfão `src/modules/dashboard/` (singular) durante esta fase~~ — RESOLVIDO em 08-02 (queries parametrizadas) + 08-03 (órfão já estava deletado desde commit c453704 pré-Wave 1; confirmado zero imports remanescentes).
+- [Phase 8] NOVO — Plan 08-03 Task 3 (`checkpoint:human-verify`, gate="blocking") aguardando o dono confirmar visualmente as 3 abas (Fiscal/DP/Contábil) em `/dashboards` contra 08-UI-SPEC.md — ver `08-03-SUMMARY.md` seção "Checkpoint Status" para os passos de verificação pendentes.
 
 ### Quick Tasks Completed
 
@@ -163,5 +164,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-06-25T10:21:01.021Z
-Stopped at: Phase 8 UI-SPEC approved
-Resume file: .planning/phases/08-dashboards-multi-setor-dp-e-cont-bil/08-UI-SPEC.md
+Stopped at: Plan 08-03 Tasks 1-2 complete, Task 3 checkpoint:human-verify pending
+Resume file: .planning/phases/08-dashboards-multi-setor-dp-e-cont-bil/08-03-SUMMARY.md
