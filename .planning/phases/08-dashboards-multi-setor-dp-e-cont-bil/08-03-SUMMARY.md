@@ -41,8 +41,8 @@ completed: 2026-06-25
 
 ## Performance
 
-- **Duration:** ~25 min
-- **Tasks:** 2 of 3 auto tasks completed; Task 3 is a `checkpoint:human-verify` awaiting the dono's visual sign-off
+- **Duration:** ~30 min
+- **Tasks:** 3 of 3 completed — Task 3 (`checkpoint:human-verify`) approved by the dono
 - **Files modified:** 3 (1 new component, 2 modified — guard.ts, page.tsx)
 
 ## Accomplishments
@@ -94,19 +94,19 @@ None — no new packages, no environment variables, no external service configur
 
 ## Checkpoint Status
 
-**Task 3 (`checkpoint:human-verify`, gate="blocking") has NOT been executed by this run.** All automatable verification ahead of the checkpoint has been completed:
+**Task 3 (`checkpoint:human-verify`, gate="blocking") approved by the dono.** Automated verification ahead of the checkpoint:
 
 - `npx tsc --noEmit` — passes clean
 - `npx vitest run tests/dashboards.rbac.test.ts` — 2/2 pass (T-4-01 regression gate intact)
 - `npx vitest run` (full suite) — 169/169 tests pass across 29 files
 
-The dono still needs to perform the visual/UX verification described in the plan's `how-to-verify` steps (log in as DONO, visit `/dashboards`, click through Fiscal/DP/Contábil tabs, confirm sector-aware empty-state copy and chart palette, optionally confirm COLABORADOR still gets 404). This SUMMARY documents Tasks 1-2 as complete; Task 3 remains open pending human approval — a fresh agent will resume from this checkpoint per the structured checkpoint protocol.
+The dono ran through `npm run dev`, logged in as DONO, and confirmed `/dashboards` renders 3 tabs (Fiscal default), all cards load in each tab, and sector-aware empty-state copy is correct. Approved directly in conversation with the orchestrator.
 
 ## Next Phase Readiness
 
-- Once the dono approves Task 3's visual verification, Phase 8 (dashboards-multi-setor-dp-e-cont-bil) is fully complete — all 3 plans (08-01, 08-02, 08-03) done, all 6 requirements (DP-06/07/08, CONT-07/08/09) satisfied.
-- No outstanding code work remains in this phase; the only remaining step is the human checkpoint sign-off.
+- Phase 8 (dashboards-multi-setor-dp-e-cont-bil) is fully complete — all 3 plans (08-01, 08-02, 08-03) done, all 6 requirements (DP-06/07/08, CONT-07/08/09) satisfied.
+- No outstanding code work remains in this phase.
 
 ---
 *Phase: 08-dashboards-multi-setor-dp-e-cont-bil*
-*Completed: 2026-06-25 (Tasks 1-2; Task 3 checkpoint pending)*
+*Completed: 2026-06-25*

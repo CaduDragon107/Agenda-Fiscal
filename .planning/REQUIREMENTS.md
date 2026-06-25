@@ -62,9 +62,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DP-03**: Geração automática mensal de INSS
 - [x] **DP-04**: Geração automática mensal de eventos periódicos de eSocial
 - [x] **DP-05**: Tarefas avulsas atribuíveis aos colaboradores de DP (reuso do mecanismo existente)
-- [ ] **DP-06**: Dashboard de desempenho por colaborador DP (no prazo vs atrasado)
-- [ ] **DP-07**: Dashboard de evolução mensal DP
-- [ ] **DP-08**: Dashboard de ranking de empresas problemáticas no DP
+- [x] **DP-06**: Dashboard de desempenho por colaborador DP (no prazo vs atrasado)
+- [x] **DP-07**: Dashboard de evolução mensal DP
+- [x] **DP-08**: Dashboard de ranking de empresas problemáticas no DP
 
 ### Contábil
 
@@ -74,9 +74,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CONT-04**: Geração automática anual de ECF (Escrituração Contábil Fiscal)
 - [x] **CONT-05**: Geração automática anual de DEFIS para empresas Simples Nacional
 - [x] **CONT-06**: Tarefas avulsas atribuíveis aos colaboradores Contábil (reuso do mecanismo existente)
-- [ ] **CONT-07**: Dashboard de desempenho por colaborador Contábil (no prazo vs atrasado)
-- [ ] **CONT-08**: Dashboard de evolução mensal Contábil
-- [ ] **CONT-09**: Dashboard de ranking de empresas problemáticas no Contábil
+- [x] **CONT-07**: Dashboard de desempenho por colaborador Contábil (no prazo vs atrasado)
+- [x] **CONT-08**: Dashboard de evolução mensal Contábil
+- [x] **CONT-09**: Dashboard de ranking de empresas problemáticas no Contábil
 
 ## Future Requirements (v2.x / v3+)
 
@@ -145,18 +145,18 @@ Explicitly excluded. Documented to prevent scope creep.
 | DP-03 | Phase 6 | Complete |
 | DP-04 | Phase 6 | Complete |
 | DP-05 | Phase 6 | Complete |
-| DP-06 | Phase 8 | Pending |
-| DP-07 | Phase 8 | Pending |
-| DP-08 | Phase 8 | Pending |
+| DP-06 | Phase 8 | Complete |
+| DP-07 | Phase 8 | Complete |
+| DP-08 | Phase 8 | Complete |
 | CONT-01 | Phase 7 | Complete |
 | CONT-02 | Phase 7 | Complete |
 | CONT-03 | Phase 7 | Complete |
 | CONT-04 | Phase 7 | Complete |
 | CONT-05 | Phase 7 | Complete |
 | CONT-06 | Phase 7 | Complete |
-| CONT-07 | Phase 8 | Pending |
-| CONT-08 | Phase 8 | Pending |
-| CONT-09 | Phase 8 | Pending |
+| CONT-07 | Phase 8 | Complete |
+| CONT-08 | Phase 8 | Complete |
+| CONT-09 | Phase 8 | Complete |
 
 **Coverage:**
 

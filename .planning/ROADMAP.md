@@ -23,7 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Fundação Multi-Setor — Schema, Autorização e Empresas** - Empresa passa a ter 1 responsável por setor (Fiscal/DP/Contábil) com backfill verificado dos 197 registros existentes, autorização passa a ser setor-aware sem regressão no Fiscal, e o cadastro de empresas expõe os 3 responsáveis e o campo "tem funcionários CLT?" (completed 2026-06-24)
 - [x] **Phase 6: Motor de Geração — Departamento Pessoal** - Geração automática mensal de Folha de Pagamento, FGTS, INSS e eventos de eSocial para empresas com funcionários CLT, mais tarefas avulsas para a equipe de DP (completed 2026-06-24)
 - [x] **Phase 7: Motor de Geração — Contábil (mensal e anual)** - Geração automática mensal de Escrituração/Balancete para todas as empresas, mais a primeira periodicidade anual do sistema (ECD, ECF, DEFIS), com tarefas avulsas para a equipe Contábil (completed 2026-06-24)
-- [ ] **Phase 8: Dashboards Multi-Setor — DP e Contábil** - Dono visualiza, em páginas próprias por setor, o desempenho comparativo dos colaboradores de DP e Contábil, a evolução mensal e o ranking de empresas problemáticas, com dados reais de geração já em produção
+- [x] **Phase 8: Dashboards Multi-Setor — DP e Contábil** - Dono visualiza, em páginas próprias por setor, o desempenho comparativo dos colaboradores de DP e Contábil, a evolução mensal e o ranking de empresas problemáticas, com dados reais de geração já em produção (completed 2026-06-25)
 
 ## Phase Details
 
@@ -130,7 +130,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 3** *(blocked on Plan 08-02)*
 
-- [ ] 08-03-PLAN.md — UI: abas Fiscal/DP/Contábil, EmptyState setor-aware, deleção do módulo órfão singular + checkpoint visual
+- [x] 08-03-PLAN.md — UI: abas Fiscal/DP/Contábil, EmptyState setor-aware, deleção do módulo órfão singular + checkpoint visual
 
 ## Progress
 
@@ -144,4 +144,4 @@ Phases execute in numeric order: 5 → 6 → 7 → 8
 | 5. Fundação Multi-Setor — Schema, Autorização e Empresas | 4/4 | Complete   | 2026-06-24 |
 | 6. Motor de Geração — Departamento Pessoal | 3/3 | Complete   | 2026-06-24 |
 | 7. Motor de Geração — Contábil (mensal e anual) | 3/3 | Complete   | 2026-06-24 |
-| 8. Dashboards Multi-Setor — DP e Contábil | 2/3 | In Progress|  |
+| 8. Dashboards Multi-Setor — DP e Contábil | 3/3 | Complete   | 2026-06-25 |
