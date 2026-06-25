@@ -23,6 +23,14 @@ findings:
   info: 2
   total: 7
 status: issues_found
+resolution:
+  CR-01: fixed (commit d885854 — snapshot.ts aggregation now partitioned by (colaboradorId, setor), 2 regression tests added)
+  CR-02: not fixed (assessed as non-issue — script is a one-time migration verification tied to this run's pre-count, not a recurring idempotent check, mirroring other one-off backfill scripts in this project)
+  WR-01: not fixed (deferred)
+  WR-02: not fixed (deferred)
+  WR-03: not fixed (deferred)
+  IN-01: not fixed (deferred)
+  IN-02: not fixed (deferred)
 ---
 
 # Phase 8: Code Review Report
@@ -174,6 +182,14 @@ const totalAtual = colaboradores.reduce(
 **File:** `src/modules/dashboards/queries.ts:231`
 **Issue:** The exported function's default parameter `quantidadeMeses = 3` can never actually be exercised by the application, because the sole caller (`guard.ts:60`) always passes an explicit value (parsed from `?meses=` or defaulted to `6`). This isn't a bug, but the discrepancy between the two defaults (3 here vs. 6 in guard.ts) is a maintenance trap — a future reader might reasonably assume the function's default reflects production behavior when it does not.
 **Fix:** Either remove the default (force callers to be explicit) or align it with the actual production default (6) to avoid confusion.
+
+---
+
+## Resolution
+
+**CR-01 — fixed** (commit `d885854`). `calcularSnapshotMensal` now selects `tipoObrigacao` on both task-population queries and derives each task's sector via a `setorDaTarefa()` helper that mirrors `tarefaSetorWhere`'s classification (recorrentes by `tipoObrigacao`, avulsas by the colaborador's own `Usuario.setor` — no extra join, since `responsavel.setor` for a task IS that colaborador's `Usuario.setor`). Aggregation maps are now keyed by `(colaboradorId, setor)` composite instead of `colaboradorId` alone, so a colaborador with cross-sector tasks now produces one row per sector instead of one contaminated row. 2 regression tests added proving isolation; all 32 pre-existing snapshot/geracao tests pass unmodified.
+
+**CR-02, WR-01, WR-02, WR-03, IN-01, IN-02 — not fixed.** CR-02 was assessed and is not considered an issue (the script is a one-time migration verification script tied to the actual pre-count observed during Plan 08-01's migration, not a reusable idempotent check — consistent with this project's other one-off backfill scripts). The remaining Warnings/Info findings are real but lower-severity and deferred as known follow-ups; they do not block Phase 8 completion.
 
 ---
 
