@@ -48,7 +48,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Fundação Multi-Setor
 
 - [x] **SETOR-01**: Empresa passa a ter 1 responsável por setor (fiscal/DP/contábil), substituindo o responsável único atual — migração de schema com backfill verificado das 197 empresas existentes para o setor Fiscal
-- [ ] **SETOR-02**: Usuário ganha campo Setor (FISCAL/DP/CONTABIL); sistema é populado com 7 colaboradores placeholder (4 DP + 3 Contábil), renomeáveis depois
+- [x] **SETOR-02**: Usuário ganha campo Setor (FISCAL/DP/CONTABIL); sistema é populado com 7 colaboradores placeholder (4 DP + 3 Contábil), renomeáveis depois
 - [x] **SETOR-03**: Seletores de atribuição de tarefa avulsa e responsável de empresa filtram colaboradores pelo setor relevante
 
 ### Empresas
@@ -73,7 +73,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CONT-03**: Geração automática anual de ECD (Escrituração Contábil Digital) para empresas Lucro Real
 - [x] **CONT-04**: Geração automática anual de ECF (Escrituração Contábil Fiscal)
 - [x] **CONT-05**: Geração automática anual de DEFIS para empresas Simples Nacional
-- [ ] **CONT-06**: Tarefas avulsas atribuíveis aos colaboradores Contábil (reuso do mecanismo existente)
+- [x] **CONT-06**: Tarefas avulsas atribuíveis aos colaboradores Contábil (reuso do mecanismo existente)
 - [ ] **CONT-07**: Dashboard de desempenho por colaborador Contábil (no prazo vs atrasado)
 - [ ] **CONT-08**: Dashboard de evolução mensal Contábil
 - [ ] **CONT-09**: Dashboard de ranking de empresas problemáticas no Contábil
@@ -137,7 +137,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | DASH-03 | Phase 4 | Complete |
 | INFRA-01 | Phase 1 | Complete |
 | SETOR-01 | Phase 5 | Complete |
-| SETOR-02 | Phase 5 | Pending |
+| SETOR-02 | Phase 5 | Complete |
 | SETOR-03 | Phase 5 | Complete |
 | EMPR-03 | Phase 5 | Complete |
 | DP-01 | Phase 6 | Complete |
@@ -153,7 +153,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | CONT-03 | Phase 7 | Complete |
 | CONT-04 | Phase 7 | Complete |
 | CONT-05 | Phase 7 | Complete |
-| CONT-06 | Phase 7 | Pending |
+| CONT-06 | Phase 7 | Complete |
 | CONT-07 | Phase 8 | Pending |
 | CONT-08 | Phase 8 | Pending |
 | CONT-09 | Phase 8 | Pending |
