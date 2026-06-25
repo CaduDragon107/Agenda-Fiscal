@@ -2,6 +2,8 @@ import { DesempenhoColaboradoresChart } from "./desempenho-colaboradores-chart";
 import { EvolucaoMensalChart } from "./evolucao-mensal-chart";
 import { RankingEmpresasTable } from "./ranking-empresas-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyState } from "./empty-state";
 import { carregarDadosDashboards } from "./guard";
 
 /**
@@ -17,15 +19,30 @@ import { carregarDadosDashboards } from "./guard";
  * ./guard.ts (arquivo .ts sem JSX) para permitir teste unitário direto sem
  * depender de um pipeline de transformação JSX no Vitest — ver
  * tests/dashboards.rbac.test.ts.
+ *
+ * Multi-setor (Phase 8, Plan 03, D-01): 3 abas (Fiscal/DP/Contábil), cada
+ * uma renderizando o mesmo layout de 3 Cards (SectorDashboard) alimentado
+ * por dados já escopados por setor na camada de queries (Plan 02).
  */
+type Setor = "FISCAL" | "DP" | "CONTABIL";
+
+type DadosSetor = Awaited<ReturnType<typeof carregarDadosDashboards>>[Setor];
+
+const SETORES: readonly Setor[] = ["FISCAL", "DP", "CONTABIL"];
+
+const LABEL_POR_SETOR: Record<Setor, string> = {
+  FISCAL: "Fiscal",
+  DP: "DP",
+  CONTABIL: "Contábil",
+};
+
 export default async function DashboardsPage({
   searchParams,
 }: {
   searchParams?: Promise<{ meses?: string }>;
 }) {
   const params = await searchParams;
-  const { desempenhoColaboradores, evolucaoMensal, rankingEmpresas } =
-    await carregarDadosDashboards(params?.meses);
+  const dados = await carregarDadosDashboards(params?.meses);
 
   return (
     <div className="flex flex-col gap-8 p-6">
@@ -36,13 +53,42 @@ export default async function DashboardsPage({
         </p>
       </div>
 
+      <Tabs defaultValue="FISCAL">
+        <TabsList>
+          {SETORES.map((setor) => (
+            <TabsTrigger key={setor} value={setor}>
+              {LABEL_POR_SETOR[setor]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {SETORES.map((setor) => (
+          <TabsContent key={setor} value={setor}>
+            <SectorDashboard setor={setor} dados={dados[setor]} />
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  );
+}
+
+function SectorDashboard({
+  setor,
+  dados,
+}: {
+  setor: Setor;
+  dados: DadosSetor;
+}) {
+  const { desempenhoColaboradores, evolucaoMensal, rankingEmpresas } = dados;
+
+  return (
+    <div className="flex flex-col gap-8">
       <Card>
         <CardHeader>
           <CardTitle>Desempenho por colaborador</CardTitle>
         </CardHeader>
         <CardContent>
           {desempenhoColaboradores.length === 0 ? (
-            <EmptyState />
+            <EmptyState setor={setor} />
           ) : (
             <DesempenhoColaboradoresChart dados={desempenhoColaboradores} />
           )}
@@ -55,7 +101,7 @@ export default async function DashboardsPage({
         </CardHeader>
         <CardContent>
           {evolucaoMensal.length === 0 ? (
-            <EmptyState />
+            <EmptyState setor={setor} />
           ) : (
             <EvolucaoMensalChart dados={evolucaoMensal} />
           )}
@@ -68,24 +114,12 @@ export default async function DashboardsPage({
         </CardHeader>
         <CardContent>
           {rankingEmpresas.length === 0 ? (
-            <EmptyState />
+            <EmptyState setor={setor} />
           ) : (
             <RankingEmpresasTable dados={rankingEmpresas} />
           )}
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center gap-2 py-16 text-center">
-      <h2 className="text-xl font-semibold">Ainda não há dados suficientes</h2>
-      <p className="max-w-md text-sm text-muted-foreground">
-        Os dashboards são alimentados pelas tarefas concluídas a cada mês.
-        Volte após o fechamento do primeiro mês de operação.
-      </p>
     </div>
   );
 }
