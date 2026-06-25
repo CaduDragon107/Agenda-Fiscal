@@ -1,8 +1,8 @@
 ---
 phase: 07-motor-de-gera-o-cont-bil-mensal-e-anual
 verified: 2026-06-24T16:10:00Z
-status: human_needed
-score: 4/4 roadmap truths verified (code-level); 1 cross-phase scope question and 1 docs-sync gap flagged for human decision
+status: passed
+score: 4/4 roadmap truths verified (code-level); 2 human-decision items resolved 2026-06-25 by the dono (see Resolution section)
 overrides_applied: 0
 gaps: []
 human_verification:
@@ -87,6 +87,15 @@ Not applicable in the UI-rendering sense (no dashboard/component renders this da
 ### Probe Execution
 
 No `scripts/*/tests/probe-*.sh` files found for this phase; none referenced in PLAN/SUMMARY. Skipped — N/A.
+
+### Resolution (2026-06-25, by the dono, at v2.0 milestone close)
+
+Both human-verification items were resolved by the dono and require no code change — only the ROADMAP.md wording was corrected to match actual (and confirmed correct) behavior:
+
+1. **DEFIS due-date formula** — confirmed CORRECT as implemented. "Ano-base" means the fiscal year being reported, not the year of task creation, matching the real Simples Nacional rule (DEFIS due March 31, reporting the prior calendar year's data). The 13-month creation-to-deadline gap is intentional. No fix needed.
+2. **Colleague-assignment wording** — confirmed EXPECTED behavior. A COLABORADOR may only self-assign avulsa tasks; only the DONO may assign a task to a different colaborador. This is the intended authorization model across all sectors (Fiscal, DP, Contábil), not a defect. ROADMAP.md success criterion #4 (and Phase 6's equivalent #5) reworded to state this precisely instead of the ambiguous "ou a outro colega" phrasing.
+
+Status upgraded from `human_needed` to `passed` — no remaining gaps.
 
 ### Requirements Coverage
 

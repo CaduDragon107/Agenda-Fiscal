@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 8 complete
-last_updated: "2026-06-25T12:00:00.000Z"
-last_activity: 2026-06-25 -- Phase 08 complete (08-01, 08-02, 08-03)
+status: Awaiting next milestone
+stopped_at: "Plan 08-03 Tasks 1-2 complete, Task 3 checkpoint:human-verify pending"
+last_updated: "2026-06-25T16:54:09.879Z"
+last_activity: 2026-06-25 — Milestone v2.0 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 
 ## Current Position
 
-Phase: 08 (dashboards-multi-setor-dp-e-cont-bil) — COMPLETE
-Plan: 3 of 3 complete
-Status: Phase 08 complete — all 6 requirements (DP-06/07/08, CONT-07/08/09) satisfied
-Last activity: 2026-06-25 -- Plan 08-03 Task 3 (human-verify checkpoint) approved by dono; Phase 8 complete
+Phase: Milestone v2.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-25 — Milestone v2.0 completed and archived
 
 ## Performance Metrics
 
@@ -161,8 +161,25 @@ Items acknowledged and carried forward from previous milestone close:
 |----------|------|--------|-------------|
 | *(none)* | | | |
 
+Items acknowledged at v2.0 milestone close (2026-06-25):
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| quick_task | 260615-ci1-adicionar-toggle-de-modo-escuro-dark-mod | flagged "unknown" by audit-open, but already shipped — see Quick Tasks Completed table (commit f70d98c) | v2.0 close |
+| quick_task | 260615-d0j-corrigir-redirect-pagina-raiz | flagged "unknown" by audit-open, but already shipped — see Quick Tasks Completed table (commit 2c61912) | v2.0 close |
+| quick_task | 260615-jyn-adicionar-logo-marca | flagged "unknown" by audit-open, but already shipped — see Quick Tasks Completed table (commit 878f089) | v2.0 close |
+| quick_task | 260618-kbg-adicionar-campo-de-motivo-de-pendencia-n | flagged "unknown" by audit-open, but already shipped — see Quick Tasks Completed table (commit 54970c1) | v2.0 close |
+| quick_task | 260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t | flagged "unknown" by audit-open, but already shipped — see Quick Tasks Completed table (commit 3bbb2e5) | v2.0 close |
+| quick_task | 260622-lty-trocar-grafico-evolucao-mensal-para-barr | flagged "unknown" by audit-open, but already shipped — see Quick Tasks Completed table (commit c393331) | v2.0 close |
+
+**Note:** All 6 items above are real, shipped, committed work — the `audit-open` tool flags them as "unknown" status because their quick-task `PLAN.md` frontmatter predates a `status:` field convention, not because the work is incomplete. No action needed; recorded here for traceability.
+
 ## Session Continuity
 
 Last session: 2026-06-25T10:21:01.021Z
 Stopped at: Plan 08-03 Tasks 1-2 complete, Task 3 checkpoint:human-verify pending
 Resume file: .planning/phases/08-dashboards-multi-setor-dp-e-cont-bil/08-03-SUMMARY.md
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
