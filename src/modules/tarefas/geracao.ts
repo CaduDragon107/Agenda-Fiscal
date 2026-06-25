@@ -87,7 +87,17 @@ export async function executarGeracaoMensal(competencia: string): Promise<{
   semResponsavelDp: { empresaId: string; nome: string }[];
   semResponsavelContabil: { empresaId: string; nome: string }[];
 }> {
-  return db.$transaction(async (tx) => {
+  // CRÍTICO (fix erro-gerar-tarefas-dono): esta transação encadeia 9-12
+  // round-trips sequenciais de banco (snapshot: 4 queries, empresa ativo,
+  // empresa CLT/DP, empresa Contábil mensal, 0-3 loops de regras anuais,
+  // tarefa.createMany) — volume que cresceu ao longo das fases 06/07/08
+  // (DP, Contábil, snapshot) sem revisar o orçamento de tempo da
+  // transação. O default do Prisma (5000ms) é insuficiente contra um
+  // Postgres Neon (serverless, cold start de 300-500ms + latência de
+  // pooler) quando a base tem 100+ empresas, causando timeout (P2028) na
+  // geração manual — daí o timeout explícito e generoso abaixo.
+  return db.$transaction(
+    async (tx) => {
     // Fecha o snapshot do mes ANTERIOR antes de gerar as tarefas do novo mes
     // (Pitfall 1 — competenciaAnterior, nunca a propria competencia recebida).
     const competenciaAnterior = format(
@@ -264,5 +274,11 @@ export async function executarGeracaoMensal(competencia: string): Promise<{
       semResponsavelDp,
       semResponsavelContabil,
     };
-  });
+    },
+    // 30s: margem generosa para 9-12 round-trips + cold start do Neon
+    // contra ~100-110 empresas. maxWait (tempo de espera por um slot de
+    // conexão livre no pool, default 2000ms) também aumentado por
+    // segurança, já que o pooler do Neon pode estar sob contenção.
+    { timeout: 30000, maxWait: 10000 }
+  );
 }

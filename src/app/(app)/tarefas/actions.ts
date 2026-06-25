@@ -315,7 +315,12 @@ export async function gerarTarefasDoMesAction(
       await executarGeracaoMensal(competenciaResolvida);
     revalidatePath("/tarefas");
     return { ok: true, criadas, puladas, semResponsavelDp, semResponsavelContabil };
-  } catch {
+  } catch (error) {
+    // CRÍTICO (fix erro-gerar-tarefas-dono): logar o erro real antes do
+    // catch genérico — sem isso, qualquer falha (timeout de transação,
+    // erro de conexão, etc.) fica completamente invisível nos logs do
+    // Railway, só aparecendo como o toast genérico no client.
+    console.error("[gerarTarefasDoMesAction] Falha ao gerar tarefas:", error);
     return { ok: false, error: "Erro ao gerar tarefas. Tente novamente." };
   }
 }
