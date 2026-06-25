@@ -54,17 +54,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DP-09 | TBD | Pending |
-| NOTF-01 | TBD | Pending |
-| NOTF-02 | TBD | Pending |
-| NOTF-03 | TBD | Pending |
-| NOTF-04 | TBD | Pending |
+| DP-09 | Phase 9 | Pending |
+| NOTF-01 | Phase 10 | Pending |
+| NOTF-02 | Phase 10 | Pending |
+| NOTF-03 | Phase 10 | Pending |
+| NOTF-04 | Phase 10 | Pending |
 
 **Coverage:**
 - v1 requirements: 5 total
-- Mapped to phases: 0
-- Unmapped: 5 ⚠️ (roadmap pending)
+- Mapped to phases: 5
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-25*
-*Last updated: 2026-06-25 after initial definition*
+*Last updated: 2026-06-25 after roadmap creation (Phases 9-10)*
