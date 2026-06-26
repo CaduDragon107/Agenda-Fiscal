@@ -67,6 +67,7 @@ type EmpresaFormProps = {
     responsavelDpId: string | null;
     responsavelContabilId: string | null;
     temFuncionariosClt: boolean;
+    temEmpregadaDomestica: boolean;
     contatos: string | null;
     particularidades: string | null;
   };
@@ -104,6 +105,7 @@ export function EmpresaForm({
       responsavelDpId: empresa?.responsavelDpId ?? "",
       responsavelContabilId: empresa?.responsavelContabilId ?? "",
       temFuncionariosClt: empresa?.temFuncionariosClt ?? false,
+      temEmpregadaDomestica: empresa?.temEmpregadaDomestica ?? false,
       contatos: empresa?.contatos ?? "",
       particularidades: empresa?.particularidades ?? "",
     },
@@ -120,6 +122,7 @@ export function EmpresaForm({
     formData.set("responsavelDpId", values.responsavelDpId ?? "");
     formData.set("responsavelContabilId", values.responsavelContabilId ?? "");
     formData.set("temFuncionariosClt", String(values.temFuncionariosClt ?? false));
+    formData.set("temEmpregadaDomestica", String(values.temEmpregadaDomestica ?? false));
     formData.set("contatos", values.contatos ?? "");
     formData.set("particularidades", values.particularidades ?? "");
 
@@ -335,6 +338,30 @@ export function EmpresaForm({
                   <p className="text-xs text-muted-foreground">
                     Define se esta empresa recebe automaticamente as obrigações de
                     Folha de Pagamento, FGTS, INSS e eSocial (Fase 6).
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="temEmpregadaDomestica"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(checked) => field.onChange(checked === true)}
+                        aria-label="Tem empregada doméstica?"
+                      />
+                    </FormControl>
+                    <FormLabel className="!mt-0">Tem empregada doméstica?</FormLabel>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Marcação informativa de vínculo de empregada doméstica. Não gera
+                    tarefas automaticamente.
                   </p>
                   <FormMessage />
                 </FormItem>

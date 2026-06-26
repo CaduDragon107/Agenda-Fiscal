@@ -58,6 +58,7 @@ export default async function EditarEmpresaPage({
           responsavelDpId: responsavelDp?.usuario.id ?? null,
           responsavelContabilId: responsavelContabil?.usuario.id ?? null,
           temFuncionariosClt: empresa.temFuncionariosClt,
+          temEmpregadaDomestica: empresa.temEmpregadaDomestica,
           contatos: empresa.contatos,
           particularidades: empresa.particularidades,
         }}
