@@ -193,7 +193,7 @@ export default async function TarefaDetalhePage({
             </dl>
             <div className="mt-4">
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/empresas/${tarefa.empresa.id}`}>Ver empresa</Link>
+                <Link href={`/empresas/${tarefa.empresa.id}/editar`}>Ver empresa</Link>
               </Button>
             </div>
           </CardContent>
