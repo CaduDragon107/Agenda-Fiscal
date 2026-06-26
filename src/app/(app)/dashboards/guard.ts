@@ -13,20 +13,28 @@ import { mesesSchema } from "@/modules/dashboards/schema";
  * src/app/(app)/dashboards/guard.ts
  *
  * Extraído de page.tsx (arquivo .ts, sem JSX) para permitir teste unitário
- * direto do guard DONO-only sem depender de um pipeline de transformação
- * JSX no Vitest (este projeto não tem @vitejs/plugin-react configurado em
+ * direto do guard sem depender de um pipeline de transformação JSX no
+ * Vitest (este projeto não tem @vitejs/plugin-react configurado em
  * vitest.config.ts — page.tsx, sendo .tsx com JSX, não pode ser importado
  * diretamente em teste). Ver tests/dashboards.rbac.test.ts.
  *
- * CRÍTICO (T-4-01): o guard `role !== "DONO" -> notFound()` é a barreira
+ * CRÍTICO (T-4-01, estendido em quick task 260626-kn2): o guard
+ * `role !== "DONO" && role !== "CHEFE_SETOR" -> notFound()` é a barreira
  * REAL de acesso — vem ANTES de qualquer query, idêntico ao padrão
  * anti-IDOR "não encontrado, never 403" já usado na edição de empresa
  * (Fase 1) e em gerarTarefasDoMesAction (Fase 3).
  *
- * Fan-out por setor (Phase 8, Plan 03): busca os 3 datasets (desempenho/
- * evolução/ranking) para FISCAL/DP/CONTABIL em paralelo, cada um com seu
- * próprio empresaWhereExtra (D-02: DP só temFuncionariosClt=true; D-03:
- * Contábil é o universo cheio de 197 empresas).
+ * Fan-out por setor (Phase 8, Plan 03; ajustado em 260626-kn2): DONO busca
+ * os 3 datasets (desempenho/evolução/ranking) para FISCAL/DP/CONTABIL em
+ * paralelo, cada um com seu próprio empresaWhereExtra (D-02: DP só
+ * temFuncionariosClt=true; D-03: Contábil é o universo cheio de 197
+ * empresas). CHEFE_SETOR busca SOMENTE o próprio setor (lido de
+ * `session.user.setor`, nunca de query string/input do client) — mesmo
+ * padrão de escopo-por-setor-da-sessão de src/lib/visibility-scope.ts.
+ * Quando CHEFE_SETOR tem `setor` null/inválido, aplica-se o mesmo fail-safe
+ * "fail seguro = sem dados" do branch CHEFE_SETOR de visibility-scope:
+ * retorna um Record vazio, sem disparar nenhuma query — NUNCA amplia para
+ * os 3 setores.
  */
 const SETORES = ["FISCAL", "DP", "CONTABIL"] as const;
 type SetorDashboard = (typeof SETORES)[number];
@@ -40,7 +48,9 @@ const empresaScopePorSetor = {
 export async function carregarDadosDashboards(meses?: string) {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (session.user.role !== "DONO") notFound();
+  if (session.user.role !== "DONO" && session.user.role !== "CHEFE_SETOR") {
+    notFound();
+  }
 
   const mesesParsed = meses !== undefined ? mesesSchema.safeParse(meses) : undefined;
   const quantidadeMeses = mesesParsed?.success ? mesesParsed.data : 6;
@@ -48,8 +58,19 @@ export async function carregarDadosDashboards(meses?: string) {
   const hoje = new Date();
   const inicioRanking = subMonths(hoje, quantidadeMeses);
 
+  // DONO: vê os 3 setores. CHEFE_SETOR: escopado a 1 setor, lido SOMENTE de
+  // session.user.setor (nunca de query string/input do client). Fail-safe
+  // (T-kn2-03): CHEFE_SETOR com setor null/inválido não dispara nenhuma
+  // query e recebe um Record vazio — NUNCA amplia para os 3 setores.
+  const setoresParaBuscar: readonly SetorDashboard[] =
+    session.user.role === "DONO"
+      ? SETORES
+      : SETORES.includes(session.user.setor as SetorDashboard)
+        ? [session.user.setor as SetorDashboard]
+        : [];
+
   const resultados = await Promise.all(
-    SETORES.map(async (setor) => {
+    setoresParaBuscar.map(async (setor) => {
       const [desempenhoColaboradores, evolucaoMensal, rankingEmpresas] =
         await Promise.all([
           listarDesempenhoColaboradoresMesAtual(
