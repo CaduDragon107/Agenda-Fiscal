@@ -61,6 +61,10 @@ describe("deriveEmpresaRows", () => {
     expect(row.responsavelFiscalId).toBeNull();
     expect(row.responsavelContabil).toBeNull();
     expect(row.responsavelContabilId).toBeNull();
+
+    // Campo informativo (fora da fronteira D-10) deve espelhar o fixture
+    // mesmo para viewer não-DONO.
+    expect(row.temEmpregadaDomestica).toBe(false);
   });
 
   it("Test 2 (Contábil colaborador): popula apenas responsavelContabil/-Id; Fiscal e DP ficam null", () => {
@@ -90,6 +94,9 @@ describe("deriveEmpresaRows", () => {
     expect(row.responsavelDpId).toBe(DP_ID);
     expect(row.responsavelContabil).toEqual({ id: CONTABIL_ID, nome: CONTABIL_NOME });
     expect(row.responsavelContabilId).toBe(CONTABIL_ID);
+
+    // Campo informativo presente para o DONO também, espelhando o fixture.
+    expect(row.temEmpregadaDomestica).toBe(false);
   });
 
   it("Test 4 (varredura anti-vazamento): JSON.stringify da saída não-DONO não contém nomes/ids cross-setor", () => {
