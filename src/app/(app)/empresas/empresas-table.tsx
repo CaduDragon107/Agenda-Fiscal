@@ -94,6 +94,16 @@ const REGIME_FILTER_OPTIONS: { value: "TODOS" | RegimeTributario; label: string 
   { value: "SIMPLES_NACIONAL", label: "Simples Nacional" },
 ];
 
+/**
+ * Para o setor DP, uma empresa sem responsável de DP atribuído significa que
+ * ela não tem movimento de pessoal (sem CLT/sem folha) — não que falta
+ * atribuir alguém. Por isso a célula de Responsável DP usa um rótulo neutro
+ * em vez do badge âmbar de alerta usado por Fiscal/Contábil.
+ */
+function SemMovimentoDp() {
+  return <span className="text-muted-foreground">Sem movimento</span>;
+}
+
 function formatarCnpj(cnpj: string): string {
   const digits = cnpj.replace(/\D/g, "");
   if (digits.length !== 14) return cnpj;
@@ -170,10 +180,7 @@ export function EmpresasTable({ empresas, responsaveis, isDono, setor }: Empresa
             {
               id: "responsavelDp",
               header: "Responsável DP",
-              cell: ({ row }) =>
-                row.original.responsavelDp?.nome ?? (
-                  <Badge className="bg-amber-500 text-white">Sem responsável</Badge>
-                ),
+              cell: ({ row }) => row.original.responsavelDp?.nome ?? <SemMovimentoDp />,
             },
             {
               id: "responsavelContabil",
@@ -195,8 +202,11 @@ export function EmpresasTable({ empresas, responsaveis, isDono, setor }: Empresa
                     : setor === "CONTABIL"
                       ? row.original.responsavelContabil?.nome
                       : row.original.responsavelFiscal?.nome;
-                return (
-                  nome ?? <Badge className="bg-amber-500 text-white">Sem responsável</Badge>
+                if (nome) return nome;
+                return setor === "DP" ? (
+                  <SemMovimentoDp />
+                ) : (
+                  <Badge className="bg-amber-500 text-white">Sem responsável</Badge>
                 );
               },
             },
