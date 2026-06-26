@@ -38,28 +38,39 @@ Full phase details (goals, success criteria, plans): `.planning/milestones/v2.0-
 ## Phase Details
 
 ### Phase 9: 13º Salário Automático
+
 **Goal**: Toda empresa com funcionários CLT tem, todo ano, uma tarefa de 13º salário gerada automaticamente — sem necessidade de criação manual.
 **Depends on**: Phase 7 (motor de periodicidade anual já validado — ECD/ECF/DEFIS)
 **Requirements**: DP-09
 **Success Criteria** (what must be TRUE):
+
   1. Empresa com `temFuncionariosClt = true` recebe, uma vez por ano, uma tarefa de 13º salário gerada automaticamente pelo cron mensal (sem duplicação em execuções repetidas no mesmo ano)
   2. Empresa sem funcionários CLT (`temFuncionariosClt = false`) nunca recebe tarefa de 13º salário
   3. Prazo da tarefa de 13º salário é ajustado automaticamente para o próximo dia útil quando cai em fim de semana/feriado, igual às demais obrigações
   4. Responsável de DP da empresa vê a tarefa de 13º salário na sua lista de tarefas e nos dashboards de DP, com o mesmo tratamento de qualquer outra obrigação DP
+
 **Plans**: 2 plans
+**Wave 1**
+
 - [ ] 09-01-PLAN.md — Fundação pura (catálogo anual de DP, enum DECIMO_TERCEIRO, mapa de setor, schema push)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 09-02-PLAN.md — Integração do 6º bloco (DP anual / 13º) em geracao.ts + testes de integração
 
 ### Phase 10: Notificações In-App
+
 **Goal**: A equipe recebe um alerta visível (sino/badge) dentro do site para prazos próximos, tarefas atrasadas, e tarefas avulsas atribuídas a ela — sem precisar abrir cada lista de tarefas para descobrir.
 **Depends on**: Phase 9 (não bloqueante — notificações consomem o mesmo modelo de Tarefa já existente; ordenação reflete prioridade de entrega, não dependência técnica rígida)
 **Requirements**: NOTF-01, NOTF-02, NOTF-03, NOTF-04
 **Success Criteria** (what must be TRUE):
+
   1. Usuário vê um sino com badge de contagem no header, visível em qualquer página do site
   2. Usuário recebe notificação quando uma tarefa sua está vencendo em breve (mesmo limiar dos alertas visuais já existentes)
   3. Usuário recebe notificação quando uma tarefa sua está atrasada
   4. Usuário recebe notificação quando uma tarefa avulsa é atribuída a ele
   5. COLABORADOR só vê notificações das tarefas das quais é responsável; DONO vê notificações de todos os setores e colaboradores (mesma regra de `withVisibilityScope`)
+
 **Plans**: TBD
 **UI hint**: yes
 
