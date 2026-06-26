@@ -165,6 +165,7 @@ None yet.
 | 260626-ckm | Backfill EmpresaResponsavelSetor DP a partir de EMPRESAS SEPARADAS Depto Pessoal.xlsx (96 empresas: Andre 21, Lauany 21, Mirella 21, Lorraine 33) | 2026-06-26 | aeb4c65 | [260626-ckm-backfill-empresaresponsavelsetor-dp-a-pa](./quick/260626-ckm-backfill-empresaresponsavelsetor-dp-a-pa/) |
 | 260626-d1a | Pagina /usuarios (DONO-only) para editar o nome de usuarios via UI - editarNomeUsuarioAction + tabela com Dialog + item de sidebar | 2026-06-26 | db209c6 | [260626-d1a-pagina-usuarios-dono-para-editar-o-nome-](./quick/260626-d1a-pagina-usuarios-dono-para-editar-o-nome-/) |
 | — | Renomear rotulo "Role" para "Cargo" na tabela /usuarios | 2026-06-26 | 5342046 | — |
+| 260626-dfc | Novo papel CHEFE_SETOR (Caio/Elisabete/Lauany): visao e atribuicao de tarefas escopadas ao proprio setor, CRUD de empresa por-campo, botao Gerar tarefas liberado | 2026-06-26 | acc0d2b | [260626-dfc-criar-role-chefe-setor-caio-fiscal-elisa](./quick/260626-dfc-criar-role-chefe-setor-caio-fiscal-elisa/) |
 
 ## Deferred Items
 
