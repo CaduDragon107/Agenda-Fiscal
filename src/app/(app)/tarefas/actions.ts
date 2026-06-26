@@ -324,3 +324,84 @@ export async function gerarTarefasDoMesAction(
     return { ok: false, error: "Erro ao gerar tarefas. Tente novamente." };
   }
 }
+
+/**
+ * Resultado da exclusão em massa das tarefas da competência atual.
+ */
+export type AcaoExcluirTarefasResult =
+  | { ok: true; excluidas: number }
+  | { ok: false; error: string };
+
+/**
+ * Exclui em massa todas as tarefas (recorrentes + avulsas, todos os
+ * setores) da competência (mês) atual, para uso emergencial quando a
+ * geração mensal precisa ser refeita. Preserva o histórico de meses
+ * anteriores.
+ *
+ * CRÍTICO (T-AIM-01, mesmo padrão de T-3-01 em gerarTarefasDoMesAction):
+ * guard de role DONO é o PRIMEIRO check após auth(), ANTES de qualquer
+ * acesso ao banco — o botão oculto client-side é só defesa em
+ * profundidade, nunca a única barreira.
+ *
+ * Escopo de exclusão (T-AIM-03): `Tarefa.competencia` é String? — tarefas
+ * recorrentes carregam "YYYY-MM", mas tarefas AVULSAS têm
+ * competencia = null. Um filtro simples por competencia deixaria todas as
+ * avulsas de fora, violando "recorrentes E avulsas". Por isso o delete usa
+ * duas condições OR: recorrentes por `competencia = competenciaAtual()`,
+ * avulsas por `competencia = null` AND `createdAt` no range do mês atual
+ * em horário LOCAL (construtor de 3 args `new Date(ano, mesIndex, 1)`,
+ * nunca string UTC — evita o off-by-one documentado em geracao.ts).
+ *
+ * DesempenhoMensal da competência atual também é limpo na mesma
+ * transação: os snapshots de desempenho são derivados das tarefas: deixá-
+ * los para trás faria o dashboard reportar números de um mês cujas
+ * tarefas não existem mais.
+ *
+ * NÃO usa withTarefaScope: esta é uma operação administrativa global do
+ * DONO (que já enxerga tudo) — escopo de visibilidade não se aplica aqui;
+ * a barreira real é o guard de role.
+ */
+export async function excluirTarefasDaCompetenciaAtualAction(): Promise<AcaoExcluirTarefasResult> {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { ok: false, error: "Não autenticado" };
+    }
+
+    if (session.user.role !== "DONO") {
+      return { ok: false, error: "não autorizado" };
+    }
+
+    const comp = competenciaAtual();
+    const [ano, mes] = comp.split("-").map(Number);
+    const inicioMes = new Date(ano, mes - 1, 1);
+    const inicioProximoMes = new Date(ano, mes, 1);
+
+    const excluidas = await db.$transaction(async (tx) => {
+      const { count } = await tx.tarefa.deleteMany({
+        where: {
+          OR: [
+            { competencia: comp },
+            {
+              competencia: null,
+              createdAt: { gte: inicioMes, lt: inicioProximoMes },
+            },
+          ],
+        },
+      });
+
+      await tx.desempenhoMensal.deleteMany({ where: { competencia: comp } });
+
+      return count;
+    });
+
+    revalidatePath("/tarefas");
+    return { ok: true, excluidas };
+  } catch (error) {
+    console.error(
+      "[excluirTarefasDaCompetenciaAtualAction] Falha ao excluir tarefas:",
+      error
+    );
+    return { ok: false, error: "Erro ao excluir tarefas. Tente novamente." };
+  }
+}
