@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, LayoutDashboard, ListChecks, LogOut } from "lucide-react";
+import { Building2, LayoutDashboard, ListChecks, LogOut, Users } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 import {
@@ -116,6 +116,19 @@ export function AppSidebar({ user, contadorAlertas }: AppSidebarProps) {
                     <Link href="/dashboards">
                       <LayoutDashboard />
                       <span>Dashboards</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              {isDono && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname?.startsWith("/usuarios")}
+                  >
+                    <Link href="/usuarios">
+                      <Users />
+                      <span>Usuários</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
