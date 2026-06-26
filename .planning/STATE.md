@@ -1,19 +1,20 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: milestone
-status: Awaiting next milestone
-stopped_at: "v2.0 milestone archived"
-last_updated: "2026-06-25T16:54:09.879Z"
-last_activity: 2026-06-25 — Milestone v2.0 completed and archived
+milestone: v2.1
+milestone_name: 13º Salário e Notificações In-App
+current_phase: 9
+current_phase_name: 13º Salário Automático
+status: planning
+stopped_at: Phase 9 context gathered
+last_updated: "2026-06-25T23:55:04.036Z"
+last_activity: 2026-06-25
+last_activity_desc: "ROADMAP.md created for v2.1 (Phase 9: 13º Salário Automático; Phase 10: Notificações In-App)"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
-current_phase: 08
-current_phase_name: dashboards-multi-setor-dp-e-cont-bil
+  total_phases: 2
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -23,14 +24,14 @@ current_phase_name: dashboards-multi-setor-dp-e-cont-bil
 See: .planning/PROJECT.md (updated 2026-06-25)
 
 **Core value:** A equipe nunca perde um prazo — fiscal, de pessoal ou contábil — de nenhum cliente, e o dono sempre sabe em tempo real o status de tudo, em qualquer setor.
-**Current focus:** Planning next milestone (run `/gsd-new-milestone`)
+**Current focus:** Roadmap created for v2.1 (Phases 9-10). Next: `/gsd-plan-phase 9`
 
 ## Current Position
 
-Phase: Milestone v2.0 complete
+Phase: 9 (13º Salário Automático) — not started
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-25 — Milestone v2.0 completed and archived
+Status: Roadmap created, awaiting phase planning
+Last activity: 2026-06-25 — ROADMAP.md created for v2.1 (Phase 9: 13º Salário Automático; Phase 10: Notificações In-App)
 
 ## Performance Metrics
 
@@ -77,6 +78,8 @@ Last activity: 2026-06-25 — Milestone v2.0 completed and archived
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Roadmap v2.1]: Phase 9 (13º Salário Automático) e Phase 10 (Notificações In-App) — duas fases, não uma só. DP-09 reaproveita o motor de periodicidade anual (Phase 7) e é puramente backend/geração; NOTF-01..04 introduz um modelo novo (Notificacao), UI nova (sino/badge no header) e triggers ligados à criação/prazo de tarefa — escopo grande o suficiente para fase própria, apesar de o milestone ser pequeno (5 requisitos).
+- [Roadmap v2.1]: Phase 10 depende de Phase 9 apenas por ordem de entrega (DP-09 primeiro fecha a cobertura de obrigações), não por acoplamento técnico — notificações consomem o mesmo modelo de Tarefa já existente desde v1.0, sem esperar por 13º salário especificamente.
 - [Roadmap]: Estrutura Vertical MVP com 4 fases — Fundação (auth+empresas+import) → Gestão de Tarefas (avulsas+detalhe+alertas) → Motor de Geração Mensal → Dashboards. Cada fase entrega algo navegável/usável de ponta a ponta.
 - [Roadmap]: Fases 2 e 3 reordenadas em relação à proposta inicial da pesquisa — UX de tarefas (avulsas, detalhe, alertas) vem ANTES do motor de geração automática, pois não depende dele e já entrega valor usável; o motor (Fase 3) então "alimenta" essa UI já existente.
 - [Roadmap]: INFRA-01 (acesso pela internet) absorvido na Fase 1 como parte da fundação de infraestrutura/deploy.
@@ -135,9 +138,10 @@ None yet.
 - [Phase 5] ~~Migração de `Empresa.responsavelId` para junction table `EmpresaResponsavelSetor` precisa de backfill verificado (197 empresas → 197 linhas FISCAL) ANTES de qualquer código passar a ler da junction table; coluna antiga deve ser mantida por 1 ciclo de release como rede de segurança~~ — RESOLVIDO em 05-01 (197/197 FISCAL verificado, 0 divergência) e mantido como rede de segurança em 05-02/05-03 (`responsavelId` ainda escrito em lockstep).
 - [Phase 5] ~~Autorização setor-aware (`withVisibilityScope`/`withTarefaScope`) precisa de novos fixtures multi-setor E da suite de IDOR existente passando inalterada como regression gate, não substituída~~ — RESOLVIDO em 05-02 (3 novas factories de fixture, 4 arquivos de regressão IDOR/visibilidade intactos, 106→115 testes verdes).
 - [Phase 6] NOVO — `confirmarImportacao` (src/app/(app)/empresas/importar/actions.ts) grava `Empresa` direto via `db.empresa.create`, fora de `criarEmpresa`/`editarEmpresa` — desde 05-03 essas duas Server Actions gravam a linha FISCAL do junction em lockstep com `responsavelId`, mas o wizard de importação NÃO foi estendido (fora do escopo de 05-03) e continua criando empresas sem a linha `EmpresaResponsavelSetor`. Hoje é inofensivo (visibilidade FISCAL ainda lê `responsavelId` direto, Plan 05-02). Vira bug real no momento em que `responsavelId` for retirado (Phase 6) ou se alguém reimportar uma planilha antes disso — qualquer empresa importada nesse intervalo terá 0 linhas no junction table. Resolver junto com a retirada de `responsavelId`, ou antes da próxima reimportação em lote.
-- [Phase 7] NOVO — Periodicidade anual (ECD/ECF/DEFIS) precisa de formato de competência explícito (ex. "YYYY") e testes simulando 12 ticks mensais do cron ao longo de um ano, verificando exatamente 1 tarefa anual por empresa por ano (ver research/PITFALLS.md Pitfall B2).
+- [Phase 7] NOVO — Periodicidade anual (ECD/ECF/DEFIS) precisa de formato de competência explícito (ex. "YYYY") e testes simulando 12 ticks mensais do cron ao longo de um ano, verificando exatamente 1 tarefa anual por empresa por ano (ver research/PITFALLS.md Pitfall B2). **Relevante para Phase 9** — 13º salário é uma segunda obrigação anual e deve seguir o mesmo padrão de teste (sweep de 12 meses, idempotência por ano).
 - [Phase 8] ~~Dashboards de DP/Contábil devem reaproveitar o módulo de queries parametrizado por setor já usado no Fiscal, nunca duplicar em módulos separados; deletar o módulo órfão `src/modules/dashboard/` (singular) durante esta fase~~ — RESOLVIDO em 08-02 (queries parametrizadas) + 08-03 (órfão já estava deletado desde commit c453704 pré-Wave 1; confirmado zero imports remanescentes).
-- [Phase 8] NOVO — Plan 08-03 Task 3 (`checkpoint:human-verify`, gate="blocking") aguardando o dono confirmar visualmente as 3 abas (Fiscal/DP/Contábil) em `/dashboards` contra 08-UI-SPEC.md — ver `08-03-SUMMARY.md` seção "Checkpoint Status" para os passos de verificação pendentes.
+- [Phase 8] ~~Plan 08-03 Task 3 (`checkpoint:human-verify`, gate="blocking") aguardando o dono confirmar visualmente as 3 abas (Fiscal/DP/Contábil) em `/dashboards` contra 08-UI-SPEC.md~~ — RESOLVIDO no fechamento do v2.0 (dono confirmou).
+- [Phase 8] ~~WR-01/WR-02/WR-03/IN-01/IN-02 de `08-REVIEW.md` (deferidos no fechamento da fase)~~ — RESOLVIDO no quick task 260625-p9h: totalNoPrazo inteiro exposto (WR-01), ranking respeita `?meses=` (WR-02), `usuarioSchema` exige setor para COLABORADOR (WR-03), carteira do snapshot escopada por setor (IN-01), default de `quantidadeMeses` alinhado a 6 (IN-02). 182/182 testes verdes, `tsc --noEmit` limpo.
 
 ### Quick Tasks Completed
 
@@ -152,6 +156,7 @@ None yet.
 | 260618-kk8 | Adicionar opcao de filtro Pendentes na tela de tarefas | 2026-06-18 | 3bbb2e5 | [260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t](./quick/260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t/) |
 | 260622-lty | Trocar grafico Evolucao Mensal de Area/Line para barras agrupadas com 5 categorias (criadas/concluidas/pendentes/pendentes-com-motivo/vencidas) | 2026-06-22 | c393331 | [260622-lty-trocar-grafico-evolucao-mensal-para-barr](./quick/260622-lty-trocar-grafico-evolucao-mensal-para-barr/) |
 | 260622-r6n | Mudar paleta de cores dos graficos do dashboard (escala de cinza -> esquema semaforo: azul/verde/amarelo/laranja/vermelho) | 2026-06-22 | 6104e79 | [260622-r6n-mudar-paleta-de-cores-dos-graficos-do-da](./quick/260622-r6n-mudar-paleta-de-cores-dos-graficos-do-da/) |
+| 260625-p9h | Corrigir achados WR-01, WR-02, WR-03, IN-01, IN-02 do 08-REVIEW.md (dashboards multi-setor) | 2026-06-25 | 7515665 | [260625-p9h-corrigir-achados-wr-01-wr-02-wr-03-in-01](./quick/260625-p9h-corrigir-achados-wr-01-wr-02-wr-03-in-01/) |
 | 260625-mgd | Renomear usuarios Dono/DP1/Contabil1 para Neto/Lauany/Elisabete no seed + script one-off para producao | 2026-06-26 | cd68e63 | [260625-mgd-renomear-usuarios-dono-neto-dp1-lauany-c](./quick/260625-mgd-renomear-usuarios-dono-neto-dp1-lauany-c/) |
 | 260626-a8d | Rota /empresas/dp (listagem com responsavel DP, celula vazia se ausente) + campo informativo Empresa.temEmpregadaDomestica | 2026-06-26 | 68edf7a | [260626-a8d-listagem-de-empresas-dp-com-responsavel-](./quick/260626-a8d-listagem-de-empresas-dp-com-responsavel-/) |
 | 260626-aim | Botao DONO-only (com AlertDialog) para excluir tarefas (recorrentes+avulsas, todos os setores) da competencia atual | 2026-06-26 | a03e4d6 | [260626-aim-botao-so-dono-para-excluir-todas-as-tare](./quick/260626-aim-botao-so-dono-para-excluir-todas-as-tare/) |
@@ -179,10 +184,11 @@ Items acknowledged at v2.0 milestone close (2026-06-25):
 
 ## Session Continuity
 
-Last session: 2026-06-25T10:21:01.021Z
-Stopped at: Plan 08-03 Tasks 1-2 complete, Task 3 checkpoint:human-verify pending
-Resume file: .planning/phases/08-dashboards-multi-setor-dp-e-cont-bil/08-03-SUMMARY.md
+Last session: 2026-06-25T23:55:04.025Z
+Stopped at: Phase 9 context gathered
+Resume file: .planning/phases/09-13-sal-rio-autom-tico/09-CONTEXT.md
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Review and approve the v2.1 roadmap (Phase 9, Phase 10)
+- Start planning Phase 9 with `/gsd-plan-phase 9`

@@ -181,6 +181,81 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
   });
 });
 
+describe("calcularSnapshotMensal — carteira escopada por setor (IN-01)", () => {
+  it("colaborador DP tem totalEmpresas filtrado por temFuncionariosClt — groupBy global daria 12, filtro DP da 4", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock, usuarioFindManyMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([
+      {
+        responsavelId: "user_dp",
+        tipoObrigacao: "FOLHA",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-15T10:00:00") }],
+      },
+    ]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    usuarioFindManyMock.mockResolvedValue([{ id: "user_dp", setor: "DP" }]);
+
+    // mock inspeciona where.temFuncionariosClt para simular o filtro real do
+    // Prisma: sem o filtro (universo global), o colaborador teria carteira
+    // de 12 empresas; com o filtro DP (temFuncionariosClt: true), apenas 4.
+    empresaGroupByMock.mockImplementation(
+      (args: { where?: { temFuncionariosClt?: boolean } }) => {
+        if (args.where?.temFuncionariosClt) {
+          return Promise.resolve([{ responsavelId: "user_dp", _count: { id: 4 } }]);
+        }
+        return Promise.resolve([{ responsavelId: "user_dp", _count: { id: 12 } }]);
+      }
+    );
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+
+    const linhaDp = resultado.find((r) => r.colaboradorId === "user_dp" && r.setor === "DP");
+    expect(linhaDp?.totalEmpresas).toBe(4);
+    expect(linhaDp?.totalEmpresas).not.toBe(12);
+
+    // groupBy chamado com o filtro temFuncionariosClt aplicado ao where (DP).
+    expect(empresaGroupByMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ ativo: true, temFuncionariosClt: true }),
+      })
+    );
+  });
+
+  it("colaboradores de setores distintos (DP e FISCAL) disparam no maximo 1 groupBy por setor distinto presente, nunca por colaborador", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const { tx, tarefaFindManyMock, empresaGroupByMock, usuarioFindManyMock } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([
+      {
+        responsavelId: "user_dp",
+        tipoObrigacao: "FOLHA",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-15T10:00:00") }],
+      },
+      {
+        responsavelId: "user_fiscal",
+        tipoObrigacao: "ICMS",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-16T10:00:00") }],
+      },
+    ]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    usuarioFindManyMock.mockResolvedValue([
+      { id: "user_dp", setor: "DP" },
+      { id: "user_fiscal", setor: "FISCAL" },
+    ]);
+    empresaGroupByMock.mockResolvedValue([]);
+
+    await calcularSnapshotMensal(tx as never, "2026-02");
+
+    // 2 setores distintos presentes (DP, FISCAL) -> no maximo 2 chamadas de
+    // groupBy (nunca 1 por colaborador, o que seria N+1).
+    expect(empresaGroupByMock).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe("calcularSnapshotMensal — setor derivado de Usuario.setor (T-08-03, Plan 08-02)", () => {
   it("cada LinhaSnapshotMensal carrega o setor correto do colaborador (DP/CONTABIL/FISCAL distintos)", async () => {
     const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");

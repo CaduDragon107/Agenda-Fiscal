@@ -29,6 +29,7 @@ type DesempenhoColaborador = {
   nome: string;
   percentualNoPrazo: number;
   totalConcluidas: number;
+  totalNoPrazo: number;
   totalEmpresas: number;
 };
 
@@ -125,6 +126,7 @@ export async function listarDesempenhoColaboradoresMesAtual(
         ? Math.round((dados.noPrazo / dados.totalConcluidas) * 100)
         : 0,
       totalConcluidas: dados.totalConcluidas,
+      totalNoPrazo: dados.noPrazo,
       totalEmpresas: carteiraPorColaborador.get(c.id) ?? 0,
     };
   });
@@ -224,11 +226,12 @@ async function calcularCategoriasCriadas(
  * concluidoEm-no-range do snapshot da Plan 04-02, para continuidade
  * live→frozen sem degrau visível no gráfico).
  *
- * Default quantidadeMeses=3 (últimos 3 meses, incluindo o corrente) — Open
- * Question 2 do RESEARCH.md, resolvida como "últimos 3 meses".
+ * Default quantidadeMeses=6 (últimos 6 meses, incluindo o corrente) — Open
+ * Question 2 do RESEARCH.md, resolvida como "últimos 6 meses", alinhado ao
+ * default real de produção em guard.ts (?meses= ausente -> 6).
  */
 export async function listarEvolucaoMensal(
-  quantidadeMeses = 3,
+  quantidadeMeses = 6,
   setor: Setor,
   empresaWhereExtra: Prisma.EmpresaWhereInput = {}
 ): Promise<PontoEvolucao[]> {
@@ -292,9 +295,7 @@ export async function listarEvolucaoMensal(
   const totalAtual = colaboradores.reduce(
     (acc, c) => ({
       total: acc.total + c.totalConcluidas,
-      noPrazo:
-        acc.noPrazo +
-        Math.round((c.percentualNoPrazo / 100) * c.totalConcluidas),
+      noPrazo: acc.noPrazo + c.totalNoPrazo,
     }),
     { total: 0, noPrazo: 0 }
   );

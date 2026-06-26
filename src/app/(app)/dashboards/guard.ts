@@ -46,7 +46,7 @@ export async function carregarDadosDashboards(meses?: string) {
   const quantidadeMeses = mesesParsed?.success ? mesesParsed.data : 6;
 
   const hoje = new Date();
-  const inicio3Meses = subMonths(hoje, 3);
+  const inicioRanking = subMonths(hoje, quantidadeMeses);
 
   const resultados = await Promise.all(
     SETORES.map(async (setor) => {
@@ -59,7 +59,7 @@ export async function carregarDadosDashboards(meses?: string) {
           ),
           listarEvolucaoMensal(quantidadeMeses, setor, empresaScopePorSetor[setor]),
           listarRankingEmpresas(
-            inicio3Meses,
+            inicioRanking,
             hoje,
             setor,
             empresaScopePorSetor[setor]

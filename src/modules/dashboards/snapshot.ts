@@ -43,6 +43,20 @@ const SETOR_POR_TIPO_OBRIGACAO = new Map<TipoObrigacao, Setor>(
 );
 
 /**
+ * Filtro de empresa por setor (IN-01), espelhando `empresaScopePorSetor` de
+ * guard.ts:34-38 — única fonte de verdade duplicada deliberadamente aqui
+ * porque snapshot.ts não pode importar de src/app/(app)/dashboards/guard.ts
+ * (camada de apresentação/Server Component) sem inverter a dependência.
+ * Mantém a carteira (`totalEmpresas`) do snapshot congelado escopada por
+ * setor, igual ao caminho live (queries.ts:98-102).
+ */
+const empresaWhereExtraPorSetor: Record<Setor, Prisma.EmpresaWhereInput> = {
+  FISCAL: {},
+  DP: { temFuncionariosClt: true },
+  CONTABIL: {},
+};
+
+/**
  * Deriva o setor de uma tarefa, espelhando a logica de `tarefaSetorWhere`
  * (T-08-03): recorrentes (tipoObrigacao nao-nulo) sao classificadas pelo
  * tipoObrigacao; avulsas (tipoObrigacao null) sao classificadas pelo setor
@@ -218,17 +232,6 @@ export async function calcularSnapshotMensal(
     porColaboradorSetor.set(chave, atual);
   }
 
-  // Contexto D-03: tamanho de carteira (numero de empresas ativas) por
-  // colaborador, mesma convencao de Pattern 2 do RESEARCH.md.
-  const carteiras = await tx.empresa.groupBy({
-    by: ["responsavelId"],
-    where: { ativo: true },
-    _count: { id: true },
-  });
-  const totalEmpresasPorColaborador = new Map<string, number>(
-    carteiras.map((c) => [c.responsavelId, c._count.id])
-  );
-
   const categoriasPorColaboradorSetor = new Map<
     string,
     {
@@ -283,6 +286,39 @@ export async function calcularSnapshotMensal(
     ...categoriasPorColaboradorSetor.keys(),
   ]);
 
+  // Contexto D-03: tamanho de carteira (numero de empresas ativas) por
+  // colaborador, mesma convencao de Pattern 2 do RESEARCH.md.
+  //
+  // IN-01: a carteira e escopada por setor (empresaWhereExtraPorSetor),
+  // espelhando o caminho live (queries.ts:98-102) — sem isso, DP herdava o
+  // total de empresas SEM o filtro temFuncionariosClt, divergindo do live e
+  // criando um degrau live->frozen na carteira exibida. No maximo 1 groupBy
+  // por setor distinto presente nas chaves (colaborador, setor) — nunca um
+  // groupBy por colaborador (evita N+1).
+  const setoresPresentes = new Set<Setor>(
+    [...chaves].map((chave) => {
+      const separador = chave.lastIndexOf("::");
+      return chave.slice(separador + 2) as Setor;
+    })
+  );
+
+  const totalEmpresasPorColaboradorSetor = new Map<string, number>();
+  await Promise.all(
+    [...setoresPresentes].map(async (setor) => {
+      const carteiras = await tx.empresa.groupBy({
+        by: ["responsavelId"],
+        where: { ativo: true, ...empresaWhereExtraPorSetor[setor] },
+        _count: { id: true },
+      });
+      for (const c of carteiras) {
+        totalEmpresasPorColaboradorSetor.set(
+          chaveColaboradorSetor(c.responsavelId, setor),
+          c._count.id
+        );
+      }
+    })
+  );
+
   const linhas: LinhaSnapshotMensal[] = [];
 
   for (const chave of chaves) {
@@ -309,7 +345,7 @@ export async function calcularSnapshotMensal(
       setor,
       totalConcluidas: concluido.totalConcluidas,
       concluidasNoPrazo: concluido.concluidasNoPrazo,
-      totalEmpresas: totalEmpresasPorColaborador.get(colaboradorId) ?? 0,
+      totalEmpresas: totalEmpresasPorColaboradorSetor.get(chave) ?? 0,
       totalTarefasPeriodo: concluido.totalTarefasPeriodo,
       totalCriadas: criado.totalCriadas,
       totalConcluidasNoPeriodo: criado.totalConcluidasNoPeriodo,
