@@ -16,6 +16,7 @@ const dbMocks = vi.hoisted(() => ({
   tarefaCreateManyMock: vi.fn(),
   tarefaFindManyMock: vi.fn(),
   empresaGroupByMock: vi.fn(),
+  empresaResponsavelSetorGroupByMock: vi.fn(),
   usuarioFindManyMock: vi.fn(),
   usuarioFindFirstMock: vi.fn(),
   desempenhoMensalCreateManyMock: vi.fn(),
@@ -26,6 +27,9 @@ vi.mock("@/lib/db", () => {
     empresa: {
       findMany: (...args: unknown[]) => dbMocks.empresaFindManyMock(...args),
       groupBy: (...args: unknown[]) => dbMocks.empresaGroupByMock(...args),
+    },
+    empresaResponsavelSetor: {
+      groupBy: (...args: unknown[]) => dbMocks.empresaResponsavelSetorGroupByMock(...args),
     },
     tarefa: {
       createMany: (...args: unknown[]) => dbMocks.tarefaCreateManyMock(...args),
@@ -50,6 +54,7 @@ vi.mock("@/lib/db", () => {
 function criarTxMock() {
   const tarefaFindManyMock = vi.fn();
   const empresaGroupByMock = vi.fn();
+  const empresaResponsavelSetorGroupByMock = vi.fn();
   const usuarioFindManyMock = vi.fn();
   const desempenhoMensalCreateManyMock = vi.fn();
 
@@ -61,10 +66,16 @@ function criarTxMock() {
     { id: "user_2", setor: "FISCAL" },
     { id: "user_3", setor: "FISCAL" },
   ]);
+  // default: sem carteira via junction table — testes que nao exercitam
+  // DP/CONTABIL nao precisam mockar isso explicitamente.
+  empresaResponsavelSetorGroupByMock.mockResolvedValue([]);
 
   const tx = {
     tarefa: { findMany: (...args: unknown[]) => tarefaFindManyMock(...args) },
     empresa: { groupBy: (...args: unknown[]) => empresaGroupByMock(...args) },
+    empresaResponsavelSetor: {
+      groupBy: (...args: unknown[]) => empresaResponsavelSetorGroupByMock(...args),
+    },
     usuario: { findMany: (...args: unknown[]) => usuarioFindManyMock(...args) },
     desempenhoMensal: {
       createMany: (...args: unknown[]) => desempenhoMensalCreateManyMock(...args),
@@ -75,6 +86,7 @@ function criarTxMock() {
     tx,
     tarefaFindManyMock,
     empresaGroupByMock,
+    empresaResponsavelSetorGroupByMock,
     usuarioFindManyMock,
     desempenhoMensalCreateManyMock,
   };
@@ -184,9 +196,15 @@ describe("calcularSnapshotMensal — agregacao D-01/D-02/D-03", () => {
 });
 
 describe("calcularSnapshotMensal — carteira escopada por setor (IN-01)", () => {
-  it("colaborador DP tem totalEmpresas filtrado por temFuncionariosClt — groupBy global daria 12, filtro DP da 4", async () => {
+  it("colaborador DP tem totalEmpresas derivado via empresaResponsavelSetor.groupBy filtrado por setor DP+temFuncionariosClt — nunca via empresa.groupBy por responsavelId legado", async () => {
     const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
-    const { tx, tarefaFindManyMock, empresaGroupByMock, usuarioFindManyMock } = criarTxMock();
+    const {
+      tx,
+      tarefaFindManyMock,
+      empresaGroupByMock,
+      empresaResponsavelSetorGroupByMock,
+      usuarioFindManyMock,
+    } = criarTxMock();
 
     tarefaFindManyMock.mockResolvedValueOnce([
       {
@@ -199,17 +217,14 @@ describe("calcularSnapshotMensal — carteira escopada por setor (IN-01)", () =>
     tarefaFindManyMock.mockResolvedValueOnce([]);
     usuarioFindManyMock.mockResolvedValue([{ id: "user_dp", setor: "DP" }]);
 
-    // mock inspeciona where.temFuncionariosClt para simular o filtro real do
-    // Prisma: sem o filtro (universo global), o colaborador teria carteira
-    // de 12 empresas; com o filtro DP (temFuncionariosClt: true), apenas 4.
-    empresaGroupByMock.mockImplementation(
-      (args: { where?: { temFuncionariosClt?: boolean } }) => {
-        if (args.where?.temFuncionariosClt) {
-          return Promise.resolve([{ responsavelId: "user_dp", _count: { id: 4 } }]);
-        }
-        return Promise.resolve([{ responsavelId: "user_dp", _count: { id: 12 } }]);
-      }
-    );
+    // carteira FISCAL legada (12 empresas) — NUNCA deve ser usada para DP.
+    empresaGroupByMock.mockResolvedValue([
+      { responsavelId: "user_dp", _count: { id: 12 } },
+    ]);
+    // carteira real DP (junction table, filtrada por temFuncionariosClt) — 4.
+    empresaResponsavelSetorGroupByMock.mockResolvedValue([
+      { usuarioId: "user_dp", _count: { id: 4 } },
+    ]);
 
     const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
 
@@ -217,17 +232,63 @@ describe("calcularSnapshotMensal — carteira escopada por setor (IN-01)", () =>
     expect(linhaDp?.totalEmpresas).toBe(4);
     expect(linhaDp?.totalEmpresas).not.toBe(12);
 
-    // groupBy chamado com o filtro temFuncionariosClt aplicado ao where (DP).
-    expect(empresaGroupByMock).toHaveBeenCalledWith(
+    expect(empresaGroupByMock).not.toHaveBeenCalled();
+    expect(empresaResponsavelSetorGroupByMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ ativo: true, temFuncionariosClt: true }),
+        where: expect.objectContaining({
+          setor: "DP",
+          empresa: expect.objectContaining({ ativo: true, temFuncionariosClt: true }),
+        }),
       })
+    );
+  });
+
+  it("colaborador FISCAL continua usando empresa.groupBy por responsavelId (forma legada) e NUNCA chama empresaResponsavelSetor.groupBy", async () => {
+    const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
+    const {
+      tx,
+      tarefaFindManyMock,
+      empresaGroupByMock,
+      empresaResponsavelSetorGroupByMock,
+      usuarioFindManyMock,
+    } = criarTxMock();
+
+    tarefaFindManyMock.mockResolvedValueOnce([
+      {
+        responsavelId: "user_fiscal",
+        tipoObrigacao: "ICMS",
+        prazo: new Date("2026-02-20T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-02-16T10:00:00") }],
+      },
+    ]);
+    tarefaFindManyMock.mockResolvedValueOnce([]);
+    usuarioFindManyMock.mockResolvedValue([{ id: "user_fiscal", setor: "FISCAL" }]);
+    empresaGroupByMock.mockResolvedValue([
+      { responsavelId: "user_fiscal", _count: { id: 30 } },
+    ]);
+
+    const resultado = await calcularSnapshotMensal(tx as never, "2026-02");
+
+    const linhaFiscal = resultado.find(
+      (r) => r.colaboradorId === "user_fiscal" && r.setor === "FISCAL"
+    );
+    expect(linhaFiscal?.totalEmpresas).toBe(30);
+
+    expect(empresaResponsavelSetorGroupByMock).not.toHaveBeenCalled();
+    expect(empresaGroupByMock).toHaveBeenCalledWith(
+      expect.objectContaining({ by: ["responsavelId"] })
     );
   });
 
   it("colaboradores de setores distintos (DP e FISCAL) disparam no maximo 1 groupBy por setor distinto presente, nunca por colaborador", async () => {
     const { calcularSnapshotMensal } = await import("@/modules/dashboards/snapshot");
-    const { tx, tarefaFindManyMock, empresaGroupByMock, usuarioFindManyMock } = criarTxMock();
+    const {
+      tx,
+      tarefaFindManyMock,
+      empresaGroupByMock,
+      empresaResponsavelSetorGroupByMock,
+      usuarioFindManyMock,
+    } = criarTxMock();
 
     tarefaFindManyMock.mockResolvedValueOnce([
       {
@@ -249,12 +310,16 @@ describe("calcularSnapshotMensal — carteira escopada por setor (IN-01)", () =>
       { id: "user_fiscal", setor: "FISCAL" },
     ]);
     empresaGroupByMock.mockResolvedValue([]);
+    empresaResponsavelSetorGroupByMock.mockResolvedValue([]);
 
     await calcularSnapshotMensal(tx as never, "2026-02");
 
-    // 2 setores distintos presentes (DP, FISCAL) -> no maximo 2 chamadas de
-    // groupBy (nunca 1 por colaborador, o que seria N+1).
-    expect(empresaGroupByMock).toHaveBeenCalledTimes(2);
+    // 2 setores distintos presentes (DP, FISCAL) -> no maximo 1 chamada de
+    // groupBy POR FONTE por setor distinto (nunca 1 por colaborador, o que
+    // seria N+1): FISCAL usa empresa.groupBy, DP usa
+    // empresaResponsavelSetor.groupBy — 1 chamada cada.
+    expect(empresaGroupByMock).toHaveBeenCalledTimes(1);
+    expect(empresaResponsavelSetorGroupByMock).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -290,11 +290,21 @@ export async function calcularSnapshotMensal(
   // colaborador, mesma convencao de Pattern 2 do RESEARCH.md.
   //
   // IN-01: a carteira e escopada por setor (empresaWhereExtraPorSetor),
-  // espelhando o caminho live (queries.ts:98-102) — sem isso, DP herdava o
-  // total de empresas SEM o filtro temFuncionariosClt, divergindo do live e
+  // espelhando o caminho live (queries.ts) — sem isso, DP herdava o total
+  // de empresas SEM o filtro temFuncionariosClt, divergindo do live e
   // criando um degrau live->frozen na carteira exibida. No maximo 1 groupBy
   // por setor distinto presente nas chaves (colaborador, setor) — nunca um
   // groupBy por colaborador (evita N+1).
+  //
+  // CORREÇÃO (bug de vazamento entre setores, quick-260626-le2):
+  // `Empresa.responsavelId` é a coluna legada EXCLUSIVA do setor FISCAL
+  // (equivalência 197/197 verificada por backfill, ver visibility-scope.ts).
+  // Usá-la para DP/CONTABIL fazia o snapshot congelado reproduzir o mesmo
+  // vazamento de carteira/colaborador entre setores que o ponto live tinha
+  // antes desta correção. Para DP/CONTABIL a carteira DEVE vir de
+  // `EmpresaResponsavelSetor` (mesmo padrão de queries.ts e de
+  // src/modules/tarefas/geracao.ts via `responsaveisPorSetor: { where: {
+  // setor } } }`) — nunca de `Empresa.responsavelId` fora do FISCAL.
   const setoresPresentes = new Set<Setor>(
     [...chaves].map((chave) => {
       const separador = chave.lastIndexOf("::");
@@ -305,14 +315,28 @@ export async function calcularSnapshotMensal(
   const totalEmpresasPorColaboradorSetor = new Map<string, number>();
   await Promise.all(
     [...setoresPresentes].map(async (setor) => {
-      const carteiras = await tx.empresa.groupBy({
-        by: ["responsavelId"],
-        where: { ativo: true, ...empresaWhereExtraPorSetor[setor] },
+      if (setor === "FISCAL") {
+        const carteiras = await tx.empresa.groupBy({
+          by: ["responsavelId"],
+          where: { ativo: true, ...empresaWhereExtraPorSetor[setor] },
+          _count: { id: true },
+        });
+        for (const c of carteiras) {
+          totalEmpresasPorColaboradorSetor.set(
+            chaveColaboradorSetor(c.responsavelId, setor),
+            c._count.id
+          );
+        }
+        return;
+      }
+      const carteiras = await tx.empresaResponsavelSetor.groupBy({
+        by: ["usuarioId"],
+        where: { setor, empresa: { ativo: true, ...empresaWhereExtraPorSetor[setor] } },
         _count: { id: true },
       });
       for (const c of carteiras) {
         totalEmpresasPorColaboradorSetor.set(
-          chaveColaboradorSetor(c.responsavelId, setor),
+          chaveColaboradorSetor(c.usuarioId, setor),
           c._count.id
         );
       }
