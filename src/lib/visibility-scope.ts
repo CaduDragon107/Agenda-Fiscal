@@ -1,22 +1,28 @@
 import type { Prisma } from "@prisma/client";
+import { tarefaSetorWhere } from "@/lib/tipo-obrigacao-setor";
 
 /**
  * Shape do usuário autenticado relevante para regras de visibilidade.
  *
- * `role` usa os mesmos valores do enum Prisma `Role` (COLABORADOR/DONO,
- * maiúsculas) e do tipo `AppRole` (src/types/next-auth.d.ts), que é o que
- * `src/auth.ts`/`src/auth.config.ts` (Plano 02) efetivamente colocam no
- * token JWT e na sessão (`session.user.role`). Não há normalização de
- * casing aqui — o valor chega da sessão já no formato do enum do banco.
+ * `role` usa os mesmos valores do enum Prisma `Role` (COLABORADOR/DONO/
+ * CHEFE_SETOR, maiúsculas) e do tipo `AppRole` (src/types/next-auth.d.ts),
+ * que é o que `src/auth.ts`/`src/auth.config.ts` (Plano 02) efetivamente
+ * colocam no token JWT e na sessão (`session.user.role`). Não há
+ * normalização de casing aqui — o valor chega da sessão já no formato do
+ * enum do banco.
  *
  * `setor` (v2.0, Plano 05-02) espelha o tipo `AppSetor`
  * (src/types/next-auth.d.ts) e o enum Prisma `Setor` — `null` para DONO
  * (que não pertence a nenhum setor específico) e para qualquer
- * COLABORADOR ainda sem setor definido.
+ * COLABORADOR/CHEFE_SETOR ainda sem setor definido.
+ *
+ * `CHEFE_SETOR` (quick task 260626-dfc) é equivalente ao DONO porém
+ * restrito ao próprio setor — vê todas as empresas/tarefas do setor, não só
+ * as pessoalmente atribuídas (ver branches abaixo).
  */
 export type SessionUser = {
   id: string;
-  role: "COLABORADOR" | "DONO";
+  role: "COLABORADOR" | "DONO" | "CHEFE_SETOR";
   setor: "FISCAL" | "DP" | "CONTABIL" | null;
 };
 
@@ -66,6 +72,18 @@ export function withVisibilityScope(
   if (user.role === "DONO") {
     return {};
   }
+  if (user.role === "CHEFE_SETOR") {
+    // CHEFE_SETOR (quick task 260626-dfc): vê TODAS as empresas do próprio
+    // setor, não só as pessoalmente atribuídas — por isso SEM `usuarioId`
+    // no `some`, diferente do branch COLABORADOR (pessoal). Sempre via
+    // junction table, inclusive FISCAL (chefe é um código novo, não
+    // precisa preservar o shape legado `{ responsavelId }`).
+    if (!setor) {
+      // Mesmo fail-safe do branch COLABORADOR — NUNCA {} (Pitfall B3).
+      return { id: "__no_setor_defined__" };
+    }
+    return { responsaveisPorSetor: { some: { setor } } };
+  }
   if (!setor) {
     // Fail-safe: COLABORADOR sem setor definido NUNCA vê empresa alguma.
     // NUNCA retornar {} aqui (Pitfall B3 — alargaria a visibilidade).
@@ -85,6 +103,11 @@ export function withVisibilityScope(
 /**
  * Aplica escopo de visibilidade de tarefas conforme papel do usuário.
  * - DONO: vê todas as tarefas → retorna {} (per D-14)
+ * - CHEFE_SETOR (quick task 260626-dfc): vê todas as tarefas (recorrentes +
+ *   avulsas) do próprio setor → retorna `tarefaSetorWhere(user.setor)`. Se
+ *   `setor` for null (defesa em profundidade, não deveria ocorrer), cai no
+ *   fallback COLABORADOR abaixo (`{ responsavelId: user.id }`), fail-safe
+ *   restritivo.
  * - COLABORADOR: vê apenas tarefas onde responsavelId === user.id → retorna { responsavelId: user.id }
  *
  * Toda query de Tarefa DEVE espalhar este retorno no where.
@@ -93,6 +116,9 @@ export function withVisibilityScope(
 export function withTarefaScope(user: SessionUser): Prisma.TarefaWhereInput {
   if (user.role === "DONO") {
     return {};
+  }
+  if (user.role === "CHEFE_SETOR" && user.setor) {
+    return tarefaSetorWhere(user.setor);
   }
   return { responsavelId: user.id };
 }
