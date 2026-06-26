@@ -46,7 +46,9 @@ Full phase details (goals, success criteria, plans): `.planning/milestones/v2.0-
   2. Empresa sem funcionários CLT (`temFuncionariosClt = false`) nunca recebe tarefa de 13º salário
   3. Prazo da tarefa de 13º salário é ajustado automaticamente para o próximo dia útil quando cai em fim de semana/feriado, igual às demais obrigações
   4. Responsável de DP da empresa vê a tarefa de 13º salário na sua lista de tarefas e nos dashboards de DP, com o mesmo tratamento de qualquer outra obrigação DP
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 09-01-PLAN.md — Fundação pura (catálogo anual de DP, enum DECIMO_TERCEIRO, mapa de setor, schema push)
+- [ ] 09-02-PLAN.md — Integração do 6º bloco (DP anual / 13º) em geracao.ts + testes de integração
 
 ### Phase 10: Notificações In-App
 **Goal**: A equipe recebe um alerta visível (sino/badge) dentro do site para prazos próximos, tarefas atrasadas, e tarefas avulsas atribuídas a ela — sem precisar abrir cada lista de tarefas para descobrir.
