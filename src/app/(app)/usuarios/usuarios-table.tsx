@@ -122,7 +122,7 @@ export function UsuariosTable({ usuarios }: UsuariosTableProps) {
           <TableRow>
             <TableHead>Nome</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
+            <TableHead>Cargo</TableHead>
             <TableHead>Setor</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
