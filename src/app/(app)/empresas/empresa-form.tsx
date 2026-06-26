@@ -60,6 +60,7 @@ type EmpresaFormProps = {
   podeEditarFiscal: boolean;
   podeEditarDp: boolean;
   podeEditarContabil: boolean;
+  podeVerCamposDp: boolean;
   empresa?: {
     id: string;
     nome: string;
@@ -97,6 +98,7 @@ export function EmpresaForm({
   podeEditarFiscal,
   podeEditarDp,
   podeEditarContabil,
+  podeVerCamposDp,
   empresa,
 }: EmpresaFormProps) {
   const router = useRouter();
@@ -327,53 +329,57 @@ export function EmpresaForm({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="temFuncionariosClt"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-2">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={(checked) => field.onChange(checked === true)}
-                        aria-label="Tem funcionários CLT?"
-                      />
-                    </FormControl>
-                    <FormLabel className="!mt-0">Tem funcionários CLT?</FormLabel>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Define se esta empresa recebe automaticamente as obrigações de
-                    Folha de Pagamento, FGTS, INSS e eSocial (Fase 6).
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {podeVerCamposDp ? (
+              <>
+                <FormField
+                  control={form.control}
+                  name="temFuncionariosClt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) => field.onChange(checked === true)}
+                            aria-label="Tem funcionários CLT?"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Tem funcionários CLT?</FormLabel>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Define se esta empresa recebe automaticamente as obrigações de
+                        Folha de Pagamento, FGTS, INSS e eSocial (Fase 6).
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="temEmpregadaDomestica"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-2">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={(checked) => field.onChange(checked === true)}
-                        aria-label="Tem empregada doméstica?"
-                      />
-                    </FormControl>
-                    <FormLabel className="!mt-0">Tem empregada doméstica?</FormLabel>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Marcação informativa de vínculo de empregada doméstica. Não gera
-                    tarefas automaticamente.
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="temEmpregadaDomestica"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) => field.onChange(checked === true)}
+                            aria-label="Tem empregada doméstica?"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Tem empregada doméstica?</FormLabel>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Marcação informativa de vínculo de empregada doméstica. Não gera
+                        tarefas automaticamente.
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            ) : null}
 
             <div className="flex justify-end gap-2">
               <Button

@@ -51,6 +51,7 @@ export default async function EditarEmpresaPage({
   const podeEditarFiscal = isDono || (isChefe && setorChefe === "FISCAL");
   const podeEditarDp = isDono || (isChefe && setorChefe === "DP");
   const podeEditarContabil = isDono || (isChefe && setorChefe === "CONTABIL");
+  const podeVerCamposDp = isDono || setorChefe === "DP";
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,6 +63,7 @@ export default async function EditarEmpresaPage({
         podeEditarFiscal={podeEditarFiscal}
         podeEditarDp={podeEditarDp}
         podeEditarContabil={podeEditarContabil}
+        podeVerCamposDp={podeVerCamposDp}
         empresa={{
           id: empresa.id,
           nome: empresa.nome,
