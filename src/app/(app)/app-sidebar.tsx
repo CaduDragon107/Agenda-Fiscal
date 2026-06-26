@@ -53,6 +53,7 @@ type AppSidebarProps = {
 export function AppSidebar({ user, contadorAlertas }: AppSidebarProps) {
   const pathname = usePathname();
   const isDono = user.role === "DONO";
+  const podeVerDashboards = user.role === "DONO" || user.role === "CHEFE_SETOR";
 
   return (
     <Sidebar collapsible="icon">
@@ -107,7 +108,7 @@ export function AppSidebar({ user, contadorAlertas }: AppSidebarProps) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {isDono && (
+              {podeVerDashboards && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
