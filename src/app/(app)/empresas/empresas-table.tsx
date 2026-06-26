@@ -201,16 +201,20 @@ export function EmpresasTable({ empresas, responsaveis, isDono, setor }: Empresa
               },
             },
           ] as ColumnDef<EmpresaRow>[])),
-      {
-        id: "temEmpregadaDomestica",
-        header: "Empregada doméstica",
-        cell: ({ row }) =>
-          row.original.temEmpregadaDomestica ? (
-            <Badge className="bg-blue-600 text-white">Sim</Badge>
-          ) : (
-            ""
-          ),
-      },
+      ...(isDono || setor === "DP"
+        ? ([
+            {
+              id: "temEmpregadaDomestica",
+              header: "Empregada doméstica",
+              cell: ({ row }) =>
+                row.original.temEmpregadaDomestica ? (
+                  <Badge className="bg-blue-600 text-white">Sim</Badge>
+                ) : (
+                  ""
+                ),
+            },
+          ] as ColumnDef<EmpresaRow>[])
+        : []),
       {
         id: "acoes",
         header: "Ações",
