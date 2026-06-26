@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { mockColaboradorUser, mockDonoUser } from "./setup";
+import {
+  mockColaboradorUser,
+  mockDonoUser,
+  mockChefeFiscalUser,
+  mockChefeDpUser,
+  mockChefeContabilUser,
+} from "./setup";
 import { withVisibilityScope, withTarefaScope } from "@/lib/visibility-scope";
+import { tarefaSetorWhere } from "@/lib/tipo-obrigacao-setor";
 
 /**
  * tests/visibility-scope.test.ts
@@ -30,6 +37,30 @@ describe("withVisibilityScope", () => {
       responsavelId: colaborador.id,
     });
   });
+
+  it("retorna { responsaveisPorSetor: { some: { setor: 'FISCAL' } } } para CHEFE_SETOR do Fiscal (sem usuarioId — todas as empresas do setor)", () => {
+    const chefeFiscal = mockChefeFiscalUser();
+
+    expect(withVisibilityScope(chefeFiscal)).toEqual({
+      responsaveisPorSetor: { some: { setor: "FISCAL" } },
+    });
+  });
+
+  it("retorna { responsaveisPorSetor: { some: { setor: 'DP' } } } para CHEFE_SETOR do DP", () => {
+    const chefeDp = mockChefeDpUser();
+
+    expect(withVisibilityScope(chefeDp)).toEqual({
+      responsaveisPorSetor: { some: { setor: "DP" } },
+    });
+  });
+
+  it("retorna { id: '__no_setor_defined__' } (fail-safe) para CHEFE_SETOR sem setor definido", () => {
+    const chefeSemSetor = mockChefeFiscalUser({ setor: null });
+
+    expect(withVisibilityScope(chefeSemSetor)).toEqual({
+      id: "__no_setor_defined__",
+    });
+  });
 });
 
 describe("withTarefaScope", () => {
@@ -44,6 +75,20 @@ describe("withTarefaScope", () => {
 
     expect(withTarefaScope(colaborador)).toEqual({
       responsavelId: colaborador.id,
+    });
+  });
+
+  it("retorna tarefaSetorWhere('CONTABIL') para CHEFE_SETOR do Contábil", () => {
+    const chefeContabil = mockChefeContabilUser();
+
+    expect(withTarefaScope(chefeContabil)).toEqual(tarefaSetorWhere("CONTABIL"));
+  });
+
+  it("retorna fallback { responsavelId: user.id } para CHEFE_SETOR sem setor definido", () => {
+    const chefeSemSetor = mockChefeFiscalUser({ setor: null });
+
+    expect(withTarefaScope(chefeSemSetor)).toEqual({
+      responsavelId: chefeSemSetor.id,
     });
   });
 });

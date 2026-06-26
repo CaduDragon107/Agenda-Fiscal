@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-06-25)
 Phase: 9 (13º Salário Automático) — not started
 Plan: —
 Status: Roadmap created, awaiting phase planning
-Last activity: 2026-06-25 — ROADMAP.md created for v2.1 (Phase 9: 13º Salário Automático; Phase 10: Notificações In-App)
+Last activity: 2026-06-26 - Completed quick task 260626-le2: Corrigir vazamento de carteira/colaboradores entre setores no card "Desempenho por colaborador" dos dashboards DP/CONTABIL
 
 ## Performance Metrics
 
@@ -157,6 +157,19 @@ None yet.
 | 260622-lty | Trocar grafico Evolucao Mensal de Area/Line para barras agrupadas com 5 categorias (criadas/concluidas/pendentes/pendentes-com-motivo/vencidas) | 2026-06-22 | c393331 | [260622-lty-trocar-grafico-evolucao-mensal-para-barr](./quick/260622-lty-trocar-grafico-evolucao-mensal-para-barr/) |
 | 260622-r6n | Mudar paleta de cores dos graficos do dashboard (escala de cinza -> esquema semaforo: azul/verde/amarelo/laranja/vermelho) | 2026-06-22 | 6104e79 | [260622-r6n-mudar-paleta-de-cores-dos-graficos-do-da](./quick/260622-r6n-mudar-paleta-de-cores-dos-graficos-do-da/) |
 | 260625-p9h | Corrigir achados WR-01, WR-02, WR-03, IN-01, IN-02 do 08-REVIEW.md (dashboards multi-setor) | 2026-06-25 | 7515665 | [260625-p9h-corrigir-achados-wr-01-wr-02-wr-03-in-01](./quick/260625-p9h-corrigir-achados-wr-01-wr-02-wr-03-in-01/) |
+| 260625-mgd | Renomear usuarios Dono/DP1/Contabil1 para Neto/Lauany/Elisabete no seed + script one-off para producao | 2026-06-26 | cd68e63 | [260625-mgd-renomear-usuarios-dono-neto-dp1-lauany-c](./quick/260625-mgd-renomear-usuarios-dono-neto-dp1-lauany-c/) |
+| 260626-a8d | Rota /empresas/dp (listagem com responsavel DP, celula vazia se ausente) + campo informativo Empresa.temEmpregadaDomestica | 2026-06-26 | 68edf7a | [260626-a8d-listagem-de-empresas-dp-com-responsavel-](./quick/260626-a8d-listagem-de-empresas-dp-com-responsavel-/) |
+| 260626-aim | Botao DONO-only (com AlertDialog) para excluir tarefas (recorrentes+avulsas, todos os setores) da competencia atual | 2026-06-26 | a03e4d6 | [260626-aim-botao-so-dono-para-excluir-todas-as-tare](./quick/260626-aim-botao-so-dono-para-excluir-todas-as-tare/) |
+| 260626-c8i | Renomear DP2/DP3/DP4/Contabil2/Contabil3 para Andre/Mirella/Lorraine/Rany/Sarah no seed + script aplicado em producao | 2026-06-26 | 630ec55 | [260626-c8i-renomear-dp2-dp3-dp4-para-andre-mirella-](./quick/260626-c8i-renomear-dp2-dp3-dp4-para-andre-mirella-/) |
+| 260626-cdf | Removida rota/sidebar separados /empresas/dp; coluna Empregada domestica movida para a tabela principal de Empresas | 2026-06-26 | 5777967 | [260626-cdf-remover-rota-e-item-de-sidebar-separados](./quick/260626-cdf-remover-rota-e-item-de-sidebar-separados/) |
+| 260626-ckm | Backfill EmpresaResponsavelSetor DP a partir de EMPRESAS SEPARADAS Depto Pessoal.xlsx (96 empresas: Andre 21, Lauany 21, Mirella 21, Lorraine 33) | 2026-06-26 | aeb4c65 | [260626-ckm-backfill-empresaresponsavelsetor-dp-a-pa](./quick/260626-ckm-backfill-empresaresponsavelsetor-dp-a-pa/) |
+| 260626-d1a | Pagina /usuarios (DONO-only) para editar o nome de usuarios via UI - editarNomeUsuarioAction + tabela com Dialog + item de sidebar | 2026-06-26 | db209c6 | [260626-d1a-pagina-usuarios-dono-para-editar-o-nome-](./quick/260626-d1a-pagina-usuarios-dono-para-editar-o-nome-/) |
+| — | Renomear rotulo "Role" para "Cargo" na tabela /usuarios | 2026-06-26 | 5342046 | — |
+| 260626-dfc | Novo papel CHEFE_SETOR (Caio/Elisabete/Lauany): visao e atribuicao de tarefas escopadas ao proprio setor, CRUD de empresa por-campo, botao Gerar tarefas liberado | 2026-06-26 | acc0d2b | [260626-dfc-criar-role-chefe-setor-caio-fiscal-elisa](./quick/260626-dfc-criar-role-chefe-setor-caio-fiscal-elisa/) |
+| — | Restringe coluna Empregada domestica ao setor DP e ao dono | 2026-06-26 | 497b53a | — |
+| 260626-kn2 | Permitir CHEFE_SETOR acessar /dashboards vendo apenas o card do proprio setor (sem tab switcher Fiscal/DP/Contabil) | 2026-06-26 | 517e696 | [260626-kn2-permitir-que-chefe-setor-acesse-a-pagina](./quick/260626-kn2-permitir-que-chefe-setor-acesse-a-pagina/) |
+| 260626-l8c | Corrigir href do link "Ver empresa" no detalhe da tarefa, que apontava para /empresas/{id} (rota inexistente, causava 404) -> /empresas/{id}/editar | 2026-06-26 | cb5d51a | [260626-l8c-corrigir-link-ver-empresa-que-aponta-par](./quick/260626-l8c-corrigir-link-ver-empresa-que-aponta-par/) |
+| 260626-le2 | Corrigir vazamento de carteira/colaboradores entre setores no card "Desempenho por colaborador" (DP/CONTABIL liam Empresa.responsavelId legado, exclusivo FISCAL; agora usam EmpresaResponsavelSetor) | 2026-06-26 | c5fddfe | [260626-le2-ajustar-dashboard-desempenho-do-funciona](./quick/260626-le2-ajustar-dashboard-desempenho-do-funciona/) |
 
 ## Deferred Items
 

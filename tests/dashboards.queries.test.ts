@@ -10,6 +10,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const tarefaFindManyMock = vi.fn();
 const empresaGroupByMock = vi.fn();
+const empresaResponsavelSetorGroupByMock = vi.fn();
 const usuarioFindManyMock = vi.fn();
 const desempenhoMensalGroupByMock = vi.fn();
 
@@ -20,6 +21,9 @@ vi.mock("@/lib/db", () => ({
     },
     empresa: {
       groupBy: (...args: unknown[]) => empresaGroupByMock(...args),
+    },
+    empresaResponsavelSetor: {
+      groupBy: (...args: unknown[]) => empresaResponsavelSetorGroupByMock(...args),
     },
     usuario: {
       findMany: (...args: unknown[]) => usuarioFindManyMock(...args),
@@ -34,6 +38,7 @@ describe("listarDesempenhoColaboradoresMesAtual", () => {
   beforeEach(() => {
     tarefaFindManyMock.mockReset();
     empresaGroupByMock.mockReset();
+    empresaResponsavelSetorGroupByMock.mockReset();
     usuarioFindManyMock.mockReset();
   });
 
@@ -150,7 +155,7 @@ describe("listarDesempenhoColaboradoresMesAtual", () => {
     expect(typeof heitor?.percentualNoPrazo).toBe("number");
   });
 
-  it("setor DP funde tarefaSetorWhere no where da Tarefa e empresaWhereExtra (temFuncionariosClt) no where de carteiras", async () => {
+  it("setor DP deriva carteira via db.empresaResponsavelSetor.groupBy (nunca db.empresa.groupBy por responsavelId legado) — user_dp1 e responsavel FISCAL de 5 empresas mas DP de apenas 2", async () => {
     const { listarDesempenhoColaboradoresMesAtual } = await import(
       "@/modules/dashboards/queries"
     );
@@ -162,8 +167,13 @@ describe("listarDesempenhoColaboradoresMesAtual", () => {
         historico: [{ concluidoEm: new Date("2026-06-09T10:00:00") }],
       },
     ]);
+    // carteira FISCAL legada (5 empresas) — NUNCA deve ser usada para DP.
     empresaGroupByMock.mockResolvedValue([
-      { responsavelId: "user_dp1", _count: { id: 4 } },
+      { responsavelId: "user_dp1", _count: { id: 5 } },
+    ]);
+    // carteira real DP (junction table) — apenas 2 empresas.
+    empresaResponsavelSetorGroupByMock.mockResolvedValue([
+      { usuarioId: "user_dp1", _count: { id: 2 } },
     ]);
     usuarioFindManyMock.mockResolvedValue([
       { id: "user_dp1", nome: "ColaboradorDP" },
@@ -176,27 +186,32 @@ describe("listarDesempenhoColaboradoresMesAtual", () => {
     );
 
     const dp1 = resultado.find((r) => r.colaboradorId === "user_dp1");
-    expect(dp1?.totalEmpresas).toBe(4);
+    expect(dp1?.totalEmpresas).toBe(2); // nunca 5
+
+    expect(empresaGroupByMock).not.toHaveBeenCalled();
+    expect(empresaResponsavelSetorGroupByMock).toHaveBeenCalledTimes(1);
 
     const tarefaArgs = tarefaFindManyMock.mock.calls[0][0] as {
       where: { OR?: Array<Record<string, unknown>> };
     };
     expect(tarefaArgs.where.OR).toBeDefined();
 
-    const empresaArgs = empresaGroupByMock.mock.calls[0][0] as {
-      where: { ativo: boolean; temFuncionariosClt?: boolean };
+    const carteiraArgs = empresaResponsavelSetorGroupByMock.mock.calls[0][0] as {
+      where: { setor: string; empresa: { ativo: boolean; temFuncionariosClt?: boolean } };
     };
-    expect(empresaArgs.where.temFuncionariosClt).toBe(true);
+    expect(carteiraArgs.where.setor).toBe("DP");
+    expect(carteiraArgs.where.empresa.ativo).toBe(true);
+    expect(carteiraArgs.where.empresa.temFuncionariosClt).toBe(true);
   });
 
-  it("setor CONTABIL usa universo de empresas completo (empresaWhereExtra={})", async () => {
+  it("setor CONTABIL deriva carteira via db.empresaResponsavelSetor.groupBy filtrado por setor CONTABIL, sem temFuncionariosClt", async () => {
     const { listarDesempenhoColaboradoresMesAtual } = await import(
       "@/modules/dashboards/queries"
     );
 
     tarefaFindManyMock.mockResolvedValue([]);
-    empresaGroupByMock.mockResolvedValue([
-      { responsavelId: "user_cont1", _count: { id: 9 } },
+    empresaResponsavelSetorGroupByMock.mockResolvedValue([
+      { usuarioId: "user_cont1", _count: { id: 9 } },
     ]);
     usuarioFindManyMock.mockResolvedValue([
       { id: "user_cont1", nome: "ColaboradorContabil" },
@@ -210,10 +225,88 @@ describe("listarDesempenhoColaboradoresMesAtual", () => {
     const cont1 = resultado.find((r) => r.colaboradorId === "user_cont1");
     expect(cont1?.totalEmpresas).toBe(9);
 
-    const empresaArgs = empresaGroupByMock.mock.calls[0][0] as {
-      where: { ativo: boolean; temFuncionariosClt?: boolean };
+    expect(empresaGroupByMock).not.toHaveBeenCalled();
+
+    const carteiraArgs = empresaResponsavelSetorGroupByMock.mock.calls[0][0] as {
+      where: { setor: string; empresa: { ativo: boolean; temFuncionariosClt?: boolean } };
     };
-    expect(empresaArgs.where.temFuncionariosClt).toBeUndefined();
+    expect(carteiraArgs.where.setor).toBe("CONTABIL");
+    expect(carteiraArgs.where.empresa.temFuncionariosClt).toBeUndefined();
+  });
+
+  it("setor FISCAL continua usando db.empresa.groupBy por responsavelId (forma legada) e NUNCA chama db.empresaResponsavelSetor.groupBy", async () => {
+    const { listarDesempenhoColaboradoresMesAtual } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    tarefaFindManyMock.mockResolvedValue([
+      {
+        responsavelId: "user_1",
+        prazo: new Date("2026-06-10T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-06-09T10:00:00") }],
+      },
+      {
+        responsavelId: "user_1",
+        prazo: new Date("2026-06-12T23:59:59"),
+        historico: [{ concluidoEm: new Date("2026-06-13T10:00:00") }],
+      },
+    ]);
+    empresaGroupByMock.mockResolvedValue([
+      { responsavelId: "user_1", _count: { id: 5 } },
+    ]);
+    usuarioFindManyMock.mockResolvedValue([
+      { id: "user_1", nome: "Caio" },
+    ]);
+
+    const resultado = await listarDesempenhoColaboradoresMesAtual(
+      new Date("2026-06-15T12:00:00"),
+      "FISCAL"
+    );
+
+    const caio = resultado.find((r) => r.colaboradorId === "user_1");
+    expect(caio?.totalEmpresas).toBe(5);
+
+    expect(empresaGroupByMock).toHaveBeenCalledTimes(1);
+    expect(empresaResponsavelSetorGroupByMock).not.toHaveBeenCalled();
+
+    const empresaArgs = empresaGroupByMock.mock.calls[0][0] as {
+      by: string[];
+      where: { ativo: boolean };
+    };
+    expect(empresaArgs.by).toEqual(["responsavelId"]);
+  });
+
+  it("colaborador cuja unica atribuicao e EmpresaResponsavelSetor.setor=CONTABIL (zero tarefas concluidas, zero relacao com Empresa.responsavelId) aparece no resultado de setor CONTABIL com totalConcluidas=0 e totalEmpresas correto", async () => {
+    const { listarDesempenhoColaboradoresMesAtual } = await import(
+      "@/modules/dashboards/queries"
+    );
+
+    // nenhuma tarefa concluida no mes para este colaborador.
+    tarefaFindManyMock.mockResolvedValue([]);
+    // carteira via junction table — unica fonte da lista de colaboradores
+    // exibidos quando nao ha tarefas concluidas.
+    empresaResponsavelSetorGroupByMock.mockResolvedValue([
+      { usuarioId: "user_cont_sem_tarefa", _count: { id: 3 } },
+    ]);
+    usuarioFindManyMock.mockResolvedValue([
+      { id: "user_cont_sem_tarefa", nome: "ColaboradorContabilSemTarefa" },
+    ]);
+
+    const resultado = await listarDesempenhoColaboradoresMesAtual(
+      new Date("2026-06-15T12:00:00"),
+      "CONTABIL"
+    );
+
+    const colaborador = resultado.find(
+      (r) => r.colaboradorId === "user_cont_sem_tarefa"
+    );
+    expect(colaborador).toBeDefined();
+    expect(colaborador?.totalConcluidas).toBe(0);
+    expect(colaborador?.totalEmpresas).toBe(3);
+
+    // prova que a lista de colaboradores (colaboradorIds) tambem usa a fonte
+    // certa de carteira — nao apenas o calculo de totalEmpresas.
+    expect(empresaGroupByMock).not.toHaveBeenCalled();
   });
 });
 

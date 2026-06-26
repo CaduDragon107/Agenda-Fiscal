@@ -3,7 +3,7 @@ import type { EmpresaRow } from "./empresas-table";
 
 type EmpresaComResponsaveis = Awaited<ReturnType<typeof listarEmpresas>>[number];
 
-type ViewerRole = "COLABORADOR" | "DONO";
+type ViewerRole = "COLABORADOR" | "DONO" | "CHEFE_SETOR";
 type ViewerSetor = "FISCAL" | "DP" | "CONTABIL" | null;
 
 /**
@@ -46,6 +46,7 @@ export function deriveEmpresaRows(
         cnpj: empresa.cnpj,
         regimeTributario: empresa.regimeTributario,
         responsavelId: empresa.responsavelId,
+        temEmpregadaDomestica: empresa.temEmpregadaDomestica,
         responsavelFiscal: fiscal,
         responsavelFiscalId: fiscal?.id ?? null,
         responsavelDp: dp,
@@ -70,6 +71,7 @@ export function deriveEmpresaRows(
       cnpj: empresa.cnpj,
       regimeTributario: empresa.regimeTributario,
       responsavelId: empresa.responsavelId,
+      temEmpregadaDomestica: empresa.temEmpregadaDomestica,
       responsavelFiscal: proprioSetor === "FISCAL" ? responsavelProprioSetor : null,
       responsavelFiscalId: proprioSetor === "FISCAL" ? responsavelProprioSetor?.id ?? null : null,
       responsavelDp: proprioSetor === "DP" ? responsavelProprioSetor : null,

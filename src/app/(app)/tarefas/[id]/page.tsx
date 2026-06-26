@@ -174,12 +174,6 @@ export default async function TarefaDetalhePage({
                   </Badge>
                 </dd>
               </div>
-              <div>
-                <dt className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Responsável
-                </dt>
-                <dd className="text-sm">{tarefa.empresa.responsavel.nome}</dd>
-              </div>
               {tarefa.empresa.particularidades && (
                 <div>
                   <dt className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -193,7 +187,7 @@ export default async function TarefaDetalhePage({
             </dl>
             <div className="mt-4">
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/empresas/${tarefa.empresa.id}`}>Ver empresa</Link>
+                <Link href={`/empresas/${tarefa.empresa.id}/editar`}>Ver empresa</Link>
               </Button>
             </div>
           </CardContent>

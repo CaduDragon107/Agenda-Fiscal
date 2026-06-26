@@ -22,6 +22,7 @@ const EMPRESA_SELECT = {
   regimeTributario: true,
   responsavelId: true,
   temFuncionariosClt: true,
+  temEmpregadaDomestica: true,
   contatos: true,
   particularidades: true,
   ativo: true,

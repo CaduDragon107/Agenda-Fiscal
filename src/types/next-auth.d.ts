@@ -1,6 +1,6 @@
 import type { DefaultSession } from "next-auth";
 
-export type AppRole = "COLABORADOR" | "DONO";
+export type AppRole = "COLABORADOR" | "DONO" | "CHEFE_SETOR";
 export type AppSetor = "FISCAL" | "DP" | "CONTABIL";
 
 declare module "next-auth" {

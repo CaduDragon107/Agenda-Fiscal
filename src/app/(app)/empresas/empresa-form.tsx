@@ -57,7 +57,10 @@ type EmpresaFormProps = {
   responsaveisFiscal: ResponsavelOption[];
   responsaveisDp: ResponsavelOption[];
   responsaveisContabil: ResponsavelOption[];
-  isDono: boolean;
+  podeEditarFiscal: boolean;
+  podeEditarDp: boolean;
+  podeEditarContabil: boolean;
+  podeVerCamposDp: boolean;
   empresa?: {
     id: string;
     nome: string;
@@ -67,6 +70,7 @@ type EmpresaFormProps = {
     responsavelDpId: string | null;
     responsavelContabilId: string | null;
     temFuncionariosClt: boolean;
+    temEmpregadaDomestica: boolean;
     contatos: string | null;
     particularidades: string | null;
   };
@@ -81,14 +85,20 @@ type EmpresaFormProps = {
  *
  * v2.0 (Plano 05-04, SETOR-01/SETOR-03): 3 seletores de responsável
  * (Fiscal/DP/Contábil), cada um filtrado por setor, mais o checkbox "Tem
- * funcionários CLT?" (EMPR-03). `isDono` controla apenas o `disabled` dos 3
- * Selects (UX) — o enforcement real é server-side (Plano 05-03, D-02).
+ * funcionários CLT?" (EMPR-03). `podeEditarFiscal`/`podeEditarDp`/
+ * `podeEditarContabil` controlam o `disabled` POR CAMPO de cada um dos 3
+ * Selects (UX) — calculados server-side (quick task 260626-dfc: DONO sempre
+ * true; CHEFE_SETOR true só no select do próprio setor) — o enforcement
+ * real é server-side em `criarEmpresa`/`editarEmpresa` (Plano 05-03, D-02).
  */
 export function EmpresaForm({
   responsaveisFiscal,
   responsaveisDp,
   responsaveisContabil,
-  isDono,
+  podeEditarFiscal,
+  podeEditarDp,
+  podeEditarContabil,
+  podeVerCamposDp,
   empresa,
 }: EmpresaFormProps) {
   const router = useRouter();
@@ -104,6 +114,7 @@ export function EmpresaForm({
       responsavelDpId: empresa?.responsavelDpId ?? "",
       responsavelContabilId: empresa?.responsavelContabilId ?? "",
       temFuncionariosClt: empresa?.temFuncionariosClt ?? false,
+      temEmpregadaDomestica: empresa?.temEmpregadaDomestica ?? false,
       contatos: empresa?.contatos ?? "",
       particularidades: empresa?.particularidades ?? "",
     },
@@ -120,6 +131,7 @@ export function EmpresaForm({
     formData.set("responsavelDpId", values.responsavelDpId ?? "");
     formData.set("responsavelContabilId", values.responsavelContabilId ?? "");
     formData.set("temFuncionariosClt", String(values.temFuncionariosClt ?? false));
+    formData.set("temEmpregadaDomestica", String(values.temEmpregadaDomestica ?? false));
     formData.set("contatos", values.contatos ?? "");
     formData.set("particularidades", values.particularidades ?? "");
 
@@ -205,7 +217,7 @@ export function EmpresaForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Responsável Fiscal</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!isDono}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!podeEditarFiscal}>
                       <FormControl>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecione o responsável" />
@@ -235,7 +247,7 @@ export function EmpresaForm({
                         field.onChange(value === SEM_RESPONSAVEL ? null : value)
                       }
                       value={field.value ?? SEM_RESPONSAVEL}
-                      disabled={!isDono}
+                      disabled={!podeEditarDp}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -267,7 +279,7 @@ export function EmpresaForm({
                         field.onChange(value === SEM_RESPONSAVEL ? null : value)
                       }
                       value={field.value ?? SEM_RESPONSAVEL}
-                      disabled={!isDono}
+                      disabled={!podeEditarContabil}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -317,29 +329,57 @@ export function EmpresaForm({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="temFuncionariosClt"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-2">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={(checked) => field.onChange(checked === true)}
-                        aria-label="Tem funcionários CLT?"
-                      />
-                    </FormControl>
-                    <FormLabel className="!mt-0">Tem funcionários CLT?</FormLabel>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Define se esta empresa recebe automaticamente as obrigações de
-                    Folha de Pagamento, FGTS, INSS e eSocial (Fase 6).
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {podeVerCamposDp ? (
+              <>
+                <FormField
+                  control={form.control}
+                  name="temFuncionariosClt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) => field.onChange(checked === true)}
+                            aria-label="Tem funcionários CLT?"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Tem funcionários CLT?</FormLabel>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Define se esta empresa recebe automaticamente as obrigações de
+                        Folha de Pagamento, FGTS, INSS e eSocial (Fase 6).
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="temEmpregadaDomestica"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) => field.onChange(checked === true)}
+                            aria-label="Tem empregada doméstica?"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Tem empregada doméstica?</FormLabel>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Marcação informativa de vínculo de empregada doméstica. Não gera
+                        tarefas automaticamente.
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            ) : null}
 
             <div className="flex justify-end gap-2">
               <Button

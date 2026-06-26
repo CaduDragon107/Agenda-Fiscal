@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, LayoutDashboard, ListChecks, LogOut } from "lucide-react";
+import { Building2, LayoutDashboard, ListChecks, LogOut, Users } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 import {
@@ -35,7 +35,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 type AppSidebarUser = {
   nome?: string | null;
   email?: string | null;
-  role: "COLABORADOR" | "DONO";
+  role: "COLABORADOR" | "DONO" | "CHEFE_SETOR";
 };
 
 function iniciais(nome?: string | null, email?: string | null): string {
@@ -53,6 +53,7 @@ type AppSidebarProps = {
 export function AppSidebar({ user, contadorAlertas }: AppSidebarProps) {
   const pathname = usePathname();
   const isDono = user.role === "DONO";
+  const podeVerDashboards = user.role === "DONO" || user.role === "CHEFE_SETOR";
 
   return (
     <Sidebar collapsible="icon">
@@ -81,7 +82,10 @@ export function AppSidebar({ user, contadorAlertas }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname?.startsWith("/empresas")}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname?.startsWith("/empresas")}
+                >
                   <Link href="/empresas">
                     <Building2 />
                     <span>Empresas</span>
@@ -104,7 +108,7 @@ export function AppSidebar({ user, contadorAlertas }: AppSidebarProps) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {isDono && (
+              {podeVerDashboards && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
@@ -113,6 +117,19 @@ export function AppSidebar({ user, contadorAlertas }: AppSidebarProps) {
                     <Link href="/dashboards">
                       <LayoutDashboard />
                       <span>Dashboards</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              {isDono && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname?.startsWith("/usuarios")}
+                  >
+                    <Link href="/usuarios">
+                      <Users />
+                      <span>Usuários</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

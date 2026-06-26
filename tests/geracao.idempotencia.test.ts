@@ -20,6 +20,11 @@ const empresaGroupByMock = vi.fn();
 // suite (que nao testa setor) quebraria com "Cannot read properties of
 // undefined (reading 'findMany')".
 const usuarioFindManyMock = vi.fn();
+// NOVO (quick-260626): geracao.ts agora tambem busca, via findFirst, o
+// usuario marcado com responsavelExtratoBancario=true (excecao fixa de
+// Lancamentos) — sem esse mock, o `tx` desta suite quebraria com
+// "tx.usuario.findFirst is not a function".
+const usuarioFindFirstMock = vi.fn();
 const desempenhoMensalCreateManyMock = vi.fn();
 
 vi.mock("@/lib/db", () => {
@@ -34,6 +39,7 @@ vi.mock("@/lib/db", () => {
     },
     usuario: {
       findMany: (...args: unknown[]) => usuarioFindManyMock(...args),
+      findFirst: (...args: unknown[]) => usuarioFindFirstMock(...args),
     },
     desempenhoMensal: {
       createMany: (...args: unknown[]) => desempenhoMensalCreateManyMock(...args),
@@ -54,6 +60,7 @@ describe("executarGeracaoMensal — idempotencia", () => {
     tarefaFindManyMock.mockReset();
     empresaGroupByMock.mockReset();
     usuarioFindManyMock.mockReset();
+    usuarioFindFirstMock.mockReset();
     desempenhoMensalCreateManyMock.mockReset();
 
     // Snapshot do mes anterior: por padrao, sem tarefas concluidas no range
@@ -62,6 +69,7 @@ describe("executarGeracaoMensal — idempotencia", () => {
     tarefaFindManyMock.mockResolvedValue([]);
     empresaGroupByMock.mockResolvedValue([]);
     usuarioFindManyMock.mockResolvedValue([]);
+    usuarioFindFirstMock.mockResolvedValue(null);
     desempenhoMensalCreateManyMock.mockResolvedValue({ count: 0 });
   });
 
@@ -300,7 +308,7 @@ describe("executarGeracaoMensal — idempotencia", () => {
   // Plan 07-02: bloco Contábil mensal + anual
   // ---------------------------------------------------------------------
 
-  it("Contábil mensal: empresa LUCRO_REAL com responsável CONTABIL gera as 8 rotinas mensais (competência sem disparo anual)", async () => {
+  it("Contábil mensal: empresa LUCRO_REAL com responsável CONTABIL gera as 7 rotinas mensais (competência sem disparo anual)", async () => {
     const { executarGeracaoMensal } = await import("@/modules/tarefas/geracao");
 
     empresaFindManyMock
@@ -313,15 +321,15 @@ describe("executarGeracaoMensal — idempotencia", () => {
           regimeTributario: "LUCRO_REAL",
           responsaveisPorSetor: [{ usuarioId: "contabil_user" }],
         },
-      ]); // bloco Contabil mensal — 1 empresa, 8 rotinas
+      ]); // bloco Contabil mensal — 1 empresa, 7 rotinas (quick-260626: EXTRATO_BANCARIO consolidado em LANCAMENTO_EXTRATOS)
 
-    createManyMock.mockResolvedValue({ count: 8 });
+    createManyMock.mockResolvedValue({ count: 7 });
 
     // "2026-03" — março não dispara nenhuma obrigação anual (DEFIS=fev,
     // ECD=abr, ECF=jun), garantindo que apenas o bloco mensal entra em jogo.
     const resultado = await executarGeracaoMensal("2026-03");
 
-    expect(resultado.criadas).toBe(8);
+    expect(resultado.criadas).toBe(7);
     expect(resultado.semResponsavelContabil).toEqual([]);
 
     expect(empresaFindManyMock).toHaveBeenNthCalledWith(3, {
@@ -343,7 +351,7 @@ describe("executarGeracaoMensal — idempotencia", () => {
     const arg = createManyMock.mock.calls[0][0] as {
       data: { responsavelId: string; tipoObrigacao: string }[];
     };
-    expect(arg.data).toHaveLength(8);
+    expect(arg.data).toHaveLength(7);
     expect(arg.data.every((t) => t.responsavelId === "contabil_user")).toBe(
       true
     );

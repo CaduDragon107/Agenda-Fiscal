@@ -5,6 +5,7 @@ import { listarEmpresas, listarResponsaveis } from "@/modules/empresas/queries";
 import { TarefasTable } from "./tarefas-table";
 import { NovaTarefaDialog } from "./nova-tarefa-dialog";
 import { GerarTarefasButton } from "./gerar-tarefas-button";
+import { ExcluirTarefasCompetenciaButton } from "./excluir-tarefas-competencia-button";
 
 export default async function TarefasPage() {
   const session = await auth();
@@ -21,7 +22,10 @@ export default async function TarefasPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Tarefas</h1>
         <div className="flex items-center gap-2">
-          {session.user.role === "DONO" && <GerarTarefasButton />}
+          {(session.user.role === "DONO" || session.user.role === "CHEFE_SETOR") && (
+            <GerarTarefasButton />
+          )}
+          {session.user.role === "DONO" && <ExcluirTarefasCompetenciaButton />}
           <NovaTarefaDialog responsaveis={responsaveis} empresas={empresas} />
         </div>
       </div>

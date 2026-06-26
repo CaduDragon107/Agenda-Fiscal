@@ -26,12 +26,11 @@ import { withVisibilityScope } from "@/lib/visibility-scope";
  *   `EmpresaResponsavelSetor` (FISCAL sempre; DP/CONTABIL apenas se
  *   informado) numa ÚNICA transação (`db.$transaction`) — nunca como
  *   escritas independentes, evitando partial-write (T-05-12).
- * - Guard DONO-only (D-02, CRÍTICO, server-side — não apenas `disabled` na
- *   UI, ver T-05-10): SOMENTE `session.user.role === "DONO"` pode alterar
- *   os 3 campos de responsável. Um COLABORADOR submetendo
- *   `responsavelFiscalId`/`responsavelDpId`/`responsavelContabilId` via
- *   chamada direta da Server Action tem esses campos silenciosamente
- *   ignorados (substituídos pelos valores atuais do banco em
+ * - Guard por-campo (D-02, CRÍTICO, server-side — não apenas `disabled` na
+ *   UI, ver T-05-10): cada um dos 3 campos de responsável só honra o valor
+ *   submetido quando `isDono || (isChefe && setorChefe === "<SETOR>")`
+ *   (quick task 260626-dfc, T-dfc-02) — senão o campo é silenciosamente
+ *   ignorado (substituído pelos valores atuais do banco em
  *   `editarEmpresa`, ou `null`/rejeitados em `criarEmpresa`) — o resto do
  *   payload (nome/contatos/particularidades/temFuncionariosClt) continua
  *   sendo aplicado normalmente.
@@ -54,6 +53,7 @@ function dadosFormulario(formData: FormData) {
     responsavelDpId: formData.get("responsavelDpId") || null,
     responsavelContabilId: formData.get("responsavelContabilId") || null,
     temFuncionariosClt: formData.get("temFuncionariosClt") === "true",
+    temEmpregadaDomestica: formData.get("temEmpregadaDomestica") === "true",
     contatos: formData.get("contatos"),
     particularidades: formData.get("particularidades"),
   };
@@ -110,13 +110,15 @@ async function upsertResponsaveisPorSetor(
  * EmpresaRegimeHistorico (regime atual, dataInicio = agora) — mantém o
  * histórico de regime coerente desde o v1.
  *
- * v2.0 (D-02, T-05-10): SOMENTE DONO pode definir responsavelDpId/
- * responsavelContabilId na criação. Um COLABORADOR criando uma empresa tem
- * esses 2 campos forçados a `null` (sem responsável DP/Contábil atribuído na
- * criação, consistente com D-01) — não há "valor atual" para re-mesclar
- * numa criação nova. `responsavelFiscalId` permanece obrigatório
- * (empresaSchema) e não é restrito por este guard (toda empresa precisa de
- * um responsável Fiscal desde a criação, igual ao comportamento pré-v2.0).
+ * v2.0 (D-02, T-05-10): SOMENTE DONO ou CHEFE_SETOR do respectivo setor (quick
+ * task 260626-dfc, T-dfc-02) pode definir responsavelDpId/
+ * responsavelContabilId na criação. Um COLABORADOR (ou CHEFE_SETOR de outro
+ * setor) criando uma empresa tem esses 2 campos forçados a `null` (sem
+ * responsável DP/Contábil atribuído na criação, consistente com D-01) — não
+ * há "valor atual" para re-mesclar numa criação nova. `responsavelFiscalId`
+ * permanece obrigatório (empresaSchema) e não é restrito por este guard
+ * (toda empresa precisa de um responsável Fiscal desde a criação, igual ao
+ * comportamento pré-v2.0).
  *
  * v2.0 (T-05-12): grava Empresa + linha(s) EmpresaResponsavelSetor numa
  * única transação; `responsavelId` legado escrito em lockstep com
@@ -137,11 +139,17 @@ export async function criarEmpresa(
 
   const dados = parsed.data;
 
-  // Guard DONO-only (D-02, T-05-10): COLABORADOR não pode atribuir
-  // responsável DP/Contábil já na criação.
-  const responsavelDpId = session.user.role === "DONO" ? dados.responsavelDpId ?? null : null;
-  const responsavelContabilId =
-    session.user.role === "DONO" ? dados.responsavelContabilId ?? null : null;
+  // Guard por-campo (D-02, T-05-10, T-dfc-02): DONO sempre autorizado;
+  // CHEFE_SETOR autorizado somente no campo do próprio setor; COLABORADOR
+  // nunca. Demais casos: campo forçado a null (sem "valor atual" numa
+  // criação nova).
+  const isDono = session.user.role === "DONO";
+  const isChefe = session.user.role === "CHEFE_SETOR";
+  const setorChefe = session.user.setor;
+  const podeEditarDp = isDono || (isChefe && setorChefe === "DP");
+  const podeEditarContabil = isDono || (isChefe && setorChefe === "CONTABIL");
+  const responsavelDpId = podeEditarDp ? dados.responsavelDpId ?? null : null;
+  const responsavelContabilId = podeEditarContabil ? dados.responsavelContabilId ?? null : null;
 
   const empresa = await db.$transaction(async (tx) => {
     const criada = await tx.empresa.create({
@@ -153,6 +161,7 @@ export async function criarEmpresa(
         // responsavelFiscalId, gravado na mesma transação da linha FISCAL.
         responsavelId: dados.responsavelFiscalId,
         temFuncionariosClt: dados.temFuncionariosClt,
+        temEmpregadaDomestica: dados.temEmpregadaDomestica,
         contatos: dados.contatos,
         particularidades: dados.particularidades,
         regimeHistorico: {
@@ -186,15 +195,17 @@ export async function criarEmpresa(
  * nada — nunca um erro de permissão (403), que vazaria a existência do
  * registro.
  *
- * v2.0 (D-02, T-05-10, CRÍTICO): SOMENTE DONO pode alterar os 3 campos de
- * responsável. Se `session.user.role !== "DONO"`, os 3 valores submetidos
- * (responsavelFiscalId/DpId/ContabilId) são IGNORADOS e re-mesclados com os
- * valores atuais já gravados na junction table (`existente.responsaveisPorSetor`)
- * — o restante do payload (nome/contatos/particularidades/temFuncionariosClt)
- * continua sendo aplicado normalmente. Isto é uma checagem server-side real,
- * não apenas um `disabled` na UI (mirror de T-01-IDOR-MUT) — um COLABORADOR
- * chamando esta action diretamente com um responsavelDpId arbitrário NÃO
- * consegue alterar o responsável DP de uma empresa.
+ * v2.0 (D-02, T-05-10, CRÍTICO): cada um dos 3 campos de responsável só
+ * honra o valor submetido quando `isDono || (isChefe && setorChefe ===
+ * "<SETOR>")` (quick task 260626-dfc, T-dfc-02) — senão o valor submetido é
+ * IGNORADO e re-mesclado com o valor atual já gravado na junction table
+ * (`existente.responsaveisPorSetor`) — o restante do payload
+ * (nome/contatos/particularidades/temFuncionariosClt) continua sendo
+ * aplicado normalmente. Isto é uma checagem server-side real, não apenas um
+ * `disabled` na UI (mirror de T-01-IDOR-MUT) — um COLABORADOR (ou
+ * CHEFE_SETOR de outro setor) chamando esta action diretamente com um
+ * responsavelDpId arbitrário NÃO consegue alterar o responsável DP de uma
+ * empresa fora do próprio escopo.
  *
  * v2.0 (T-05-12): Empresa.update + upsert(s) de EmpresaResponsavelSetor numa
  * única transação (sem partial-write); `responsavelId` legado em lockstep
@@ -239,15 +250,21 @@ export async function editarEmpresa(
   const setorAtual = (setor: "FISCAL" | "DP" | "CONTABIL") =>
     existente.responsaveisPorSetor.find((r) => r.setor === setor)?.usuarioId ?? null;
 
-  // Guard DONO-only (D-02, T-05-10, CRÍTICO — server-side, não apenas
-  // `disabled` na UI): COLABORADOR não pode alterar os 3 responsáveis;
-  // valores submetidos são descartados e substituídos pelos valores atuais.
+  // Guard por-campo (D-02, T-05-10, T-dfc-02, CRÍTICO — server-side, não
+  // apenas `disabled` na UI): cada campo só honra o valor submetido quando
+  // autorizado para aquele setor específico; senão é descartado e
+  // substituído pelo valor atual já gravado.
   const isDono = session.user.role === "DONO";
-  const responsavelFiscalId = isDono
+  const isChefe = session.user.role === "CHEFE_SETOR";
+  const setorChefe = session.user.setor;
+  const podeEditarFiscal = isDono || (isChefe && setorChefe === "FISCAL");
+  const podeEditarDp = isDono || (isChefe && setorChefe === "DP");
+  const podeEditarContabil = isDono || (isChefe && setorChefe === "CONTABIL");
+  const responsavelFiscalId = podeEditarFiscal
     ? dados.responsavelFiscalId
     : setorAtual("FISCAL") ?? existente.responsavelId;
-  const responsavelDpId = isDono ? dados.responsavelDpId ?? null : setorAtual("DP");
-  const responsavelContabilId = isDono
+  const responsavelDpId = podeEditarDp ? dados.responsavelDpId ?? null : setorAtual("DP");
+  const responsavelContabilId = podeEditarContabil
     ? dados.responsavelContabilId ?? null
     : setorAtual("CONTABIL");
 
@@ -262,6 +279,7 @@ export async function editarEmpresa(
         // responsavelFiscalId efetivo (já passado pelo guard DONO-only).
         responsavelId: responsavelFiscalId,
         temFuncionariosClt: dados.temFuncionariosClt,
+        temEmpregadaDomestica: dados.temEmpregadaDomestica,
         contatos: dados.contatos,
         particularidades: dados.particularidades,
       },

@@ -35,6 +35,7 @@ export const empresaSchema = z.object({
   responsavelDpId: z.string().optional().nullable(),
   responsavelContabilId: z.string().optional().nullable(),
   temFuncionariosClt: z.boolean().default(false),
+  temEmpregadaDomestica: z.boolean().default(false),
   contatos: z.string().optional(),
   particularidades: z.string().optional(),
 });
