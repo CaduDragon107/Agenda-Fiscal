@@ -161,6 +161,7 @@ None yet.
 | 260626-a8d | Rota /empresas/dp (listagem com responsavel DP, celula vazia se ausente) + campo informativo Empresa.temEmpregadaDomestica | 2026-06-26 | 68edf7a | [260626-a8d-listagem-de-empresas-dp-com-responsavel-](./quick/260626-a8d-listagem-de-empresas-dp-com-responsavel-/) |
 | 260626-aim | Botao DONO-only (com AlertDialog) para excluir tarefas (recorrentes+avulsas, todos os setores) da competencia atual | 2026-06-26 | a03e4d6 | [260626-aim-botao-so-dono-para-excluir-todas-as-tare](./quick/260626-aim-botao-so-dono-para-excluir-todas-as-tare/) |
 | 260626-c8i | Renomear DP2/DP3/DP4/Contabil2/Contabil3 para Andre/Mirella/Lorraine/Rany/Sarah no seed + script aplicado em producao | 2026-06-26 | 630ec55 | [260626-c8i-renomear-dp2-dp3-dp4-para-andre-mirella-](./quick/260626-c8i-renomear-dp2-dp3-dp4-para-andre-mirella-/) |
+| 260626-cdf | Removida rota/sidebar separados /empresas/dp; coluna Empregada domestica movida para a tabela principal de Empresas | 2026-06-26 | 5777967 | [260626-cdf-remover-rota-e-item-de-sidebar-separados](./quick/260626-cdf-remover-rota-e-item-de-sidebar-separados/) |
 
 ## Deferred Items
 
