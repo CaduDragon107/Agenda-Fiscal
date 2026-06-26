@@ -183,7 +183,7 @@ Items acknowledged at v2.0 milestone close (2026-06-25):
 
 Last session: 2026-06-25T23:55:04.025Z
 Stopped at: Phase 9 context gathered
-Resume file: .planning/phases/09-13-sal-rio-autom-tico/09-CONTEXT.md
+Resume file: .planning/phases/09-decimo-terceiro-salario-automatico/09-CONTEXT.md
 
 ## Operator Next Steps
 
