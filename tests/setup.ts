@@ -21,7 +21,7 @@
  * comportamento dos testes de regressão pré-v2.0 sem editá-los.
  */
 
-export type SessionRole = "COLABORADOR" | "DONO";
+export type SessionRole = "COLABORADOR" | "DONO" | "CHEFE_SETOR";
 export type SessionSetor = "FISCAL" | "DP" | "CONTABIL" | null;
 
 export type SessionUser = {
@@ -98,6 +98,50 @@ export function mockContabilColaboradorUser(overrides: Partial<SessionUser> = {}
     nome: "Contabil1",
     email: "contabil1@escritorio.com.br",
     role: "COLABORADOR",
+    setor: "CONTABIL",
+    ...overrides,
+  };
+}
+
+/**
+ * Cria um usuário "chefe de setor" mockado do setor Fiscal (Caio, quick task
+ * 260626-dfc) — visão total das empresas/tarefas do próprio setor, não só as
+ * pessoalmente atribuídas.
+ */
+export function mockChefeFiscalUser(overrides: Partial<SessionUser> = {}): SessionUser {
+  return {
+    id: "user_chefe_fiscal_1",
+    nome: "Caio",
+    email: "colaborador1@escritorio.com.br",
+    role: "CHEFE_SETOR",
+    setor: "FISCAL",
+    ...overrides,
+  };
+}
+
+/**
+ * Cria um usuário "chefe de setor" mockado do setor DP (Lauany).
+ */
+export function mockChefeDpUser(overrides: Partial<SessionUser> = {}): SessionUser {
+  return {
+    id: "user_chefe_dp_1",
+    nome: "Lauany",
+    email: "dp1@escritorio.com.br",
+    role: "CHEFE_SETOR",
+    setor: "DP",
+    ...overrides,
+  };
+}
+
+/**
+ * Cria um usuário "chefe de setor" mockado do setor Contábil (Elisabete).
+ */
+export function mockChefeContabilUser(overrides: Partial<SessionUser> = {}): SessionUser {
+  return {
+    id: "user_chefe_contabil_1",
+    nome: "Elisabete",
+    email: "contabil1@escritorio.com.br",
+    role: "CHEFE_SETOR",
     setor: "CONTABIL",
     ...overrides,
   };
