@@ -34,11 +34,15 @@ export type TipoObrigacaoContabil =
 
 type ObrigacaoRegraContabil = { tipo: TipoObrigacaoContabil; diaBase: number };
 
-// D-02: dias-base das 8 rotinas mensais Contábil, ANTES do ajuste de dia útil.
+// D-02: dias-base das rotinas mensais Contábil, ANTES do ajuste de dia útil.
 // Compartilhado entre LUCRO_REAL e LUCRO_PRESUMIDO (D-04: mesmas datas para
 // ambos os regimes — distinção de Grupo A/B/C fora de escopo nesta fase).
+//
+// Quick task 260626: EXTRATO_BANCARIO removido do catálogo — consolidado em
+// LANCAMENTO_EXTRATOS (mesma atividade na prática, ambas sempre da Rany).
+// O valor de enum EXTRATO_BANCARIO permanece em prisma/schema.prisma apenas
+// por compatibilidade com tarefas já geradas no banco antes desta mudança.
 const ROTINAS_CONTABIL_MENSAL: ObrigacaoRegraContabil[] = [
-  { tipo: "EXTRATO_BANCARIO", diaBase: 1 },
   { tipo: "LANCAMENTO_EXTRATOS", diaBase: 10 },
   { tipo: "FOLHA_CONTABIL", diaBase: 14 },
   { tipo: "FISCAL_CONTABIL", diaBase: 17 },
@@ -83,7 +87,7 @@ export type TarefaParaCriarContabil = {
 export function gerarTarefasDoMesContabil(
   empresas: { id: string; regimeTributario: RegimeTributario; responsavelId: string }[],
   competencia: string,
-  responsavelExtratoBancarioId?: string
+  responsavelLancamentosId?: string
 ): TarefaParaCriarContabil[] {
   if (!competenciaSchema.safeParse(competencia).success) {
     throw new Error(`competencia inválida: ${competencia}`);
@@ -99,12 +103,13 @@ export function gerarTarefasDoMesContabil(
       const prazoBase = calcularPrazoBaseDiaFixo(competencia, regra.diaBase);
       const prazo = anticiparParaDiaUtil(prazoBase); // D-05
 
-      // Excecao permanente: Extrato Bancario sempre vai para o responsavel
-      // marcado com Usuario.responsavelExtratoBancario, independente de quem
-      // for o responsavel Contabil da empresa.
+      // Excecao permanente (quick-260626): Lancamentos (ex-Extrato Bancario,
+      // mesma atividade consolidada) sempre vai para o responsavel marcado
+      // com Usuario.responsavelExtratoBancario, independente de quem for o
+      // responsavel Contabil da empresa.
       const responsavelId =
-        regra.tipo === "EXTRATO_BANCARIO" && responsavelExtratoBancarioId
-          ? responsavelExtratoBancarioId
+        regra.tipo === "LANCAMENTO_EXTRATOS" && responsavelLancamentosId
+          ? responsavelLancamentosId
           : empresa.responsavelId;
 
       return {

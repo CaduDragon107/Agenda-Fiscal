@@ -24,6 +24,7 @@ const empresaGroupByMock = vi.fn();
 // suite quebraria com "Cannot read properties of undefined (reading
 // 'findMany')".
 const usuarioFindManyMock = vi.fn();
+const usuarioFindFirstMock = vi.fn();
 const desempenhoMensalCreateManyMock = vi.fn();
 
 vi.mock("@/lib/db", () => {
@@ -38,6 +39,7 @@ vi.mock("@/lib/db", () => {
     },
     usuario: {
       findMany: (...args: unknown[]) => usuarioFindManyMock(...args),
+      findFirst: (...args: unknown[]) => usuarioFindFirstMock(...args),
     },
     desempenhoMensal: {
       createMany: (...args: unknown[]) => desempenhoMensalCreateManyMock(...args),
@@ -67,11 +69,13 @@ describe("gerarTarefasDoMesAction — RBAC", () => {
     tarefaFindManyMock.mockReset();
     empresaGroupByMock.mockReset();
     usuarioFindManyMock.mockReset();
+    usuarioFindFirstMock.mockReset();
     desempenhoMensalCreateManyMock.mockReset();
 
     tarefaFindManyMock.mockResolvedValue([]);
     empresaGroupByMock.mockResolvedValue([]);
     usuarioFindManyMock.mockResolvedValue([]);
+    usuarioFindFirstMock.mockResolvedValue(null);
     desempenhoMensalCreateManyMock.mockResolvedValue({ count: 0 });
   });
 
@@ -112,11 +116,13 @@ describe("gerarTarefasDoMesAction — sucesso DONO", () => {
     tarefaFindManyMock.mockReset();
     empresaGroupByMock.mockReset();
     usuarioFindManyMock.mockReset();
+    usuarioFindFirstMock.mockReset();
     desempenhoMensalCreateManyMock.mockReset();
 
     tarefaFindManyMock.mockResolvedValue([]);
     empresaGroupByMock.mockResolvedValue([]);
     usuarioFindManyMock.mockResolvedValue([]);
+    usuarioFindFirstMock.mockResolvedValue(null);
     desempenhoMensalCreateManyMock.mockResolvedValue({ count: 0 });
   });
 

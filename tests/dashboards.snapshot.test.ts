@@ -17,6 +17,7 @@ const dbMocks = vi.hoisted(() => ({
   tarefaFindManyMock: vi.fn(),
   empresaGroupByMock: vi.fn(),
   usuarioFindManyMock: vi.fn(),
+  usuarioFindFirstMock: vi.fn(),
   desempenhoMensalCreateManyMock: vi.fn(),
 }));
 
@@ -32,6 +33,7 @@ vi.mock("@/lib/db", () => {
     },
     usuario: {
       findMany: (...args: unknown[]) => dbMocks.usuarioFindManyMock(...args),
+      findFirst: (...args: unknown[]) => dbMocks.usuarioFindFirstMock(...args),
     },
     desempenhoMensal: {
       createMany: (...args: unknown[]) => dbMocks.desempenhoMensalCreateManyMock(...args),
@@ -593,6 +595,7 @@ describe("executarGeracaoMensal — congelamento do mes anterior (snapshot)", ()
     tarefaFindManyMock,
     empresaGroupByMock,
     usuarioFindManyMock,
+    usuarioFindFirstMock,
     desempenhoMensalCreateManyMock,
   } = dbMocks;
 
@@ -602,6 +605,7 @@ describe("executarGeracaoMensal — congelamento do mes anterior (snapshot)", ()
     tarefaFindManyMock.mockReset();
     empresaGroupByMock.mockReset();
     usuarioFindManyMock.mockReset();
+    usuarioFindFirstMock.mockReset();
     desempenhoMensalCreateManyMock.mockReset();
 
     empresaFindManyMock.mockResolvedValue([]);
@@ -611,6 +615,7 @@ describe("executarGeracaoMensal — congelamento do mes anterior (snapshot)", ()
     // default: user_1 (usado nos 3 testes deste describe) pertence ao setor
     // FISCAL — evita que a linha do snapshot seja descartada por setor null.
     usuarioFindManyMock.mockResolvedValue([{ id: "user_1", setor: "FISCAL" }]);
+    usuarioFindFirstMock.mockResolvedValue(null);
     desempenhoMensalCreateManyMock.mockResolvedValue({ count: 0 });
   });
 

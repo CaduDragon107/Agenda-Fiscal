@@ -178,13 +178,13 @@ export async function executarGeracaoMensal(competencia: string): Promise<{
       .filter((e) => e.responsaveisPorSetor.length === 0)
       .map((e) => ({ empresaId: e.id, nome: e.nome })); // D-11: pular e listar, nunca throw
 
-    // Excecao permanente (quick-260626): tarefas de Extrato Bancario sempre
-    // vao para o usuario marcado com responsavelExtratoBancario=true,
-    // independente de quem for o responsavel Contabil cadastrado por
-    // empresa. Espera-se exatamente 0 ou 1 usuario com a flag; se nenhum
-    // estiver marcado, o comportamento cai para o responsavel Contabil
-    // padrao (sem quebrar a geracao).
-    const responsavelExtratoBancario = await tx.usuario.findFirst({
+    // Excecao permanente (quick-260626): tarefas de Lancamentos (ex-Extrato
+    // Bancario, consolidados na mesma atividade) sempre vao para o usuario
+    // marcado com responsavelExtratoBancario=true, independente de quem for
+    // o responsavel Contabil cadastrado por empresa. Espera-se exatamente 0
+    // ou 1 usuario com a flag; se nenhum estiver marcado, o comportamento
+    // cai para o responsavel Contabil padrao (sem quebrar a geracao).
+    const responsavelLancamentos = await tx.usuario.findFirst({
       where: { responsavelExtratoBancario: true },
       select: { id: true },
     });
@@ -196,7 +196,7 @@ export async function executarGeracaoMensal(competencia: string): Promise<{
         responsavelId: e.responsaveisPorSetor[0].usuarioId,
       })),
       competencia,
-      responsavelExtratoBancario?.id
+      responsavelLancamentos?.id
     );
 
     // Bloco Contábil ANUAL (Plano 07-02): primeira periodicidade não-mensal

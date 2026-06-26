@@ -5,15 +5,17 @@ import { gerarTarefasDoMesContabil } from "@/lib/geracao-tarefas-contabil";
  * tests/geracao-tarefas-contabil.test.ts
  *
  * Cobre CONT-01: gerarTarefasDoMesContabil(empresas, competencia) deve
- * produzir exatamente as 8 rotinas mensais Contábil (D-02) para empresas
+ * produzir exatamente as 7 rotinas mensais Contábil (D-02) para empresas
  * LUCRO_REAL e LUCRO_PRESUMIDO, e zero rotinas para SIMPLES_NACIONAL
  * (D-03). Mirror de tests/geracao-tarefas-dp.test.ts.
+ *
+ * Quick task 260626: EXTRATO_BANCARIO consolidado em LANCAMENTO_EXTRATOS
+ * (mesma atividade na prática) — 8 rotinas passaram a ser 7.
  *
  * O helper é puro (sem I/O), portanto não precisa de mocks.
  */
 
 const TIPOS_ESPERADOS = [
-  "EXTRATO_BANCARIO",
   "LANCAMENTO_EXTRATOS",
   "FOLHA_CONTABIL",
   "FISCAL_CONTABIL",
@@ -24,21 +26,21 @@ const TIPOS_ESPERADOS = [
 ].sort();
 
 describe("gerarTarefasDoMesContabil", () => {
-  it("produz as 8 rotinas para LUCRO_REAL", () => {
+  it("produz as 7 rotinas para LUCRO_REAL", () => {
     const empresas = [
       { id: "e1", regimeTributario: "LUCRO_REAL" as const, responsavelId: "u1" },
     ];
     const resultado = gerarTarefasDoMesContabil(empresas, "2026-03");
-    expect(resultado).toHaveLength(8);
+    expect(resultado).toHaveLength(7);
     expect(resultado.map((t) => t.tipoObrigacao).sort()).toEqual(TIPOS_ESPERADOS);
   });
 
-  it("produz as 8 rotinas para LUCRO_PRESUMIDO (mesmas datas que LUCRO_REAL, D-04)", () => {
+  it("produz as 7 rotinas para LUCRO_PRESUMIDO (mesmas datas que LUCRO_REAL, D-04)", () => {
     const empresas = [
       { id: "e1", regimeTributario: "LUCRO_PRESUMIDO" as const, responsavelId: "u1" },
     ];
     const resultado = gerarTarefasDoMesContabil(empresas, "2026-03");
-    expect(resultado).toHaveLength(8);
+    expect(resultado).toHaveLength(7);
     expect(resultado.map((t) => t.tipoObrigacao).sort()).toEqual(TIPOS_ESPERADOS);
   });
 
@@ -72,7 +74,7 @@ describe("gerarTarefasDoMesContabil", () => {
     ];
     const resultado = gerarTarefasDoMesContabil(empresas, "2026-03");
 
-    expect(resultado).toHaveLength(8);
+    expect(resultado).toHaveLength(7);
     for (const tarefa of resultado) {
       expect(tarefa.empresaId).toBe("e1");
       expect(tarefa.responsavelId).toBe("u1");
@@ -82,30 +84,30 @@ describe("gerarTarefasDoMesContabil", () => {
     }
   });
 
-  it("EXTRATO_BANCARIO vai para responsavelExtratoBancarioId quando informado; demais rotinas mantêm o responsável Contábil da empresa", () => {
+  it("LANCAMENTO_EXTRATOS vai para responsavelLancamentosId quando informado; demais rotinas mantêm o responsável Contábil da empresa", () => {
     const empresas = [
       { id: "e1", regimeTributario: "LUCRO_REAL" as const, responsavelId: "u-contabil" },
     ];
-    const resultado = gerarTarefasDoMesContabil(empresas, "2026-03", "u-extrato");
+    const resultado = gerarTarefasDoMesContabil(empresas, "2026-03", "u-lancamentos");
 
-    const extrato = resultado.find((t) => t.tipoObrigacao === "EXTRATO_BANCARIO");
-    expect(extrato?.responsavelId).toBe("u-extrato");
+    const lancamentos = resultado.find((t) => t.tipoObrigacao === "LANCAMENTO_EXTRATOS");
+    expect(lancamentos?.responsavelId).toBe("u-lancamentos");
 
-    const outras = resultado.filter((t) => t.tipoObrigacao !== "EXTRATO_BANCARIO");
+    const outras = resultado.filter((t) => t.tipoObrigacao !== "LANCAMENTO_EXTRATOS");
     expect(outras.length).toBeGreaterThan(0);
     for (const tarefa of outras) {
       expect(tarefa.responsavelId).toBe("u-contabil");
     }
   });
 
-  it("sem responsavelExtratoBancarioId informado, EXTRATO_BANCARIO cai no responsável Contábil padrão", () => {
+  it("sem responsavelLancamentosId informado, LANCAMENTO_EXTRATOS cai no responsável Contábil padrão", () => {
     const empresas = [
       { id: "e1", regimeTributario: "LUCRO_REAL" as const, responsavelId: "u-contabil" },
     ];
     const resultado = gerarTarefasDoMesContabil(empresas, "2026-03");
 
-    const extrato = resultado.find((t) => t.tipoObrigacao === "EXTRATO_BANCARIO");
-    expect(extrato?.responsavelId).toBe("u-contabil");
+    const lancamentos = resultado.find((t) => t.tipoObrigacao === "LANCAMENTO_EXTRATOS");
+    expect(lancamentos?.responsavelId).toBe("u-contabil");
   });
 
   it("lança erro para competencia em formato não canônico, em vez de propagar Invalid Date silenciosamente", () => {
