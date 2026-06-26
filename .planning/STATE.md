@@ -152,6 +152,7 @@ None yet.
 | 260618-kk8 | Adicionar opcao de filtro Pendentes na tela de tarefas | 2026-06-18 | 3bbb2e5 | [260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t](./quick/260618-kk8-adicionar-opcao-de-filtro-pendentes-na-t/) |
 | 260622-lty | Trocar grafico Evolucao Mensal de Area/Line para barras agrupadas com 5 categorias (criadas/concluidas/pendentes/pendentes-com-motivo/vencidas) | 2026-06-22 | c393331 | [260622-lty-trocar-grafico-evolucao-mensal-para-barr](./quick/260622-lty-trocar-grafico-evolucao-mensal-para-barr/) |
 | 260622-r6n | Mudar paleta de cores dos graficos do dashboard (escala de cinza -> esquema semaforo: azul/verde/amarelo/laranja/vermelho) | 2026-06-22 | 6104e79 | [260622-r6n-mudar-paleta-de-cores-dos-graficos-do-da](./quick/260622-r6n-mudar-paleta-de-cores-dos-graficos-do-da/) |
+| 260625-mgd | Renomear usuarios Dono/DP1/Contabil1 para Neto/Lauany/Elisabete no seed + script one-off para producao | 2026-06-26 | cd68e63 | [260625-mgd-renomear-usuarios-dono-neto-dp1-lauany-c](./quick/260625-mgd-renomear-usuarios-dono-neto-dp1-lauany-c/) |
 
 ## Deferred Items
 
