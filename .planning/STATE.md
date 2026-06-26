@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-06-25)
 Phase: 9 (13º Salário Automático) — not started
 Plan: —
 Status: Roadmap created, awaiting phase planning
-Last activity: 2026-06-25 — ROADMAP.md created for v2.1 (Phase 9: 13º Salário Automático; Phase 10: Notificações In-App)
+Last activity: 2026-06-26 - Completed quick task 260626-kn2: Permitir CHEFE_SETOR acessar /dashboards vendo apenas o card do proprio setor
 
 ## Performance Metrics
 
@@ -167,6 +167,7 @@ None yet.
 | — | Renomear rotulo "Role" para "Cargo" na tabela /usuarios | 2026-06-26 | 5342046 | — |
 | 260626-dfc | Novo papel CHEFE_SETOR (Caio/Elisabete/Lauany): visao e atribuicao de tarefas escopadas ao proprio setor, CRUD de empresa por-campo, botao Gerar tarefas liberado | 2026-06-26 | acc0d2b | [260626-dfc-criar-role-chefe-setor-caio-fiscal-elisa](./quick/260626-dfc-criar-role-chefe-setor-caio-fiscal-elisa/) |
 | — | Restringe coluna Empregada domestica ao setor DP e ao dono | 2026-06-26 | 497b53a | — |
+| 260626-kn2 | Permitir CHEFE_SETOR acessar /dashboards vendo apenas o card do proprio setor (sem tab switcher Fiscal/DP/Contabil) | 2026-06-26 | 517e696 | [260626-kn2-permitir-que-chefe-setor-acesse-a-pagina](./quick/260626-kn2-permitir-que-chefe-setor-acesse-a-pagina/) |
 
 ## Deferred Items
 
