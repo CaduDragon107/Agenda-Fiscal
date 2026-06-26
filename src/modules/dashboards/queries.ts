@@ -96,14 +96,36 @@ export async function listarDesempenhoColaboradoresMesAtual(
   // contexto D-03: tamanho de carteira (nº de empresas ativas) por
   // colaborador. empresaWhereExtra (ex.: { temFuncionariosClt: true } para
   // DP, D-02) é load-bearing AQUI — único lugar onde se aplica (Pitfall 3).
-  const carteiras = await db.empresa.groupBy({
-    by: ["responsavelId"],
-    where: { ativo: true, ...empresaWhereExtra },
-    _count: { id: true },
-  });
-  const carteiraPorColaborador = new Map(
-    carteiras.map((c) => [c.responsavelId, c._count.id])
-  );
+  //
+  // CORREÇÃO (bug de vazamento entre setores, quick-260626-le2):
+  // `Empresa.responsavelId` é a coluna legada EXCLUSIVA do setor FISCAL
+  // (equivalência 197/197 verificada por backfill, ver visibility-scope.ts).
+  // Usá-la para DP/CONTABIL vazava a carteira/colaboradores do responsável
+  // FISCAL para dentro dos dashboards de outros setores. Para DP/CONTABIL a
+  // fonte real de responsabilidade por setor é a tabela de junção
+  // `EmpresaResponsavelSetor` (mesmo padrão já usado em
+  // src/modules/tarefas/geracao.ts via `responsaveisPorSetor: { where: {
+  // setor } } }`) — nunca `Empresa.responsavelId` fora do FISCAL.
+  const carteiraPorColaborador =
+    setor === "FISCAL"
+      ? new Map(
+          (
+            await db.empresa.groupBy({
+              by: ["responsavelId"],
+              where: { ativo: true, ...empresaWhereExtra },
+              _count: { id: true },
+            })
+          ).map((c) => [c.responsavelId, c._count.id])
+        )
+      : new Map(
+          (
+            await db.empresaResponsavelSetor.groupBy({
+              by: ["usuarioId"],
+              where: { setor, empresa: { ativo: true, ...empresaWhereExtra } },
+              _count: { id: true },
+            })
+          ).map((c) => [c.usuarioId, c._count.id])
+        );
 
   // nomes dos colaboradores presentes (concluídas OU com carteira) — select
   // explícito, nunca relação crua (T-04-LEAK2).
