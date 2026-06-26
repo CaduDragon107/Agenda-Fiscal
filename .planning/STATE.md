@@ -163,6 +163,7 @@ None yet.
 | 260626-c8i | Renomear DP2/DP3/DP4/Contabil2/Contabil3 para Andre/Mirella/Lorraine/Rany/Sarah no seed + script aplicado em producao | 2026-06-26 | 630ec55 | [260626-c8i-renomear-dp2-dp3-dp4-para-andre-mirella-](./quick/260626-c8i-renomear-dp2-dp3-dp4-para-andre-mirella-/) |
 | 260626-cdf | Removida rota/sidebar separados /empresas/dp; coluna Empregada domestica movida para a tabela principal de Empresas | 2026-06-26 | 5777967 | [260626-cdf-remover-rota-e-item-de-sidebar-separados](./quick/260626-cdf-remover-rota-e-item-de-sidebar-separados/) |
 | 260626-ckm | Backfill EmpresaResponsavelSetor DP a partir de EMPRESAS SEPARADAS Depto Pessoal.xlsx (96 empresas: Andre 21, Lauany 21, Mirella 21, Lorraine 33) | 2026-06-26 | aeb4c65 | [260626-ckm-backfill-empresaresponsavelsetor-dp-a-pa](./quick/260626-ckm-backfill-empresaresponsavelsetor-dp-a-pa/) |
+| 260626-d1a | Pagina /usuarios (DONO-only) para editar o nome de usuarios via UI - editarNomeUsuarioAction + tabela com Dialog + item de sidebar | 2026-06-26 | db209c6 | [260626-d1a-pagina-usuarios-dono-para-editar-o-nome-](./quick/260626-d1a-pagina-usuarios-dono-para-editar-o-nome-/) |
 
 ## Deferred Items
 
