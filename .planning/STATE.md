@@ -166,6 +166,7 @@ None yet.
 | 260626-d1a | Pagina /usuarios (DONO-only) para editar o nome de usuarios via UI - editarNomeUsuarioAction + tabela com Dialog + item de sidebar | 2026-06-26 | db209c6 | [260626-d1a-pagina-usuarios-dono-para-editar-o-nome-](./quick/260626-d1a-pagina-usuarios-dono-para-editar-o-nome-/) |
 | — | Renomear rotulo "Role" para "Cargo" na tabela /usuarios | 2026-06-26 | 5342046 | — |
 | 260626-dfc | Novo papel CHEFE_SETOR (Caio/Elisabete/Lauany): visao e atribuicao de tarefas escopadas ao proprio setor, CRUD de empresa por-campo, botao Gerar tarefas liberado | 2026-06-26 | acc0d2b | [260626-dfc-criar-role-chefe-setor-caio-fiscal-elisa](./quick/260626-dfc-criar-role-chefe-setor-caio-fiscal-elisa/) |
+| — | Restringe coluna Empregada domestica ao setor DP e ao dono | 2026-06-26 | 497b53a | — |
 
 ## Deferred Items
 
