@@ -35,7 +35,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 type AppSidebarUser = {
   nome?: string | null;
   email?: string | null;
-  role: "COLABORADOR" | "DONO";
+  role: "COLABORADOR" | "DONO" | "CHEFE_SETOR";
 };
 
 function iniciais(nome?: string | null, email?: string | null): string {

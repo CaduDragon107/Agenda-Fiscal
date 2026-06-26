@@ -3,7 +3,7 @@ import type { EmpresaRow } from "./empresas-table";
 
 type EmpresaComResponsaveis = Awaited<ReturnType<typeof listarEmpresas>>[number];
 
-type ViewerRole = "COLABORADOR" | "DONO";
+type ViewerRole = "COLABORADOR" | "DONO" | "CHEFE_SETOR";
 type ViewerSetor = "FISCAL" | "DP" | "CONTABIL" | null;
 
 /**

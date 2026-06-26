@@ -40,7 +40,7 @@ export type UsuarioRow = {
   id: string;
   nome: string;
   email: string;
-  role: "COLABORADOR" | "DONO";
+  role: "COLABORADOR" | "DONO" | "CHEFE_SETOR";
   setor: "FISCAL" | "DP" | "CONTABIL" | null;
 };
 
@@ -51,6 +51,7 @@ type UsuariosTableProps = {
 const ROLE_LABEL: Record<UsuarioRow["role"], string> = {
   DONO: "Dono",
   COLABORADOR: "Colaborador",
+  CHEFE_SETOR: "Chefe de Setor",
 };
 
 const SETOR_LABEL: Record<NonNullable<UsuarioRow["setor"]>, string> = {

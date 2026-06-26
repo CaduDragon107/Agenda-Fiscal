@@ -96,6 +96,24 @@ export async function criarTarefa(
     return { ok: false, error: "não autorizado" };
   }
 
+  // CHEFE_SETOR (quick task 260626-dfc, T-dfc-01): pode se atribuir a si
+  // mesmo OU a qualquer colega do MESMO setor; nunca a colega de outro
+  // setor. Guard server-side real — busca o setor do alvo no banco, nunca
+  // confia em input do client. A anti-IDOR de empresa (acima) já cobre
+  // "chefe só cria tarefa para empresa do próprio setor".
+  if (
+    session.user.role === "CHEFE_SETOR" &&
+    dados.responsavelId !== session.user.id
+  ) {
+    const alvo = await db.usuario.findUnique({
+      where: { id: dados.responsavelId },
+      select: { setor: true },
+    });
+    if (!alvo || alvo.setor !== session.user.setor) {
+      return { ok: false, error: "não autorizado" };
+    }
+  }
+
   try {
     const tarefa = await db.tarefa.create({
       data: {
@@ -272,7 +290,9 @@ export async function salvarMotivoPendencia(
  * após `auth()`, ANTES de qualquer acesso ao banco — protege contra um
  * COLABORADOR chamando a action diretamente mesmo com o botão oculto
  * client-side (a UI escondendo o botão é só defesa em profundidade, nunca
- * a única barreira).
+ * a única barreira). Liberado também para CHEFE_SETOR (quick task
+ * 260626-dfc) — a geração permanece GLOBAL (todos os setores), não "só do
+ * meu setor".
  *
  * CRÍTICO (T-3-05): guard de autenticação primeiro, mesmo padrão das
  * demais actions deste arquivo.
@@ -296,7 +316,7 @@ export async function gerarTarefasDoMesAction(
       return { ok: false, error: "Não autenticado" };
     }
 
-    if (session.user.role !== "DONO") {
+    if (session.user.role !== "DONO" && session.user.role !== "CHEFE_SETOR") {
       return { ok: false, error: "não autorizado" };
     }
 
