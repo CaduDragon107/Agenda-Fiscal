@@ -6,13 +6,13 @@ current_phase: 9
 current_phase_name: 13º Salário Automático
 status: planning
 stopped_at: Phase 9 context gathered
-last_updated: "2026-06-26T21:49:32.674Z"
+last_updated: "2026-06-26T22:29:42.806Z"
 last_activity: 2026-06-26
 last_activity_desc: "Completed quick task 260626-le2: Corrigir vazamento de carteira/colaboradores entre setores no card "Desempenho por colaborador" dos dashboards DP/CONTABIL"
 progress:
   total_phases: 2
   completed_phases: 0
-  total_plans: 0
+  total_plans: 2
   completed_plans: 0
   percent: 0
 ---
@@ -170,6 +170,7 @@ None yet.
 | 260626-kn2 | Permitir CHEFE_SETOR acessar /dashboards vendo apenas o card do proprio setor (sem tab switcher Fiscal/DP/Contabil) | 2026-06-26 | 517e696 | [260626-kn2-permitir-que-chefe-setor-acesse-a-pagina](./quick/260626-kn2-permitir-que-chefe-setor-acesse-a-pagina/) |
 | 260626-l8c | Corrigir href do link "Ver empresa" no detalhe da tarefa, que apontava para /empresas/{id} (rota inexistente, causava 404) -> /empresas/{id}/editar | 2026-06-26 | cb5d51a | [260626-l8c-corrigir-link-ver-empresa-que-aponta-par](./quick/260626-l8c-corrigir-link-ver-empresa-que-aponta-par/) |
 | 260626-le2 | Corrigir vazamento de carteira/colaboradores entre setores no card "Desempenho por colaborador" (DP/CONTABIL liam Empresa.responsavelId legado, exclusivo FISCAL; agora usam EmpresaResponsavelSetor) | 2026-06-26 | c5fddfe | [260626-le2-ajustar-dashboard-desempenho-do-funciona](./quick/260626-le2-ajustar-dashboard-desempenho-do-funciona/) |
+| 260626-qxu | Mostrar "Sem movimento" (em vez de "Sem responsável") na célula de Responsável DP quando a empresa não tem responsável de DP atribuído, para viewers com acesso ao setor DP | 2026-06-26 | 94e8799 | [260626-qxu-mostrar-para-usu-rios-do-setor-dp-na-lis](./quick/260626-qxu-mostrar-para-usu-rios-do-setor-dp-na-lis/) |
 
 ## Deferred Items
 
@@ -194,7 +195,7 @@ Items acknowledged at v2.0 milestone close (2026-06-25):
 
 ## Session Continuity
 
-Last session: 2026-06-25T23:55:04.025Z
+Last session: 2026-06-26T22:29:42.796Z
 Stopped at: Phase 9 context gathered
 Resume file: .planning/phases/09-decimo-terceiro-salario-automatico/09-CONTEXT.md
 
