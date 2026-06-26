@@ -174,12 +174,6 @@ export default async function TarefaDetalhePage({
                   </Badge>
                 </dd>
               </div>
-              <div>
-                <dt className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Responsável
-                </dt>
-                <dd className="text-sm">{tarefa.empresa.responsavel.nome}</dd>
-              </div>
               {tarefa.empresa.particularidades && (
                 <div>
                   <dt className="text-xs text-muted-foreground uppercase tracking-wide">
