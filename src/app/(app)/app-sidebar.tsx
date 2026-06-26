@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, LayoutDashboard, ListChecks, LogOut, Users } from "lucide-react";
+import { Building2, LayoutDashboard, ListChecks, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 import {
@@ -83,21 +83,11 @@ export function AppSidebar({ user, contadorAlertas }: AppSidebarProps) {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={
-                    pathname?.startsWith("/empresas") && !pathname.startsWith("/empresas/dp")
-                  }
+                  isActive={pathname?.startsWith("/empresas")}
                 >
                   <Link href="/empresas">
                     <Building2 />
                     <span>Empresas</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname?.startsWith("/empresas/dp")}>
-                  <Link href="/empresas/dp">
-                    <Users />
-                    <span>Empresas DP</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
