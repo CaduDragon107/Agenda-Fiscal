@@ -64,6 +64,7 @@ model Usuario {
   senhaHash String
   role      Role     @default(COLABORADOR)
   setor     Setor?
+  responsavelExtratoBancario Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -82,6 +82,32 @@ describe("gerarTarefasDoMesContabil", () => {
     }
   });
 
+  it("EXTRATO_BANCARIO vai para responsavelExtratoBancarioId quando informado; demais rotinas mantêm o responsável Contábil da empresa", () => {
+    const empresas = [
+      { id: "e1", regimeTributario: "LUCRO_REAL" as const, responsavelId: "u-contabil" },
+    ];
+    const resultado = gerarTarefasDoMesContabil(empresas, "2026-03", "u-extrato");
+
+    const extrato = resultado.find((t) => t.tipoObrigacao === "EXTRATO_BANCARIO");
+    expect(extrato?.responsavelId).toBe("u-extrato");
+
+    const outras = resultado.filter((t) => t.tipoObrigacao !== "EXTRATO_BANCARIO");
+    expect(outras.length).toBeGreaterThan(0);
+    for (const tarefa of outras) {
+      expect(tarefa.responsavelId).toBe("u-contabil");
+    }
+  });
+
+  it("sem responsavelExtratoBancarioId informado, EXTRATO_BANCARIO cai no responsável Contábil padrão", () => {
+    const empresas = [
+      { id: "e1", regimeTributario: "LUCRO_REAL" as const, responsavelId: "u-contabil" },
+    ];
+    const resultado = gerarTarefasDoMesContabil(empresas, "2026-03");
+
+    const extrato = resultado.find((t) => t.tipoObrigacao === "EXTRATO_BANCARIO");
+    expect(extrato?.responsavelId).toBe("u-contabil");
+  });
+
   it("lança erro para competencia em formato não canônico, em vez de propagar Invalid Date silenciosamente", () => {
     const empresas = [
       { id: "e1", regimeTributario: "LUCRO_REAL" as const, responsavelId: "u1" },

@@ -82,7 +82,8 @@ export type TarefaParaCriarContabil = {
  */
 export function gerarTarefasDoMesContabil(
   empresas: { id: string; regimeTributario: RegimeTributario; responsavelId: string }[],
-  competencia: string
+  competencia: string,
+  responsavelExtratoBancarioId?: string
 ): TarefaParaCriarContabil[] {
   if (!competenciaSchema.safeParse(competencia).success) {
     throw new Error(`competencia inválida: ${competencia}`);
@@ -98,9 +99,17 @@ export function gerarTarefasDoMesContabil(
       const prazoBase = calcularPrazoBaseDiaFixo(competencia, regra.diaBase);
       const prazo = anticiparParaDiaUtil(prazoBase); // D-05
 
+      // Excecao permanente: Extrato Bancario sempre vai para o responsavel
+      // marcado com Usuario.responsavelExtratoBancario, independente de quem
+      // for o responsavel Contabil da empresa.
+      const responsavelId =
+        regra.tipo === "EXTRATO_BANCARIO" && responsavelExtratoBancarioId
+          ? responsavelExtratoBancarioId
+          : empresa.responsavelId;
+
       return {
         empresaId: empresa.id,
-        responsavelId: empresa.responsavelId,
+        responsavelId,
         titulo: `${TITULO_OBRIGACAO_CONTABIL[regra.tipo]} — ${nomeMes}/${ano}`,
         tipoObrigacao: regra.tipo,
         competencia,
