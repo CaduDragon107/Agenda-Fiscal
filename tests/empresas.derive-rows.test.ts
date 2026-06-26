@@ -47,6 +47,35 @@ function montarFixtures() {
   ];
 }
 
+/**
+ * Fixture de empresa SEM linha de DP em `responsaveisPorSetor` — representa
+ * uma empresa sem movimento de pessoal (sem CLT/sem folha). Mantém Fiscal e
+ * Contábil populados para isolar a ausência apenas no setor DP.
+ */
+function montarFixturesSemDp() {
+  return [
+    {
+      id: "empresa_2",
+      nome: "Empresa Sem Movimento DP LTDA",
+      cnpj: "22.333.444/0001-92",
+      regimeTributario: "SIMPLES_NACIONAL" as const,
+      responsavelId: FISCAL_ID,
+      temFuncionariosClt: false,
+      temEmpregadaDomestica: false,
+      contatos: null,
+      particularidades: null,
+      ativo: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      responsavel: { id: FISCAL_ID, nome: FISCAL_NOME },
+      responsaveisPorSetor: [
+        { setor: "FISCAL" as const, usuario: { id: FISCAL_ID, nome: FISCAL_NOME } },
+        { setor: "CONTABIL" as const, usuario: { id: CONTABIL_ID, nome: CONTABIL_NOME } },
+      ],
+    },
+  ];
+}
+
 describe("deriveEmpresaRows", () => {
   it("Test 1 (DP colaborador): popula apenas responsavelDp/-Id; Fiscal e Contábil ficam null", () => {
     const rows = deriveEmpresaRows(montarFixtures(), "COLABORADOR", "DP");
@@ -136,5 +165,60 @@ describe("deriveEmpresaRows", () => {
     expect(rowContabil.responsavelDpId).toBeNull();
     expect(serializadoContabil).toContain(CONTABIL_NOME);
     expect(serializadoContabil).toContain(CONTABIL_ID);
+  });
+
+  // Quick task 260626-qxu: a UI renderiza "Sem movimento" na célula DP
+  // quando responsavelDp/-Id chegam null. Estes testes travam o contrato de
+  // que esse null só ocorre nos casos corretos, e que o nome de DP nunca
+  // vaza para um viewer fora do setor DP mesmo quando a empresa TEM
+  // responsável de DP no fixture.
+  it("Test 5 (DONO, empresa sem responsável DP): responsavelDp/-Id são null (UI renderiza Sem movimento)", () => {
+    const rows = deriveEmpresaRows(montarFixturesSemDp(), "DONO", null);
+
+    expect(rows).toHaveLength(1);
+    const [row] = rows;
+
+    expect(row.responsavelDp).toBeNull();
+    expect(row.responsavelDpId).toBeNull();
+
+    // Fiscal e Contábil permanecem populados — só DP fica ausente.
+    expect(row.responsavelFiscal).toEqual({ id: FISCAL_ID, nome: FISCAL_NOME });
+    expect(row.responsavelContabil).toEqual({ id: CONTABIL_ID, nome: CONTABIL_NOME });
+  });
+
+  it("Test 6 (COLABORADOR-DP, empresa sem responsável DP): responsavelDp/-Id são null (UI renderiza Sem movimento)", () => {
+    const rows = deriveEmpresaRows(montarFixturesSemDp(), "COLABORADOR", "DP");
+
+    expect(rows).toHaveLength(1);
+    const [row] = rows;
+
+    expect(row.responsavelDp).toBeNull();
+    expect(row.responsavelDpId).toBeNull();
+
+    // Próprio setor populado mas vazio; outros setores ficam null por D-10
+    // (não por ausência no fixture — Fiscal está presente no fixture mas
+    // não pode vazar para um viewer DP).
+    expect(row.responsavelFiscal).toBeNull();
+    expect(row.responsavelFiscalId).toBeNull();
+    expect(row.responsavelContabil).toBeNull();
+    expect(row.responsavelContabilId).toBeNull();
+  });
+
+  it("Test 7 (viewer FISCAL, empresa COM responsável DP): responsavelDp permanece null — nome de DP nunca vaza fora do setor DP", () => {
+    const rows = deriveEmpresaRows(montarFixtures(), "COLABORADOR", "FISCAL");
+
+    expect(rows).toHaveLength(1);
+    const [row] = rows;
+
+    // O fixture TEM um responsável de DP (DP_NOME/DP_ID), mas o viewer não
+    // tem acesso ao setor DP — o campo deve ser null por construção, e a
+    // coluna DP nem é renderizada para esse viewer (empresas-table.tsx).
+    expect(row.responsavelDp).toBeNull();
+    expect(row.responsavelDpId).toBeNull();
+
+    expect(row.responsavelFiscal).toEqual({ id: FISCAL_ID, nome: FISCAL_NOME });
+
+    const serializado = JSON.stringify(rows);
+    expect(serializado).not.toContain(DP_NOME);
   });
 });
