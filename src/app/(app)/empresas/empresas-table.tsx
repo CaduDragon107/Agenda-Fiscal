@@ -59,6 +59,7 @@ export type EmpresaRow = {
   cnpj: string;
   regimeTributario: RegimeTributario;
   responsavelId: string;
+  temEmpregadaDomestica: boolean;
   responsavelFiscal: ResponsavelSetor;
   responsavelFiscalId: string | null;
   responsavelDp: ResponsavelSetor;
@@ -200,6 +201,16 @@ export function EmpresasTable({ empresas, responsaveis, isDono, setor }: Empresa
               },
             },
           ] as ColumnDef<EmpresaRow>[])),
+      {
+        id: "temEmpregadaDomestica",
+        header: "Empregada doméstica",
+        cell: ({ row }) =>
+          row.original.temEmpregadaDomestica ? (
+            <Badge className="bg-blue-600 text-white">Sim</Badge>
+          ) : (
+            ""
+          ),
+      },
       {
         id: "acoes",
         header: "Ações",
