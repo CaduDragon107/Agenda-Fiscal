@@ -57,7 +57,9 @@ type EmpresaFormProps = {
   responsaveisFiscal: ResponsavelOption[];
   responsaveisDp: ResponsavelOption[];
   responsaveisContabil: ResponsavelOption[];
-  isDono: boolean;
+  podeEditarFiscal: boolean;
+  podeEditarDp: boolean;
+  podeEditarContabil: boolean;
   empresa?: {
     id: string;
     nome: string;
@@ -82,14 +84,19 @@ type EmpresaFormProps = {
  *
  * v2.0 (Plano 05-04, SETOR-01/SETOR-03): 3 seletores de responsável
  * (Fiscal/DP/Contábil), cada um filtrado por setor, mais o checkbox "Tem
- * funcionários CLT?" (EMPR-03). `isDono` controla apenas o `disabled` dos 3
- * Selects (UX) — o enforcement real é server-side (Plano 05-03, D-02).
+ * funcionários CLT?" (EMPR-03). `podeEditarFiscal`/`podeEditarDp`/
+ * `podeEditarContabil` controlam o `disabled` POR CAMPO de cada um dos 3
+ * Selects (UX) — calculados server-side (quick task 260626-dfc: DONO sempre
+ * true; CHEFE_SETOR true só no select do próprio setor) — o enforcement
+ * real é server-side em `criarEmpresa`/`editarEmpresa` (Plano 05-03, D-02).
  */
 export function EmpresaForm({
   responsaveisFiscal,
   responsaveisDp,
   responsaveisContabil,
-  isDono,
+  podeEditarFiscal,
+  podeEditarDp,
+  podeEditarContabil,
   empresa,
 }: EmpresaFormProps) {
   const router = useRouter();
@@ -208,7 +215,7 @@ export function EmpresaForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Responsável Fiscal</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!isDono}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!podeEditarFiscal}>
                       <FormControl>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecione o responsável" />
@@ -238,7 +245,7 @@ export function EmpresaForm({
                         field.onChange(value === SEM_RESPONSAVEL ? null : value)
                       }
                       value={field.value ?? SEM_RESPONSAVEL}
-                      disabled={!isDono}
+                      disabled={!podeEditarDp}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -270,7 +277,7 @@ export function EmpresaForm({
                         field.onChange(value === SEM_RESPONSAVEL ? null : value)
                       }
                       value={field.value ?? SEM_RESPONSAVEL}
-                      disabled={!isDono}
+                      disabled={!podeEditarContabil}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
