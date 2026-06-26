@@ -154,6 +154,7 @@ None yet.
 | 260622-r6n | Mudar paleta de cores dos graficos do dashboard (escala de cinza -> esquema semaforo: azul/verde/amarelo/laranja/vermelho) | 2026-06-22 | 6104e79 | [260622-r6n-mudar-paleta-de-cores-dos-graficos-do-da](./quick/260622-r6n-mudar-paleta-de-cores-dos-graficos-do-da/) |
 | 260625-mgd | Renomear usuarios Dono/DP1/Contabil1 para Neto/Lauany/Elisabete no seed + script one-off para producao | 2026-06-26 | cd68e63 | [260625-mgd-renomear-usuarios-dono-neto-dp1-lauany-c](./quick/260625-mgd-renomear-usuarios-dono-neto-dp1-lauany-c/) |
 | 260626-a8d | Rota /empresas/dp (listagem com responsavel DP, celula vazia se ausente) + campo informativo Empresa.temEmpregadaDomestica | 2026-06-26 | 68edf7a | [260626-a8d-listagem-de-empresas-dp-com-responsavel-](./quick/260626-a8d-listagem-de-empresas-dp-com-responsavel-/) |
+| 260626-aim | Botao DONO-only (com AlertDialog) para excluir tarefas (recorrentes+avulsas, todos os setores) da competencia atual | 2026-06-26 | a03e4d6 | [260626-aim-botao-so-dono-para-excluir-todas-as-tare](./quick/260626-aim-botao-so-dono-para-excluir-todas-as-tare/) |
 
 ## Deferred Items
 
