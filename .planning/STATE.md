@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-06-25)
 Phase: 9 (13º Salário Automático) — not started
 Plan: —
 Status: Roadmap created, awaiting phase planning
-Last activity: 2026-06-26 - Completed quick task 260626-l8c: Corrigir link "Ver empresa" que apontava para rota inexistente (404)
+Last activity: 2026-06-26 - Completed quick task 260626-le2: Corrigir vazamento de carteira/colaboradores entre setores no card "Desempenho por colaborador" dos dashboards DP/CONTABIL
 
 ## Performance Metrics
 
@@ -169,6 +169,7 @@ None yet.
 | — | Restringe coluna Empregada domestica ao setor DP e ao dono | 2026-06-26 | 497b53a | — |
 | 260626-kn2 | Permitir CHEFE_SETOR acessar /dashboards vendo apenas o card do proprio setor (sem tab switcher Fiscal/DP/Contabil) | 2026-06-26 | 517e696 | [260626-kn2-permitir-que-chefe-setor-acesse-a-pagina](./quick/260626-kn2-permitir-que-chefe-setor-acesse-a-pagina/) |
 | 260626-l8c | Corrigir href do link "Ver empresa" no detalhe da tarefa, que apontava para /empresas/{id} (rota inexistente, causava 404) -> /empresas/{id}/editar | 2026-06-26 | cb5d51a | [260626-l8c-corrigir-link-ver-empresa-que-aponta-par](./quick/260626-l8c-corrigir-link-ver-empresa-que-aponta-par/) |
+| 260626-le2 | Corrigir vazamento de carteira/colaboradores entre setores no card "Desempenho por colaborador" (DP/CONTABIL liam Empresa.responsavelId legado, exclusivo FISCAL; agora usam EmpresaResponsavelSetor) | 2026-06-26 | c5fddfe | [260626-le2-ajustar-dashboard-desempenho-do-funciona](./quick/260626-le2-ajustar-dashboard-desempenho-do-funciona/) |
 
 ## Deferred Items
 
