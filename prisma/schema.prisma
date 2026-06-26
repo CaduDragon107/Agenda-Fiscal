@@ -84,6 +84,7 @@ model Empresa {
   responsavelId      String
   responsavel        Usuario           @relation("ResponsavelEmpresa", fields: [responsavelId], references: [id])
   temFuncionariosClt Boolean           @default(false)
+  temEmpregadaDomestica Boolean        @default(false)
   contatos           String?
   particularidades   String?
   ativo              Boolean           @default(true)

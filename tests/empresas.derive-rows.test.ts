@@ -31,6 +31,7 @@ function montarFixtures() {
       regimeTributario: "LUCRO_REAL" as const,
       responsavelId: FISCAL_ID,
       temFuncionariosClt: true,
+      temEmpregadaDomestica: false,
       contatos: null,
       particularidades: null,
       ativo: true,

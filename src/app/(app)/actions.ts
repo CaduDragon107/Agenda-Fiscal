@@ -54,6 +54,7 @@ function dadosFormulario(formData: FormData) {
     responsavelDpId: formData.get("responsavelDpId") || null,
     responsavelContabilId: formData.get("responsavelContabilId") || null,
     temFuncionariosClt: formData.get("temFuncionariosClt") === "true",
+    temEmpregadaDomestica: formData.get("temEmpregadaDomestica") === "true",
     contatos: formData.get("contatos"),
     particularidades: formData.get("particularidades"),
   };
@@ -153,6 +154,7 @@ export async function criarEmpresa(
         // responsavelFiscalId, gravado na mesma transação da linha FISCAL.
         responsavelId: dados.responsavelFiscalId,
         temFuncionariosClt: dados.temFuncionariosClt,
+        temEmpregadaDomestica: dados.temEmpregadaDomestica,
         contatos: dados.contatos,
         particularidades: dados.particularidades,
         regimeHistorico: {
@@ -262,6 +264,7 @@ export async function editarEmpresa(
         // responsavelFiscalId efetivo (já passado pelo guard DONO-only).
         responsavelId: responsavelFiscalId,
         temFuncionariosClt: dados.temFuncionariosClt,
+        temEmpregadaDomestica: dados.temEmpregadaDomestica,
         contatos: dados.contatos,
         particularidades: dados.particularidades,
       },
