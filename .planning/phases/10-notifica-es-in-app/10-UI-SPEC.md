@@ -50,7 +50,7 @@ Declared values (must be multiples of 4), matching project-wide convention alrea
 
 Exceptions:
 - Bell **icon-only touch target**: 32px (`size-8`, matches existing `Button` `size="icon"` = `size-8`) — consistent with `SidebarTrigger` sizing already in the header.
-- Notification row minimum height: 44px (touch-target floor) even though visual content may be shorter — applies to dropdown list items per accessibility convention.
+- Notification row minimum height: 48px (touch-target floor, nearest standard-scale value) even though visual content may be shorter — applies to dropdown list items per accessibility convention.
 
 ---
 
@@ -61,13 +61,13 @@ Reusing the project's existing 3-tier scale (no new sizes introduced — verifie
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px (`text-sm`) | 400 (regular) | 1.5 |
-| Label | 12px (`text-xs`) | 500 (medium) | 1.4 — used for badge count, empresa/timestamp metadata under each notification |
+| Label | 12px (`text-xs`) | 400 (regular) | 1.4 — used for badge count, empresa/timestamp metadata under each notification |
 | Heading | 16px (`text-base`) | 600 (semibold) | 1.2 — dropdown panel title "Notificações" |
 | Display | not used | — | — |
 
 Notes:
-- Notification row title (tarefa name) uses Body 14px/500 (medium, not the project's semibold) to distinguish from section heading while still reading as the primary line.
-- Exactly 2 weights used project-wide already (400 regular, 500/600 for emphasis) — no new weight introduced.
+- Notification row title (tarefa name) uses Body 14px/600 (semibold) to read as the primary line within each row — the only other emphasis weight besides Heading.
+- Exactly 2 weights used project-wide and in this phase: 400 (regular — body copy, labels/metadata) and 600 (semibold — panel heading, notification row titles). No 500/medium weight introduced.
 
 ---
 
@@ -85,6 +85,8 @@ Reusing existing token set from `src/app/globals.css` (oklch neutral base + sema
 | Destructive | `var(--destructive)` | "Marcar todas como lidas" is non-destructive (reversible is not needed — already a one-way state per D-04, but it is not data-loss); no destructive-confirm UI needed for this phase (no delete action exists for notifications, per CONTEXT.md — only "ler" transitions, no delete) |
 
 Accent reserved for: **bell badge count number, "Atrasada" tag (red), "Vencendo" tag (amber), "Avulsa atribuída" tag (blue/neutral)** — never any other element in the dropdown (links, buttons, panel chrome stay neutral/secondary).
+
+**Focal point:** the unread notification rows (with their colored type tag) are the primary visual anchor of the dropdown panel; the "Marcar todas como lidas" CTA in the header is secondary, styled as a plain/ghost text-link-weight button so it never competes with the colored row tags for attention.
 
 ---
 
@@ -123,7 +125,7 @@ No third-party registries declared for this phase.
 1. **Placement**: Bell renders in `src/app/(app)/layout.tsx` header, between `Separator` and the (currently empty) right side of the flex row — `<header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">`. Use `ml-auto` on the bell wrapper to push it to the right edge of the header, consistent with common "actions on the right" header convention (not contradicted by any existing pattern in this codebase, since the header is currently sparse).
 2. **Server/Client split**: Per established pattern in `AppLayout` (Server Component fetching `contarAlertasTarefas` and passing as prop to client `AppSidebar`), the bell's initial unread count and sync should be fetched server-side in `AppLayout` and passed as a prop to a new client component (e.g. `NotificationBell`), which owns the `Popover` open state and "mark as read" Server Action calls. This mirrors the exact prop-drilling pattern already used for `contadorAlertas`.
 3. **Sidebar badge removal (D-10)**: Remove `contadorAlertas` prop from `AppSidebar`, the badge `<span>` block (lines ~100-107 of `app-sidebar.tsx`), and the now-unused `contarAlertasTarefas` import/call in `layout.tsx`. This is a deletion, not a new visual — no new contract needed beyond "remove cleanly, no orphaned prop types."
-4. **Dropdown row anatomy** (top to bottom, per row): type tag (Badge, colored per Color section) + tarefa título (Body 14px/500) on one line; empresa nome + prazo formatted date (Label 12px, `text-muted-foreground`) on the line below — mirrors the existing two-line density pattern visible in `app-sidebar.tsx`'s user footer (`text-sm font-medium` + `text-xs text-muted-foreground`).
+4. **Dropdown row anatomy** (top to bottom, per row): type tag (Badge, colored per Color section) + tarefa título (Body 14px/600 semibold) on one line; empresa nome + prazo formatted date (Label 12px/400 regular, `text-muted-foreground`) on the line below — mirrors the existing two-line density pattern visible in `app-sidebar.tsx`'s user footer (`text-sm font-medium` + `text-xs text-muted-foreground`).
 5. **Badge count cap**: Reuse exact existing convention from `app-sidebar.tsx` line 105: `{contadorAlertas > 99 ? "99+" : contadorAlertas}` — apply identically to the new bell badge count.
 6. **Empty state**: Render inside the `Popover` content area itself (not a separate page) — centered text, no illustration needed (project has no illustration system established elsewhere), using `text-muted-foreground` body copy per the Color/Typography contract above.
 
