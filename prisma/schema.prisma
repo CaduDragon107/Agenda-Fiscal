@@ -55,6 +55,7 @@ enum TipoObrigacao {
   ECD
   ECF
   DEFIS
+  DECIMO_TERCEIRO
 }
 
 model Usuario {

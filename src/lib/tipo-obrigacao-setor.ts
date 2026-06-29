@@ -9,7 +9,7 @@ import type { Prisma, Setor, TipoObrigacao } from "@prisma/client";
  * geracao-tarefas-contabil-anual.ts) e cross-referenciada contra o enum
  * `TipoObrigacao` em prisma/schema.prisma.
  *
- * Mapeamento DISJUNTO: cada um dos 20 valores do enum aparece em
+ * Mapeamento DISJUNTO: cada um dos 21 valores do enum aparece em
  * exatamente um setor — garantido pelo teste de completude em
  * tests/tipo-obrigacao-setor.test.ts (quebra na hora se o enum mudar sem
  * atualizar este mapa).
@@ -20,7 +20,7 @@ import type { Prisma, Setor, TipoObrigacao } from "@prisma/client";
  */
 export const TIPOS_OBRIGACAO_POR_SETOR: Record<Setor, TipoObrigacao[]> = {
   FISCAL: ["ICMS", "PIS_COFINS", "SPED_FISCAL", "SPED_CONTRIBUICOES", "DAS"],
-  DP: ["FOLHA", "ESOCIAL", "FGTS", "INSS"],
+  DP: ["FOLHA", "ESOCIAL", "FGTS", "INSS", "DECIMO_TERCEIRO"],
   CONTABIL: [
     "EXTRATO_BANCARIO",
     "LANCAMENTO_EXTRATOS",

@@ -27,9 +27,9 @@ describe("tarefaSetorWhere", () => {
     ];
 
     expect(recorrentesClause.tipoObrigacao.in).toEqual(
-      expect.arrayContaining(["FOLHA", "ESOCIAL", "FGTS", "INSS"])
+      expect.arrayContaining(["FOLHA", "ESOCIAL", "FGTS", "INSS", "DECIMO_TERCEIRO"])
     );
-    expect(recorrentesClause.tipoObrigacao.in).toHaveLength(4);
+    expect(recorrentesClause.tipoObrigacao.in).toHaveLength(5);
 
     expect(avulsasClause).toEqual({
       tipoObrigacao: null,
@@ -88,12 +88,12 @@ describe("tarefaSetorWhere", () => {
     // um setor, e nenhum valor extra (nao pertencente ao enum) foi incluido.
     expect(ocorrenciasPorValor.size).toBe(todosValoresDoEnum.length);
 
-    // Soma exata dos 3 arrays == 20 (5 FISCAL + 4 DP + 11 CONTABIL).
+    // Soma exata dos 3 arrays == 21 (5 FISCAL + 5 DP + 11 CONTABIL).
     const somaTotal = Object.values(TIPOS_OBRIGACAO_POR_SETOR).reduce(
       (acc, lista) => acc + lista.length,
       0
     );
-    expect(somaTotal).toBe(20);
+    expect(somaTotal).toBe(21);
     expect(somaTotal).toBe(todosValoresDoEnum.length);
   });
 });
