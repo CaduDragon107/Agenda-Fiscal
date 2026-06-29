@@ -7,7 +7,7 @@
 
 ### Departamento Pessoal (DP)
 
-- [ ] **DP-09**: Geração automática anual de tarefa de 13º salário, por empresa com funcionários CLT (`temFuncionariosClt`), reaproveitando o motor de periodicidade anual já validado no Contábil (ECD/ECF/DEFIS)
+- [x] **DP-09**: Geração automática anual de tarefa de 13º salário, por empresa com funcionários CLT (`temFuncionariosClt`), reaproveitando o motor de periodicidade anual já validado no Contábil (ECD/ECF/DEFIS)
 
 ### Notificações
 
@@ -54,13 +54,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DP-09 | Phase 9 | Pending |
+| DP-09 | Phase 9 | Complete |
 | NOTF-01 | Phase 10 | Pending |
 | NOTF-02 | Phase 10 | Pending |
 | NOTF-03 | Phase 10 | Pending |
 | NOTF-04 | Phase 10 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 5 total
 - Mapped to phases: 5
 - Unmapped: 0 ✓

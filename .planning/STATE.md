@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 13º Salário e Notificações In-App
-status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-06-29T10:54:07.944Z"
+status: verifying
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-06-29T11:01:55.983Z"
 last_activity: 2026-06-29 -- Phase 09 execution started
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
-  percent: 0
+  completed_plans: 2
+  percent: 50
 current_phase: 9
 current_phase_name: 13º Salário Automático
 ---
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-06-25)
 
 Phase: 09 (decimo-terceiro-salario-automatico) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-29 -- Phase 09 execution started
 
 ## Performance Metrics
@@ -70,6 +70,7 @@ Last activity: 2026-06-29 -- Phase 09 execution started
 | Phase 06 P02 | 22min | 3 tasks | 5 files |
 | Phase 07 P02 | 20min | - tasks | - files |
 | Phase 09 P01 | 25min | 3 tasks | 5 files |
+| Phase 09 P02 | 18min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -127,6 +128,7 @@ Recent decisions affecting current work:
 - [Phase ?]: anoVencimento = anoAtual (D-02) hardcoded em função dedicada (geracao-tarefas-dp-anual.ts), sem reuso/import do módulo Contábil anual (que hardcoda anoAtual + 1) -- catálogo paralelo evita regressão nos testes de ECD/ECF/DEFIS
 - [Phase ?]: [09-01] Catálogo flat geracao-tarefas-dp-anual.ts sem campo de elegibilidade por regime tributário -- gate temFuncionariosClt fica no chamador (geracao.ts), mesmo padrão de geracao-tarefas-dp.ts
 - [Phase ?]: [09-01] DECIMO_TERCEIRO rastreia o vencimento da 2ª parcela/saldo (20/dez), não a 1ª parcela (30/nov) -- D-01
+- [Phase ?]: [Phase 09-02]: Bloco DP-anual reusa comResponsavelDp (bloco DP mensal) em vez de novo tx.empresa.findMany — sem nova chave semResponsavelDpAnual, preserva cadeia de mocks posicional dos testes existentes
 
 ### Pending Todos
 
@@ -198,8 +200,8 @@ Items acknowledged at v2.0 milestone close (2026-06-25):
 
 ## Session Continuity
 
-Last session: 2026-06-29T10:54:07.934Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-06-29T11:01:55.974Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

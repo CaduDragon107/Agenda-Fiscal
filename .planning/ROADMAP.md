@@ -32,7 +32,7 @@ Full phase details (goals, success criteria, plans): `.planning/milestones/v2.0-
 
 ### v2.1 13º Salário e Notificações In-App (Phases 9-10) — IN PROGRESS
 
-- [ ] **Phase 9: 13º Salário Automático** - Geração automática anual de tarefa de 13º salário, reaproveitando o motor de periodicidade anual já validado no Contábil
+- [x] **Phase 9: 13º Salário Automático** - Geração automática anual de tarefa de 13º salário, reaproveitando o motor de periodicidade anual já validado no Contábil (completed 2026-06-29)
 - [ ] **Phase 10: Notificações In-App** - Sino/badge no header notifica o usuário sobre tarefas vencendo, atrasadas ou avulsas atribuídas a ele, com visibilidade escopada por responsável
 
 ## Phase Details
@@ -56,7 +56,7 @@ Full phase details (goals, success criteria, plans): `.planning/milestones/v2.0-
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 09-02-PLAN.md — Integração do 6º bloco (DP anual / 13º) em geracao.ts + testes de integração
+- [x] 09-02-PLAN.md — Integração do 6º bloco (DP anual / 13º) em geracao.ts + testes de integração
 
 ### Phase 10: Notificações In-App
 
@@ -86,7 +86,7 @@ Full phase details (goals, success criteria, plans): `.planning/milestones/v2.0-
 | 6. Motor de Geração — DP | v2.0 | 3/3 | Complete | 2026-06-24 |
 | 7. Motor de Geração — Contábil | v2.0 | 3/3 | Complete | 2026-06-24 |
 | 8. Dashboards Multi-Setor | v2.0 | 3/3 | Complete | 2026-06-25 |
-| 9. 13º Salário Automático | v2.1 | 1/2 | In Progress|  |
+| 9. 13º Salário Automático | v2.1 | 2/2 | Complete   | 2026-06-29 |
 | 10. Notificações In-App | v2.1 | 0/0 | Not started | - |
 
 Phase numbering continues from the next milestone (v2.1 or v3.0 starts at Phase 9 — never restart at 01). Run `/gsd-new-milestone` to scope the next milestone.
