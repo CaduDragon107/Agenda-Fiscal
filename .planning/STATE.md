@@ -2,19 +2,18 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 13º Salário e Notificações In-App
-current_phase: 9
-current_phase_name: 13º Salário Automático
-status: planning
-stopped_at: Phase 9 context gathered
-last_updated: "2026-06-26T22:29:42.806Z"
-last_activity: 2026-06-26
-last_activity_desc: "Completed quick task 260626-le2: Corrigir vazamento de carteira/colaboradores entre setores no card "Desempenho por colaborador" dos dashboards DP/CONTABIL"
+status: executing
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-06-29T10:54:07.944Z"
+last_activity: 2026-06-29 -- Phase 09 execution started
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 2
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
+current_phase: 9
+current_phase_name: 13º Salário Automático
 ---
 
 # Project State
@@ -24,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-25)
 
 **Core value:** A equipe nunca perde um prazo — fiscal, de pessoal ou contábil — de nenhum cliente, e o dono sempre sabe em tempo real o status de tudo, em qualquer setor.
-**Current focus:** Roadmap created for v2.1 (Phases 9-10). Next: `/gsd-plan-phase 9`
+**Current focus:** Phase 09 — decimo-terceiro-salario-automatico
 
 ## Current Position
 
-Phase: 9 (13º Salário Automático) — not started
-Plan: —
-Status: Roadmap created, awaiting phase planning
-Last activity: 2026-06-26 - Completed quick task 260626-le2: Corrigir vazamento de carteira/colaboradores entre setores no card "Desempenho por colaborador" dos dashboards DP/CONTABIL
+Phase: 09 (decimo-terceiro-salario-automatico) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-06-29 -- Phase 09 execution started
 
 ## Performance Metrics
 
@@ -70,6 +69,7 @@ Last activity: 2026-06-26 - Completed quick task 260626-le2: Corrigir vazamento 
 | Phase 06 P03 | 8min | 1 tasks | 1 files |
 | Phase 06 P02 | 22min | 3 tasks | 5 files |
 | Phase 07 P02 | 20min | - tasks | - files |
+| Phase 09 P01 | 25min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -124,6 +124,9 @@ Recent decisions affecting current work:
 - [Phase 06-02]: Tarefas Fiscal e DP mescladas em um unico array antes de um unico tx.tarefa.createMany -- idempotencia continua apoiada exclusivamente na constraint @@unique
 - [Phase ?]: [07-02] tarefasContabilAnual tipado inline (nao reusando TarefaParaCriarContabil) pois tipoObrigacao e um union disjunto entre os eixos mensal e anual
 - [Phase ?]: [07-02] tests/geracao.actions.test.ts usa competenciaAtual() sem mock de data fixa - mock de empresa.findMany precisa de fallback mockResolvedValue([]) para cobrir a chamada extra do bloco anual em meses de virada (fev/abr/jun)
+- [Phase ?]: anoVencimento = anoAtual (D-02) hardcoded em função dedicada (geracao-tarefas-dp-anual.ts), sem reuso/import do módulo Contábil anual (que hardcoda anoAtual + 1) -- catálogo paralelo evita regressão nos testes de ECD/ECF/DEFIS
+- [Phase ?]: [09-01] Catálogo flat geracao-tarefas-dp-anual.ts sem campo de elegibilidade por regime tributário -- gate temFuncionariosClt fica no chamador (geracao.ts), mesmo padrão de geracao-tarefas-dp.ts
+- [Phase ?]: [09-01] DECIMO_TERCEIRO rastreia o vencimento da 2ª parcela/saldo (20/dez), não a 1ª parcela (30/nov) -- D-01
 
 ### Pending Todos
 
@@ -195,9 +198,9 @@ Items acknowledged at v2.0 milestone close (2026-06-25):
 
 ## Session Continuity
 
-Last session: 2026-06-26T22:29:42.796Z
-Stopped at: Phase 9 context gathered
-Resume file: .planning/phases/09-decimo-terceiro-salario-automatico/09-CONTEXT.md
+Last session: 2026-06-29T10:54:07.934Z
+Stopped at: Completed 09-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 

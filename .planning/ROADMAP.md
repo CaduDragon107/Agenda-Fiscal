@@ -52,7 +52,7 @@ Full phase details (goals, success criteria, plans): `.planning/milestones/v2.0-
 **Plans**: 2 plans
 **Wave 1**
 
-- [ ] 09-01-PLAN.md — Fundação pura (catálogo anual de DP, enum DECIMO_TERCEIRO, mapa de setor, schema push)
+- [x] 09-01-PLAN.md — Fundação pura (catálogo anual de DP, enum DECIMO_TERCEIRO, mapa de setor, schema push)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -86,7 +86,7 @@ Full phase details (goals, success criteria, plans): `.planning/milestones/v2.0-
 | 6. Motor de Geração — DP | v2.0 | 3/3 | Complete | 2026-06-24 |
 | 7. Motor de Geração — Contábil | v2.0 | 3/3 | Complete | 2026-06-24 |
 | 8. Dashboards Multi-Setor | v2.0 | 3/3 | Complete | 2026-06-25 |
-| 9. 13º Salário Automático | v2.1 | 0/0 | Not started | - |
+| 9. 13º Salário Automático | v2.1 | 1/2 | In Progress|  |
 | 10. Notificações In-App | v2.1 | 0/0 | Not started | - |
 
 Phase numbering continues from the next milestone (v2.1 or v3.0 starts at Phase 9 — never restart at 01). Run `/gsd-new-milestone` to scope the next milestone.
