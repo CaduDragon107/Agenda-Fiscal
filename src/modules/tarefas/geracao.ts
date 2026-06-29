@@ -50,6 +50,18 @@
  * Empresas sem responsável Contábil (mensal ou qualquer obrigação anual
  * disparada no mês) são deduplicadas por `empresaId` (Pitfall 4) antes de
  * retornar em `semResponsavelContabil`.
+ *
+ * NOVO (Plano 09-02): 6º e último bloco da transação — DP anual (13º
+ * salário, DECIMO_TERCEIRO). Reusa deliberadamente `empresasClt`/
+ * `comResponsavelDp` JÁ buscados pelo bloco DP mensal (mesma elegibilidade
+ * `temFuncionariosClt: true` + `setor: "DP"`) — não adiciona nenhuma nova
+ * chamada `tx.empresa.findMany`, preservando a cadeia de mocks posicional
+ * dos testes existentes (Pitfall 4 do 09-RESEARCH.md). `anoVencimento`
+ * vem do catálogo dedicado de DP (`geracao-tarefas-dp-anual.ts`, mesmo
+ * ano-base — D-02), nunca do motor Contábil anual (que usa anoAtual + 1).
+ * Como a elegibilidade é idêntica à do bloco DP mensal, não há lista
+ * `semResponsavelDpAnual` separada — empresa CLT sem responsável de DP já
+ * está reportada uma única vez em `semResponsavelDp`.
  */
 
 import { db } from "@/lib/db";
@@ -62,6 +74,12 @@ import {
   TITULO_OBRIGACAO_ANUAL,
   type TipoObrigacaoAnual,
 } from "@/lib/geracao-tarefas-contabil-anual";
+import {
+  obrigacoesDpAnuaisParaCompetencia,
+  calcularPrazoDpAnual,
+  TITULO_OBRIGACAO_DP_ANUAL,
+  type TipoObrigacaoDpAnual,
+} from "@/lib/geracao-tarefas-dp-anual";
 import { calcularSnapshotMensal } from "@/modules/dashboards/snapshot";
 import { format, subMonths } from "date-fns";
 
@@ -261,11 +279,43 @@ export async function executarGeracaoMensal(competencia: string): Promise<{
     }
     const semResponsavelContabil = Array.from(semResponsavelContabilMap.values());
 
+    // Bloco DP ANUAL (Plano 09-02): 13º salário. REUSA empresasClt/
+    // comResponsavelDp já buscados pelo bloco DP mensal acima — mesma
+    // elegibilidade (temFuncionariosClt: true + setor: "DP"), sem nenhum
+    // novo tx.empresa.findMany (Pitfall 4). A função de regras anuais de DP
+    // retorna [] em 11 dos 12 meses — caminho normal, não erro. Empresa CLT
+    // sem responsável de DP já está reportada em semResponsavelDp (mesmo
+    // gate do bloco mensal) — sem lista nem dedup nova.
+    const regrasDpAnuais = obrigacoesDpAnuaisParaCompetencia(competencia);
+
+    let tarefasDpAnual: {
+      empresaId: string;
+      responsavelId: string;
+      titulo: string;
+      tipoObrigacao: TipoObrigacaoDpAnual;
+      competencia: string;
+      prazo: Date;
+    }[] = [];
+
+    for (const { regra, competenciaAnual, anoVencimento } of regrasDpAnuais) {
+      tarefasDpAnual = tarefasDpAnual.concat(
+        comResponsavelDp.map((e) => ({
+          empresaId: e.id,
+          responsavelId: e.responsaveisPorSetor[0].usuarioId,
+          titulo: `${TITULO_OBRIGACAO_DP_ANUAL[regra.tipo]} - ${competenciaAnual}`, // D-06/D-07
+          tipoObrigacao: regra.tipo,
+          competencia: competenciaAnual, // "YYYY" — D-07
+          prazo: calcularPrazoDpAnual(anoVencimento, regra.mesVencimento, regra.diaVencimento),
+        }))
+      );
+    }
+
     const tarefas = [
       ...tarefasFiscal,
       ...tarefasDp,
       ...tarefasContabilMensal,
       ...tarefasContabilAnual,
+      ...tarefasDpAnual,
     ];
 
     if (tarefas.length === 0) {
