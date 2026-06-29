@@ -478,6 +478,137 @@ describe("executarGeracaoMensal — idempotencia", () => {
     expect(segunda.puladas).toBe(1);
   });
 
+  // ---------------------------------------------------------------------
+  // Plan 09-02: bloco DP anual (13º salário)
+  // ---------------------------------------------------------------------
+
+  it("DP anual: competência '2026-11' cria a tarefa DECIMO_TERCEIRO para empresa CLT com responsável DP, atribuída ao responsável de DP", async () => {
+    const { executarGeracaoMensal } = await import("@/modules/tarefas/geracao");
+
+    empresaFindManyMock
+      .mockResolvedValueOnce([]) // loop Fiscal vazio
+      .mockResolvedValueOnce([
+        {
+          id: "e6",
+          nome: "Empresa CLT com DP",
+          responsaveisPorSetor: [{ usuarioId: "dp_user" }],
+        },
+      ]) // loop DP (reusado pelo bloco DP-anual — sem novo findMany)
+      .mockResolvedValueOnce([]); // bloco Contabil mensal vazio
+    // "2026-11" não dispara nenhuma obrigação Contábil anual (DEFIS=fev,
+    // ECD=abr, ECF=jun) — cadeia de mocks permanece com exatamente 3
+    // mockResolvedValueOnce, igual aos testes de jul/ago/set existentes.
+
+    createManyMock.mockResolvedValue({ count: 5 }); // 4 DP mensal + 1 DECIMO_TERCEIRO
+
+    const resultado = await executarGeracaoMensal("2026-11");
+
+    expect(resultado.criadas).toBe(5);
+
+    const arg = createManyMock.mock.calls[0][0] as {
+      data: {
+        empresaId: string;
+        responsavelId: string;
+        tipoObrigacao: string;
+        competencia: string;
+        titulo: string;
+      }[];
+    };
+    const decimoTerceiro = arg.data.find((t) => t.tipoObrigacao === "DECIMO_TERCEIRO");
+    expect(decimoTerceiro).toBeDefined();
+    expect(decimoTerceiro).toMatchObject({
+      empresaId: "e6",
+      responsavelId: "dp_user",
+      competencia: "2026",
+    });
+    expect(decimoTerceiro!.titulo.startsWith("13º Salário - 2026")).toBe(true);
+
+    // empresa.findMany não foi chamado uma 4a vez para o bloco DP-anual —
+    // ele reusa a 2a chamada (bloco DP mensal), confirmando o Pitfall 4.
+    expect(empresaFindManyMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("DP anual: competência '2026-07' (fora de novembro) não inclui nenhuma tarefa DECIMO_TERCEIRO em createMany", async () => {
+    const { executarGeracaoMensal } = await import("@/modules/tarefas/geracao");
+
+    empresaFindManyMock
+      .mockResolvedValueOnce([]) // loop Fiscal vazio
+      .mockResolvedValueOnce([
+        {
+          id: "e7",
+          nome: "Empresa CLT com DP",
+          responsaveisPorSetor: [{ usuarioId: "dp_user" }],
+        },
+      ])
+      .mockResolvedValueOnce([]); // bloco Contabil mensal vazio
+
+    createManyMock.mockResolvedValue({ count: 4 }); // só as 4 tarefas DP mensal
+
+    const resultado = await executarGeracaoMensal("2026-07");
+
+    expect(resultado.criadas).toBe(4);
+
+    const arg = createManyMock.mock.calls[0][0] as {
+      data: { tipoObrigacao: string }[];
+    };
+    expect(arg.data.some((t) => t.tipoObrigacao === "DECIMO_TERCEIRO")).toBe(false);
+  });
+
+  it("DP anual: idempotência — segunda execução da competência '2026-11' não duplica a tarefa de 13º", async () => {
+    const { executarGeracaoMensal } = await import("@/modules/tarefas/geracao");
+
+    const empresasClt = [
+      {
+        id: "e8",
+        nome: "Empresa CLT idempotente",
+        responsaveisPorSetor: [{ usuarioId: "dp_user" }],
+      },
+    ];
+
+    empresaFindManyMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce(empresasClt)
+      .mockResolvedValueOnce([]);
+    createManyMock.mockResolvedValueOnce({ count: 5 });
+    const primeira = await executarGeracaoMensal("2026-11");
+    expect(primeira.criadas).toBe(5);
+    expect(primeira.puladas).toBe(0);
+
+    empresaFindManyMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce(empresasClt)
+      .mockResolvedValueOnce([]);
+    createManyMock.mockResolvedValueOnce({ count: 0 }); // skipDuplicates pula tudo
+    const segunda = await executarGeracaoMensal("2026-11");
+    expect(segunda.criadas).toBe(0);
+    expect(segunda.puladas).toBe(5);
+  });
+
+  it("DP anual: gate temFuncionariosClt — empresasClt vazio não gera nenhuma tarefa DECIMO_TERCEIRO", async () => {
+    const { executarGeracaoMensal } = await import("@/modules/tarefas/geracao");
+
+    empresaFindManyMock
+      .mockResolvedValueOnce([]) // loop Fiscal vazio
+      .mockResolvedValueOnce([]) // loop DP vazio — nenhuma empresa CLT
+      .mockResolvedValueOnce([]); // bloco Contabil mensal vazio
+
+    createManyMock.mockResolvedValue({ count: 0 });
+
+    const resultado = await executarGeracaoMensal("2026-11");
+
+    expect(resultado.criadas).toBe(0);
+    // tarefas.length === 0 nesta competência -> createMany nem é chamado
+    expect(createManyMock).not.toHaveBeenCalled();
+  });
+
+  it("DP anual: DECIMO_TERCEIRO está classificado como DP em TIPOS_OBRIGACAO_POR_SETOR, nunca FISCAL/CONTABIL — success criterion 4", async () => {
+    const { TIPOS_OBRIGACAO_POR_SETOR } = await import("@/lib/tipo-obrigacao-setor");
+
+    expect(TIPOS_OBRIGACAO_POR_SETOR.DP).toContain("DECIMO_TERCEIRO");
+    expect(TIPOS_OBRIGACAO_POR_SETOR.FISCAL).not.toContain("DECIMO_TERCEIRO");
+    expect(TIPOS_OBRIGACAO_POR_SETOR.CONTABIL).not.toContain("DECIMO_TERCEIRO");
+  });
+
   it("Pitfall 4: empresa sem responsável CONTABIL pulada tanto no bloco mensal quanto no bloco anual (mesmo mês) aparece UMA única vez em semResponsavelContabil (deduplicado)", async () => {
     const { executarGeracaoMensal } = await import("@/modules/tarefas/geracao");
 
