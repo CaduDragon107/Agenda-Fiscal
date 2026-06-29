@@ -31,6 +31,10 @@ Um sino com badge de contagem no header, visível em qualquer página do site, a
 ### Relação com a badge existente na sidebar
 - **D-10:** O sino do header **substitui** a badge atual no item "Tarefas" da sidebar (`src/app/(app)/app-sidebar.tsx`, prop `contadorAlertas`, função `contarAlertasTarefas` em `src/modules/tarefas/queries.ts`). Remover essa badge e sua prop para evitar dois números diferentes em lugares diferentes (a badge antiga não contava avulsa atribuída, o sino conta os 3 critérios).
 
+### Decisões da pesquisa (confirmadas pelo usuário)
+- **D-11:** A sincronização sob demanda sempre gera/atribui notificações para o `responsavelId` real da tarefa, independente de qual usuário disparou o carregamento da página (ex: o DONO navegando não gera notificações "dele" — gera para o responsável de fato).
+- **D-12:** O campo `lida` é **global por linha** (uma linha por `tarefaId+usuarioId+tipo`, propriedade da própria notificação daquele destinatário) — não há tabela de leitura por visualizador. Se o DONO abrir o sino e visualizar/marcar como lida uma notificação de um colaborador, isso afeta o badge desse colaborador também (consequência aceita do modelo de dados de D-01/D-03).
+
 ### Claude's Discretion
 - Nome exato da tabela/model Prisma e nomenclatura dos campos.
 - Onde exatamente a sincronização sob demanda é disparada (no `layout.tsx` do app shell, em cada `page.tsx`, ou via Server Action chamada ao montar o componente do sino) — decisão de arquitetura, não de produto.
