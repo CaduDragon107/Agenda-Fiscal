@@ -71,8 +71,20 @@ Full phase details (goals, success criteria, plans): `.planning/milestones/v2.0-
   4. Usuário recebe notificação quando uma tarefa avulsa é atribuída a ele
   5. COLABORADOR só vê notificações das tarefas das quais é responsável; DONO vê notificações de todos os setores e colaboradores (mesma regra de `withVisibilityScope`)
 
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
+
+**Wave 1**
+
+- [ ] 10-01-PLAN.md — Fundação: modelo Notificacao + enum, helper classificarPatamarPrazo (limiar único), schema push, stubs de teste Wave 0
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 10-02-PLAN.md — Backend: sincronizarNotificacoes, queries escopadas, Server Actions de mark-as-read + testes reais (NOTF-01..04)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 10-03-PLAN.md — UI: shadcn popover/scroll-area, NotificationBell, wiring no AppLayout, remoção da badge da sidebar (D-10) + checkpoint visual
 
 ## Progress
 
@@ -87,6 +99,6 @@ Full phase details (goals, success criteria, plans): `.planning/milestones/v2.0-
 | 7. Motor de Geração — Contábil | v2.0 | 3/3 | Complete | 2026-06-24 |
 | 8. Dashboards Multi-Setor | v2.0 | 3/3 | Complete | 2026-06-25 |
 | 9. 13º Salário Automático | v2.1 | 2/2 | Complete   | 2026-06-29 |
-| 10. Notificações In-App | v2.1 | 0/0 | Not started | - |
+| 10. Notificações In-App | v2.1 | 0/3 | Planned | - |
 
 Phase numbering continues from the next milestone (v2.1 or v3.0 starts at Phase 9 — never restart at 01). Run `/gsd-new-milestone` to scope the next milestone.
